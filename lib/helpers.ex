@@ -110,7 +110,7 @@ defmodule Excellent.Helpers do
 
   def nested_variable() do
     single_variable()
-    |> ignore(string("."))
+    |> string(".")
     |> concat(single_variable())
   end
 
@@ -119,38 +119,21 @@ defmodule Excellent.Helpers do
   end
 
   def substitution() do
-    ignore(string("@"))
+    string("@")
     |> concat(variable())
   end
 
   def block() do
-    ignore(string("@"))
-    |> ignore(string("("))
-    |> repeat(
-      lookahead_not(string(")"))
-      |> concat(blockable_things())
-    )
-    |> ignore(string(")"))
+    string("@")
+    |> string("(")
+    |> utf8_string([not: ?)], min: 1)
+    |> string(")")
   end
 
   def function() do
     utf8_string([not: ?(], min: 1)
-    |> ignore(string("("))
-    |> repeat(
-      lookahead_not(string(")"))
-      |> concat(blockable_things())
-    )
-    |> ignore(string(")"))
-  end
-
-  def blockable_things do
-    choice([
-      variable(),
-      integer(min: 1),
-      decimal(),
-      ignore(string(",")),
-      ignore(string(" ")),
-      utf8_string([not: ?)], min: 1)
-    ])
+    |> string("(")
+    |> utf8_string([], min: 0)
+    |> string(")")
   end
 end
