@@ -92,4 +92,49 @@ defmodule Excellent.Helpers do
   def cast_boolean("true"), do: true
   def cast_boolean("false"), do: false
   def cast_boolean(binary), do: binary |> String.downcase() |> cast_boolean()
+
+  def logic_comparison() do
+    choice([
+      string("<>"),
+      string("="),
+      string(">="),
+      string(">"),
+      string("<="),
+      string("<")
+    ])
+  end
+
+  def variable() do
+    utf8_string([?a..?z, ?A..?Z], min: 1)
+    |> optional(ignore(string(".")))
+    |> repeat()
+  end
+
+  def substitution() do
+    ignore(string("@"))
+    |> concat(variable())
+  end
+
+  def block() do
+    ignore(string("@"))
+    |> ignore(string("("))
+    |> repeat(
+      lookahead_not(string(")"))
+      |> choice([
+        variable(),
+        utf8_string([not: ?)], min: 1)
+      ])
+    )
+    |> ignore(string(")"))
+  end
+
+  def function() do
+    utf8_string([not: ?(], min: 1)
+    |> ignore(string("("))
+    |> repeat(
+      lookahead_not(string(")"))
+      |> concat(variable())
+    )
+    |> ignore(string(")"))
+  end
 end

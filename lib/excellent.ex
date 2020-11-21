@@ -9,4 +9,8 @@ defmodule Excellent do
   defparsec(:decimal, decimal())
   defparsec(:datetime, datetime())
   defparsec(:boolean, boolean())
+  defparsec(:logic_comparison, logic_comparison())
+  defparsec(:substitution, substitution())
+  defparsec(:block, block())
+  defparsec(:function, function())
 end

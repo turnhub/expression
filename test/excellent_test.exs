@@ -28,4 +28,56 @@ defmodule ExcellentTest do
       assert {:ok, [false], _, _, _, _} = Excellent.boolean("False")
     end
   end
+
+  describe "logic" do
+    test "=" do
+      assert {:ok, ["="], _, _, _, _} = Excellent.logic_comparison("=")
+    end
+
+    test "<>" do
+      assert {:ok, ["<>"], _, _, _, _} = Excellent.logic_comparison("<>")
+    end
+
+    test ">" do
+      assert {:ok, [">"], _, _, _, _} = Excellent.logic_comparison(">")
+    end
+
+    test ">=" do
+      assert {:ok, [">="], _, _, _, _} = Excellent.logic_comparison(">=")
+    end
+
+    test "<" do
+      assert {:ok, ["<"], _, _, _, _} = Excellent.logic_comparison("<")
+    end
+
+    test "<=" do
+      assert {:ok, ["<="], _, _, _, _} = Excellent.logic_comparison("<=")
+    end
+  end
+
+  describe "templating" do
+    test "substitution" do
+      assert {:ok, ["contact"], _, _, _, _} = Excellent.substitution("@contact")
+      assert {:ok, ["contact", "name"], _, _, _, _} = Excellent.substitution("@contact.name")
+
+      assert {:ok, ["contact", "name", "foo"], _, _, _, _} =
+               Excellent.substitution("@contact.name.foo")
+    end
+
+    test "block" do
+      assert {:ok, ["contact", "name"], _, _, _, _} = Excellent.block("@(contact.name)")
+    end
+  end
+
+  describe "functions" do
+    test "single argument" do
+      assert {:ok, ["YEAR", "contact", "age"], _, _, _, _} =
+               Excellent.function("YEAR(contact.age)")
+    end
+
+    # test "multiple arguments" do
+    #   assert {:ok, ["DATE", "2012", "12", "25"], _, _, _, _} =
+    #            Excellent.function("DATE(2012, 12, 25)")
+    # end
+  end
 end
