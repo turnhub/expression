@@ -104,10 +104,18 @@ defmodule Excellent.Helpers do
     ])
   end
 
-  def variable() do
+  def single_variable() do
     utf8_string([?a..?z, ?A..?Z], min: 1)
-    |> optional(ignore(string(".")))
-    |> repeat()
+  end
+
+  def nested_variable() do
+    single_variable()
+    |> ignore(string("."))
+    |> concat(single_variable())
+  end
+
+  def variable() do
+    choice([nested_variable(), single_variable()])
   end
 
   def substitution() do
@@ -120,10 +128,7 @@ defmodule Excellent.Helpers do
     |> ignore(string("("))
     |> repeat(
       lookahead_not(string(")"))
-      |> choice([
-        variable(),
-        utf8_string([not: ?)], min: 1)
-      ])
+      |> concat(blockable_things())
     )
     |> ignore(string(")"))
   end
@@ -133,8 +138,19 @@ defmodule Excellent.Helpers do
     |> ignore(string("("))
     |> repeat(
       lookahead_not(string(")"))
-      |> concat(variable())
+      |> concat(blockable_things())
     )
     |> ignore(string(")"))
+  end
+
+  def blockable_things do
+    choice([
+      variable(),
+      integer(min: 1),
+      decimal(),
+      ignore(string(",")),
+      ignore(string(" ")),
+      utf8_string([not: ?)], min: 1)
+    ])
   end
 end

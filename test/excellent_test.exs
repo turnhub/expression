@@ -59,9 +59,6 @@ defmodule ExcellentTest do
     test "substitution" do
       assert {:ok, ["contact"], _, _, _, _} = Excellent.substitution("@contact")
       assert {:ok, ["contact", "name"], _, _, _, _} = Excellent.substitution("@contact.name")
-
-      assert {:ok, ["contact", "name", "foo"], _, _, _, _} =
-               Excellent.substitution("@contact.name.foo")
     end
 
     test "block" do
@@ -75,9 +72,8 @@ defmodule ExcellentTest do
                Excellent.function("YEAR(contact.age)")
     end
 
-    # test "multiple arguments" do
-    #   assert {:ok, ["DATE", "2012", "12", "25"], _, _, _, _} =
-    #            Excellent.function("DATE(2012, 12, 25)")
-    # end
+    test "multiple arguments" do
+      assert {:ok, ["DATE", 2012, 12, 25], _, _, _, _} = Excellent.function("DATE(2012, 12, 25)")
+    end
   end
 end
