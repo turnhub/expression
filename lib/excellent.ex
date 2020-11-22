@@ -3,48 +3,134 @@ defmodule Excellent do
   Documentation for `Excellent`.
   """
   import NimbleParsec
-  import Excellent.Helpers
+  # import Excellent.Helpers
 
-  defcombinator(:text, utf8_string([], 1))
-  defcombinator(:whitespace, ignore(string(" ")))
-  defcombinator(:decimal, decimal())
-  defcombinator(:datetime, datetime())
-  defcombinator(:boolean, boolean())
-  defcombinator(:logic_comparison, logic_comparison())
-  defcombinator(:substitution, substitution())
-  defcombinator(:variable, variable())
-  defcombinator(:integer, integer(min: 1))
-  defcombinator(:block, block())
+  opening_block = string("@(")
+  closing_block = string(")")
 
-  defparsec(
-    :expression,
-    choice([
-      parsec(:substitution),
-      parsec(:function),
-      parsec(:datetime),
-      parsec(:boolean),
-      parsec(:variable),
-      parsec(:decimal),
-      parsec(:integer),
-      parsec(:logic_comparison),
-      parsec(:whitespace),
-      parsec(:text)
-    ])
-  )
-
-  function_open =
-    utf8_string([not: ?(], min: 1)
-    |> string("(")
-
+  function_open = string("(")
   function_close = string(")")
 
-  defcombinator(
-    :function,
-    function_open
+  identifier = ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 1)
+
+  plus = string("+")
+  minus = string("-")
+
+  true_value =
+    string("true")
+    |> replace(true)
+
+  false_value =
+    string("false")
+    |> replace(false)
+
+  int =
+    optional(minus)
+    |> concat(integer(min: 1))
+    |> reduce({Enum, :join, [""]})
+    |> map({String, :to_integer, []})
+
+  decimal =
+    optional(minus)
+    |> concat(integer(min: 1))
+    |> concat(string("."))
+    |> concat(integer(min: 1))
+    |> reduce({Enum, :join, [""]})
+    |> map({Decimal, :new, []})
+
+  single_quoted_string =
+    ignore(string(~s(')))
     |> repeat(
-      lookahead_not(string(")"))
-      |> parsec(:expression)
+      lookahead_not(ascii_char([?']))
+      |> choice([string(~s(\')), utf8_char([])])
     )
-    |> concat(function_close)
+    |> ignore(string(~s(')))
+    |> reduce({List, :to_string, []})
+
+  double_quoted_string =
+    ignore(string(~s(")))
+    |> repeat(
+      lookahead_not(ascii_char([?"]))
+      |> choice([string(~s(\")), utf8_char([])])
+    )
+    |> ignore(string(~s(")))
+    |> reduce({List, :to_string, []})
+
+  dot_access =
+    ignore(string("."))
+    |> concat(identifier)
+
+  field =
+    identifier
+    |> repeat(dot_access)
+
+  value =
+    choice([
+      int,
+      decimal,
+      true_value,
+      false_value,
+      single_quoted_string,
+      double_quoted_string
+    ])
+    |> unwrap_and_tag(:value)
+
+  space =
+    string(" ")
+    |> times(min: 0)
+
+  opening_substitution = string("@")
+
+  text =
+    lookahead_not(choice([opening_block, opening_substitution]))
+    |> utf8_string([], 1)
+    |> times(min: 1)
+    |> reduce({Enum, :join, []})
+    |> tag(:text)
+
+  argument =
+    choice([
+      tag(value, :scalar),
+      tag(field, :field)
+    ])
+
+  arguments =
+    choice([parsec(:function), value, argument])
+    |> repeat(
+      ignore(space)
+      |> ignore(string(","))
+      |> ignore(space)
+      |> concat(choice([parsec(:function), value, argument]))
+    )
+
+  substitution =
+    ignore(opening_substitution)
+    |> concat(
+      choice([
+        parsec(:function),
+        argument
+      ])
+    )
+    |> tag(:substitution)
+
+  block =
+    ignore(opening_block)
+    |> ignore(space)
+    |> lookahead_not(closing_block)
+    |> concat(argument)
+    |> ignore(space)
+    |> ignore(closing_block)
+    |> tag(:block)
+
+  defcombinatorp(
+    :function,
+    identifier
+    |> concat(ignore(function_open))
+    |> optional(tag(arguments, :arguments))
+    |> concat(ignore(function_close))
+    |> tag(:function)
   )
+
+  defcombinatorp(:expression, repeat(choice([block, substitution, text])))
+  defparsec(:parse, parsec(:expression) |> eos())
 end

@@ -22,6 +22,7 @@ defmodule Excellent.MixProject do
   defp deps do
     [
       {:nimble_parsec, "~> 1.1"},
+      {:decimal, "~> 2.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false}
     ]
   end
