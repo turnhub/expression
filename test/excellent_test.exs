@@ -94,4 +94,10 @@ defmodule ExcellentTest do
               ], _, _, _, _} = Excellent.parse("@HOUR(NOW())")
     end
   end
+
+  describe "logic" do
+    test "add" do
+      assert {:ok, [block: []], _, _, _, _} = Excellent.parse("@(1 aa)")
+    end
+  end
 end

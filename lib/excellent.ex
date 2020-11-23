@@ -13,8 +13,37 @@ defmodule Excellent do
 
   identifier = ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 1)
 
-  plus = string("+")
-  minus = string("-")
+  plus = tag(string("+"), :plus)
+  minus = tag(string("-"), :minus)
+  multiply = tag(string("*"), :multiply)
+  divide = tag(string("/"), :divide)
+  exponent = tag(string("^"), :exponent)
+
+  operators =
+    choice([
+      plus,
+      minus,
+      multiply,
+      divide,
+      exponent
+    ])
+
+  eq = tag(string("="), :eq)
+  neq = tag(string("<>"), :neq)
+  gt = tag(string(">"), :gt)
+  gte = tag(string(">="), :gte)
+  lt = tag(string("<"), :lt)
+  lte = tag(string("<="), :lte)
+
+  logical =
+    choice([
+      neq,
+      eq,
+      gte,
+      gt,
+      lte,
+      lt
+    ])
 
   int =
     optional(minus)
@@ -63,6 +92,8 @@ defmodule Excellent do
       decimal,
       int,
       boolean(),
+      operators,
+      logical,
       single_quoted_string,
       double_quoted_string
     ])
@@ -87,21 +118,21 @@ defmodule Excellent do
       field
     ])
 
-  arguments =
-    choice([parsec(:function), value, argument])
-    |> repeat(
-      ignore(space)
-      |> ignore(string(","))
-      |> ignore(space)
-      |> concat(choice([parsec(:function), value, argument]))
-    )
+  arguments = choice([parsec(:function), value, field])
+  # |> repeat(
+  #   ignore(space)
+  #   |> ignore(string(","))
+  #   |> ignore(space)
+  #   |> concat(choice([parsec(:function), value, argument]))
+  # )
 
   substitution =
     ignore(opening_substitution)
     |> concat(
       choice([
         parsec(:function),
-        argument
+        # argument
+        tag(identifier, :field)
       ])
     )
     |> tag(:substitution)
@@ -110,7 +141,7 @@ defmodule Excellent do
     ignore(opening_block)
     |> ignore(space)
     |> lookahead_not(closing_block)
-    |> concat(argument)
+    |> concat(arguments)
     |> ignore(space)
     |> ignore(closing_block)
     |> tag(:block)
