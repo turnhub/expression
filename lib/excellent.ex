@@ -11,6 +11,7 @@ defmodule Excellent do
   function_open = string("(")
   function_close = string(")")
 
+  # identifiers must start with a letter
   identifier =
     ascii_string([?a..?z, ?A..?Z], min: 1)
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
