@@ -94,6 +94,9 @@ defmodule ExcellentTest do
     test "add" do
       assert {:ok, [block: [{:value, 1}, {:operator, ["+"]}, {:field, ["a"]}]], _, _, _, _} =
                Excellent.parse("@(1 + a)")
+
+      assert {:ok, [block: [{:field, ["contact", "age"]}, {:operator, ["+"]}, {:value, 1}]], _, _,
+              _, _} = Excellent.parse("@(contact.age+1)")
     end
 
     test "join" do
