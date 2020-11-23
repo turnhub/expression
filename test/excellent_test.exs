@@ -39,65 +39,78 @@ defmodule ExcellentTest do
 
   describe "templating" do
     test "substitution" do
-      assert {:ok, [substitution: [field: ["contact"]]], _, _, _, _} = Excellent.parse("@contact")
+      assert {:ok, [substitution: [field: ["contact"]]], _, _, _, _} =
+               Excellent.parse_substitution("@contact")
 
       assert {:ok, [substitution: [field: ["contact", "name"]]], _, _, _, _} =
-               Excellent.parse("@contact.name")
+               Excellent.parse_substitution("@contact.name")
     end
   end
 
   describe "blocks" do
     test "block" do
       assert {:ok, [block: [field: ["contact", "name"]]], _, _, _, _} =
-               Excellent.parse("@(contact.name)")
+               Excellent.parse_block("@(contact.name)")
     end
   end
 
   describe "functions" do
     test "without arguments" do
-      assert {:ok, [substitution: [function: ["HOUR"]]], _, _, _, _} = Excellent.parse("@HOUR()")
+      assert {:ok, [function: ["HOUR"]], _, _, _, _} = Excellent.parse_function("HOUR()")
     end
 
     test "with a single argument" do
       assert {:ok,
               [
-                substitution: [
-                  function: ["HOUR", {:arguments, [field: ["contact", "timestamp"]]}]
-                ]
-              ], _, _, _, _} = Excellent.parse("@HOUR(contact.timestamp)")
+                function: ["HOUR", {:arguments, [field: ["contact", "timestamp"]]}]
+              ], _, _, _, _} = Excellent.parse_function("HOUR(contact.timestamp)")
     end
 
     test "with a multiple argument" do
       assert {:ok,
               [
-                substitution: [
-                  function: [
-                    "EDATE",
-                    {
-                      :arguments,
-                      [
-                        field: ["date", "today"],
-                        value: 1
-                      ]
-                    }
-                  ]
+                function: [
+                  "EDATE",
+                  {
+                    :arguments,
+                    [
+                      field: ["date", "today"],
+                      value: 1
+                    ]
+                  }
                 ]
-              ], _, _, _, _} = Excellent.parse("@EDATE(date.today, 1)")
+              ], _, _, _, _} = Excellent.parse_function("EDATE(date.today, 1)")
     end
 
     test "with functions" do
       assert {:ok,
               [
-                substitution: [
-                  function: ["HOUR", {:arguments, [function: ["NOW"]]}]
-                ]
-              ], _, _, _, _} = Excellent.parse("@HOUR(NOW())")
+                function: ["HOUR", {:arguments, [function: ["NOW"]]}]
+              ], _, _, _, _} = Excellent.parse_function("HOUR(NOW())")
     end
   end
 
   describe "logic" do
     test "add" do
-      assert {:ok, [block: []], _, _, _, _} = Excellent.parse("@(1 aa)")
+      assert {:ok, [block: [{:value, 1}, {:operator, ["+"]}, {:field, ["a"]}]], _, _, _, _} =
+               Excellent.parse("@(1 + a)")
+
+      assert {:ok, [block: [{:field, ["contact", "age"]}, {:operator, ["+"]}, {:value, 1}]], _, _,
+              _, _} = Excellent.parse("@(contact.age+1)")
+    end
+
+    test "join" do
+      assert {:ok,
+              [
+                block: [
+                  {:field, ["contact", "first_name"]},
+                  {:operator, ["&"]},
+                  {:value, {:string, [" "]}},
+                  {:operator, ["&"]},
+                  {:field, ["contact", "last_name"]}
+                ]
+              ], _, _, _,
+              _} = Excellent.parse("@(contact.first_name & \" \" & contact.last_name)")
     end
   end
 end
