@@ -7,59 +7,33 @@ defmodule ExcellentTest do
       assert {:ok, [text: ["hello"]], _, _, _, _} = Excellent.parse("hello")
     end
 
-    @tag :skip
     test "decimal" do
-      assert {:ok, [block: [value: 1.23]], _, _, _, _} = Excellent.parse("@(1.23)")
+      value = Decimal.new("1.23")
+      assert {:ok, [block: [value: ^value]], _, _, _, _} = Excellent.parse("@(1.23)")
     end
 
-    @tag :skip
     test "datetime" do
-      assert {:ok, [2020, 11, 21, 20, 13, 51, 921_042, "Z"], _, _, _, _} =
-               Excellent.parse("2020-11-21T20:13:51.921042Z")
+      {:ok, value, 0} = DateTime.from_iso8601("2020-11-21T20:13:51.921042Z")
 
-      assert {:ok, [1, 2, 2020, 23, 23, 23], _, _, _, _} = Excellent.parse("01-02-2020 23:23:23")
+      assert {:ok, [block: [value: ^value]], _, _, _, _} =
+               Excellent.parse("@(2020-11-21T20:13:51.921042Z)")
 
-      assert {:ok, [1, 2, 2020, 23, 23], _, _, _, _} = Excellent.parse("01-02-2020 23:23")
+      {:ok, value, 0} = DateTime.from_iso8601("2020-02-01T23:23:23Z")
+
+      assert {:ok, [block: [value: ^value]], _, _, _, _} =
+               Excellent.parse("@(01-02-2020 23:23:23)")
+
+      full_minute = %{value | second: 0}
+
+      assert {:ok, [block: [value: ^full_minute]], _, _, _, _} =
+               Excellent.parse("@(01-02-2020 23:23)")
     end
 
-    @tag :skip
     test "boolean" do
-      assert {:ok, [true], _, _, _, _} = Excellent.parse("true")
-      assert {:ok, [true], _, _, _, _} = Excellent.parse("True")
-      assert {:ok, [false], _, _, _, _} = Excellent.parse("false")
-      assert {:ok, [false], _, _, _, _} = Excellent.parse("False")
-    end
-  end
-
-  describe "logic" do
-    @tag :skip
-    test "=" do
-      assert {:ok, ["="], _, _, _, _} = Excellent.parse("=")
-    end
-
-    @tag :skip
-    test "<>" do
-      assert {:ok, ["<>"], _, _, _, _} = Excellent.parse("<>")
-    end
-
-    @tag :skip
-    test ">" do
-      assert {:ok, [">"], _, _, _, _} = Excellent.parse(">")
-    end
-
-    @tag :skip
-    test ">=" do
-      assert {:ok, [">="], _, _, _, _} = Excellent.parse(">=")
-    end
-
-    @tag :skip
-    test "<" do
-      assert {:ok, ["<"], _, _, _, _} = Excellent.parse("<")
-    end
-
-    @tag :skip
-    test "<=" do
-      assert {:ok, ["<="], _, _, _, _} = Excellent.parse("<=")
+      assert {:ok, [block: [value: true]], _, _, _, _} = Excellent.parse("@(true)")
+      assert {:ok, [block: [value: true]], _, _, _, _} = Excellent.parse("@(True)")
+      assert {:ok, [block: [value: false]], _, _, _, _} = Excellent.parse("@(false)")
+      assert {:ok, [block: [value: false]], _, _, _, _} = Excellent.parse("@(False)")
     end
   end
 
@@ -118,24 +92,6 @@ defmodule ExcellentTest do
                   function: ["HOUR", {:arguments, [function: ["NOW"]]}]
                 ]
               ], _, _, _, _} = Excellent.parse("@HOUR(NOW())")
-    end
-
-    @tag :skip
-    test "single var argument" do
-      assert {:ok, ["YEAR", "(", "contact", ".", "age", ")"], _, _, _, _} =
-               Excellent.parse("YEAR(contact.age)")
-    end
-
-    @tag :skip
-    test "multiple integer arguments" do
-      assert {:ok, ["DATE", "(", 2020, ",", 12, ",", 12, ")"], _, _, _, _} =
-               Excellent.parse("DATE(2020, 12, 12)")
-    end
-
-    @tag :skip
-    test "mixed var and integer arguments" do
-      assert {:ok, ["EDATE", "(", "date", ".", "today", ",", 1, ")"], _, _, _, _} =
-               Excellent.parse("EDATE(date.today, 1)")
     end
   end
 end

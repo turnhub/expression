@@ -3,7 +3,7 @@ defmodule Excellent do
   Documentation for `Excellent`.
   """
   import NimbleParsec
-  # import Excellent.Helpers
+  import Excellent.{BooleanHelpers, DateHelpers}
 
   opening_block = string("@(")
   closing_block = string(")")
@@ -15,14 +15,6 @@ defmodule Excellent do
 
   plus = string("+")
   minus = string("-")
-
-  true_value =
-    string("true")
-    |> replace(true)
-
-  false_value =
-    string("false")
-    |> replace(false)
 
   int =
     optional(minus)
@@ -63,13 +55,14 @@ defmodule Excellent do
   field =
     identifier
     |> repeat(dot_access)
+    |> tag(:field)
 
   value =
     choice([
-      int,
+      datetime(),
       decimal,
-      true_value,
-      false_value,
+      int,
+      boolean(),
       single_quoted_string,
       double_quoted_string
     ])
@@ -90,8 +83,8 @@ defmodule Excellent do
 
   argument =
     choice([
-      tag(value, :scalar),
-      tag(field, :field)
+      value,
+      field
     ])
 
   arguments =
