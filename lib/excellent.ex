@@ -28,6 +28,7 @@ defmodule Excellent do
   gte = string(">=")
   lt = string("<")
   lte = string("<=")
+  concat = string("&")
 
   operator =
     choice([
@@ -41,7 +42,8 @@ defmodule Excellent do
       gte,
       gt,
       lte,
-      lt
+      lt,
+      concat
     ])
     |> tag(:operator)
 
@@ -67,6 +69,7 @@ defmodule Excellent do
     )
     |> ignore(string(~s(')))
     |> reduce({List, :to_string, []})
+    |> tag(:string)
 
   double_quoted_string =
     ignore(string(~s(")))
@@ -76,6 +79,7 @@ defmodule Excellent do
     )
     |> ignore(string(~s(")))
     |> reduce({List, :to_string, []})
+    |> tag(:string)
 
   dot_access =
     ignore(string("."))

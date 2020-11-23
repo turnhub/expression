@@ -95,5 +95,19 @@ defmodule ExcellentTest do
       assert {:ok, [block: [{:value, 1}, {:operator, ["+"]}, {:field, ["a"]}]], _, _, _, _} =
                Excellent.parse("@(1 + a)")
     end
+
+    test "join" do
+      assert {:ok,
+              [
+                block: [
+                  {:field, ["contact", "first_name"]},
+                  {:operator, ["&"]},
+                  {:value, {:string, [" "]}},
+                  {:operator, ["&"]},
+                  {:field, ["contact", "last_name"]}
+                ]
+              ], _, _, _,
+              _} = Excellent.parse("@(contact.first_name & \" \" & contact.last_name)")
+    end
   end
 end
