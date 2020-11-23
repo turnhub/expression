@@ -11,32 +11,31 @@ defmodule Excellent do
   function_open = string("(")
   function_close = string(")")
 
-  identifier = ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 1)
+  identifier =
+    ascii_string([?a..?z, ?A..?Z], min: 1)
+    |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
+    |> reduce({Enum, :join, []})
 
-  plus = tag(string("+"), :plus)
-  minus = tag(string("-"), :minus)
-  multiply = tag(string("*"), :multiply)
-  divide = tag(string("/"), :divide)
-  exponent = tag(string("^"), :exponent)
+  plus = string("+")
+  minus = string("-")
+  multiply = string("*")
+  divide = string("/")
+  exponent = string("^")
 
-  operators =
+  eq = string("=")
+  neq = string("<>")
+  gt = string(">")
+  gte = string(">=")
+  lt = string("<")
+  lte = string("<=")
+
+  operator =
     choice([
       plus,
       minus,
       multiply,
       divide,
-      exponent
-    ])
-
-  eq = tag(string("="), :eq)
-  neq = tag(string("<>"), :neq)
-  gt = tag(string(">"), :gt)
-  gte = tag(string(">="), :gte)
-  lt = tag(string("<"), :lt)
-  lte = tag(string("<="), :lte)
-
-  logical =
-    choice([
+      exponent,
       neq,
       eq,
       gte,
@@ -44,6 +43,7 @@ defmodule Excellent do
       lte,
       lt
     ])
+    |> tag(:operator)
 
   int =
     optional(minus)
@@ -92,8 +92,6 @@ defmodule Excellent do
       decimal,
       int,
       boolean(),
-      operators,
-      logical,
       single_quoted_string,
       double_quoted_string
     ])
@@ -112,27 +110,43 @@ defmodule Excellent do
     |> reduce({Enum, :join, []})
     |> tag(:text)
 
-  argument =
+  function_argument =
     choice([
+      parsec(:function),
+      field,
+      value
+    ])
+
+  function_arguments =
+    function_argument
+    |> repeat(
+      ignore(space)
+      |> ignore(string(","))
+      |> ignore(space)
+      |> concat(function_argument)
+    )
+
+  block_argument =
+    choice([
+      parsec(:function),
+      operator,
       value,
       field
     ])
 
-  arguments = choice([parsec(:function), value, field])
-  # |> repeat(
-  #   ignore(space)
-  #   |> ignore(string(","))
-  #   |> ignore(space)
-  #   |> concat(choice([parsec(:function), value, argument]))
-  # )
+  block_arguments =
+    block_argument
+    |> repeat(
+      ignore(space)
+      |> concat(block_argument)
+    )
 
   substitution =
     ignore(opening_substitution)
     |> concat(
       choice([
         parsec(:function),
-        # argument
-        tag(identifier, :field)
+        field
       ])
     )
     |> tag(:substitution)
@@ -141,7 +155,7 @@ defmodule Excellent do
     ignore(opening_block)
     |> ignore(space)
     |> lookahead_not(closing_block)
-    |> concat(arguments)
+    |> concat(block_arguments)
     |> ignore(space)
     |> ignore(closing_block)
     |> tag(:block)
@@ -150,11 +164,23 @@ defmodule Excellent do
     :function,
     identifier
     |> concat(ignore(function_open))
-    |> optional(tag(arguments, :arguments))
+    |> optional(tag(function_arguments, :arguments))
     |> concat(ignore(function_close))
     |> tag(:function)
   )
 
-  defcombinatorp(:expression, repeat(choice([block, substitution, text])))
-  defparsec(:parse, parsec(:expression) |> eos())
+  defparsec(:parse_function, parsec(:function))
+  defparsec(:parse_substitution, substitution)
+  defparsec(:parse_block, block)
+  # defcombinatorp(:expression, repeat(choice([block, substitution, text])))
+  defparsec(
+    :parse,
+    repeat(
+      choice([
+        block,
+        substitution,
+        text
+      ])
+    )
+  )
 end
