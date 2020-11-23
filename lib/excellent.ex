@@ -3,7 +3,7 @@ defmodule Excellent do
   Documentation for `Excellent`.
   """
   import NimbleParsec
-  import Excellent.{BooleanHelpers, DateHelpers}
+  import Excellent.{BooleanHelpers, DateHelpers, OperatorHelpers}
 
   opening_block = string("@(")
   closing_block = string(")")
@@ -16,45 +16,14 @@ defmodule Excellent do
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
     |> reduce({Enum, :join, []})
 
-  plus = string("+")
-  minus = string("-")
-  multiply = string("*")
-  divide = string("/")
-  exponent = string("^")
-
-  eq = string("=")
-  neq = string("<>")
-  gt = string(">")
-  gte = string(">=")
-  lt = string("<")
-  lte = string("<=")
-  concat = string("&")
-
-  operator =
-    choice([
-      plus,
-      minus,
-      multiply,
-      divide,
-      exponent,
-      neq,
-      eq,
-      gte,
-      gt,
-      lte,
-      lt,
-      concat
-    ])
-    |> tag(:operator)
-
   int =
-    optional(minus)
+    optional(string("-"))
     |> concat(integer(min: 1))
     |> reduce({Enum, :join, [""]})
     |> map({String, :to_integer, []})
 
   decimal =
-    optional(minus)
+    optional(string("-"))
     |> concat(integer(min: 1))
     |> concat(string("."))
     |> concat(integer(min: 1))
@@ -133,7 +102,7 @@ defmodule Excellent do
   block_argument =
     choice([
       parsec(:function),
-      operator,
+      operator(),
       value,
       field
     ])
@@ -176,7 +145,7 @@ defmodule Excellent do
   defparsec(:parse_function, parsec(:function))
   defparsec(:parse_substitution, substitution)
   defparsec(:parse_block, block)
-  # defcombinatorp(:expression, repeat(choice([block, substitution, text])))
+
   defparsec(
     :parse,
     repeat(
