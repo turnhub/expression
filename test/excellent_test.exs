@@ -4,92 +4,94 @@ defmodule ExcellentTest do
 
   describe "types" do
     test "text" do
-      assert {:ok, ["hello"], _, _, _, _} = Excellent.expression("hello")
+      assert {:ok, [text: ["hello"]], _, _, _, _} = Excellent.parse("hello")
     end
 
     test "decimal" do
-      assert {:ok, [1, 23], _, _, _, _} = Excellent.expression("1.23")
+      value = Decimal.new("1.23")
+      assert {:ok, [block: [value: ^value]], _, _, _, _} = Excellent.parse("@(1.23)")
     end
 
     test "datetime" do
-      assert {:ok, [2020, 11, 21, 20, 13, 51, 921_042, "Z"], _, _, _, _} =
-               Excellent.expression("2020-11-21T20:13:51.921042Z")
+      {:ok, value, 0} = DateTime.from_iso8601("2020-11-21T20:13:51.921042Z")
 
-      assert {:ok, [1, 2, 2020, 23, 23, 23], _, _, _, _} =
-               Excellent.expression("01-02-2020 23:23:23")
+      assert {:ok, [block: [value: ^value]], _, _, _, _} =
+               Excellent.parse("@(2020-11-21T20:13:51.921042Z)")
 
-      assert {:ok, [1, 2, 2020, 23, 23], _, _, _, _} = Excellent.expression("01-02-2020 23:23")
+      {:ok, value, 0} = DateTime.from_iso8601("2020-02-01T23:23:23Z")
+
+      assert {:ok, [block: [value: ^value]], _, _, _, _} =
+               Excellent.parse("@(01-02-2020 23:23:23)")
+
+      full_minute = %{value | second: 0}
+
+      assert {:ok, [block: [value: ^full_minute]], _, _, _, _} =
+               Excellent.parse("@(01-02-2020 23:23)")
     end
 
     test "boolean" do
-      assert {:ok, [true], _, _, _, _} = Excellent.expression("true")
-      assert {:ok, [true], _, _, _, _} = Excellent.expression("True")
-      assert {:ok, [false], _, _, _, _} = Excellent.expression("false")
-      assert {:ok, [false], _, _, _, _} = Excellent.expression("False")
-    end
-  end
-
-  describe "logic" do
-    test "=" do
-      assert {:ok, ["="], _, _, _, _} = Excellent.expression("=")
-    end
-
-    test "<>" do
-      assert {:ok, ["<>"], _, _, _, _} = Excellent.expression("<>")
-    end
-
-    test ">" do
-      assert {:ok, [">"], _, _, _, _} = Excellent.expression(">")
-    end
-
-    test ">=" do
-      assert {:ok, [">="], _, _, _, _} = Excellent.expression(">=")
-    end
-
-    test "<" do
-      assert {:ok, ["<"], _, _, _, _} = Excellent.expression("<")
-    end
-
-    test "<=" do
-      assert {:ok, ["<="], _, _, _, _} = Excellent.expression("<=")
+      assert {:ok, [block: [value: true]], _, _, _, _} = Excellent.parse("@(true)")
+      assert {:ok, [block: [value: true]], _, _, _, _} = Excellent.parse("@(True)")
+      assert {:ok, [block: [value: false]], _, _, _, _} = Excellent.parse("@(false)")
+      assert {:ok, [block: [value: false]], _, _, _, _} = Excellent.parse("@(False)")
     end
   end
 
   describe "templating" do
     test "substitution" do
-      assert {:ok, ["@", "contact"], _, _, _, _} = Excellent.expression("@contact")
+      assert {:ok, [substitution: [field: ["contact"]]], _, _, _, _} = Excellent.parse("@contact")
 
-      assert {:ok, ["@", "contact", ".", "name"], _, _, _, _} =
-               Excellent.expression("@contact.name")
+      assert {:ok, [substitution: [field: ["contact", "name"]]], _, _, _, _} =
+               Excellent.parse("@contact.name")
     end
   end
 
   describe "blocks" do
     test "block" do
-      assert {:ok, ["@", "(", "contact", ".", "name", ")"], _, _, _, _} =
-               Excellent.expression("@(contact.name)")
+      assert {:ok, [block: [field: ["contact", "name"]]], _, _, _, _} =
+               Excellent.parse("@(contact.name)")
     end
   end
 
   describe "functions" do
-    test "nested functions" do
-      assert {:ok, ["HOUR", "(", "NOW", "(", ")", ")"], _, _, _, _} =
-               Excellent.expression("HOUR(NOW())")
+    test "without arguments" do
+      assert {:ok, [substitution: [function: ["HOUR"]]], _, _, _, _} = Excellent.parse("@HOUR()")
     end
 
-    test "single var argument" do
-      assert {:ok, ["YEAR", "(", "contact", ".", "age", ")"], _, _, _, _} =
-               Excellent.expression("YEAR(contact.age)")
+    test "with a single argument" do
+      assert {:ok,
+              [
+                substitution: [
+                  function: ["HOUR", {:arguments, [field: ["contact", "timestamp"]]}]
+                ]
+              ], _, _, _, _} = Excellent.parse("@HOUR(contact.timestamp)")
     end
 
-    test "multiple integer arguments" do
-      assert {:ok, ["DATE", "(", 2020, ",", 12, ",", 12, ")"], _, _, _, _} =
-               Excellent.expression("DATE(2020, 12, 12)")
+    test "with a multiple argument" do
+      assert {:ok,
+              [
+                substitution: [
+                  function: [
+                    "EDATE",
+                    {
+                      :arguments,
+                      [
+                        field: ["date", "today"],
+                        value: 1
+                      ]
+                    }
+                  ]
+                ]
+              ], _, _, _, _} = Excellent.parse("@EDATE(date.today, 1)")
     end
 
-    test "mixed var and integer arguments" do
-      assert {:ok, ["EDATE", "(", "date", ".", "today", ",", 1, ")"], _, _, _, _} =
-               Excellent.expression("EDATE(date.today, 1)")
+    test "with functions" do
+      assert {:ok,
+              [
+                substitution: [
+                  function: ["HOUR", {:arguments, [function: ["NOW"]]}]
+                ]
+              ], _, _, _, _} = Excellent.parse("@HOUR(NOW())")
     end
   end
 end
