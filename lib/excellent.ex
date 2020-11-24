@@ -157,4 +157,22 @@ defmodule Excellent do
       ])
     )
   )
+
+  def evaluate(expression, context) do
+    {:ok, ast, "", _, _, _} = parse(expression)
+    evaluate_ast(ast, context)
+  end
+
+  def evaluate_ast(ast, context) do
+    Enum.reduce(ast, "", fn {type, args}, acc ->
+      acc <> partial_ast(type, args, context)
+    end)
+  end
+
+  def partial_ast(:text, [text], _context), do: text
+  def partial_ast(:block, args, context), do: evaluate_ast(args, context)
+
+  def partial_ast(:field, args, context) do
+    get_in(context, args) || ""
+  end
 end

@@ -113,4 +113,27 @@ defmodule ExcellentTest do
               _} = Excellent.parse("@(contact.first_name & \" \" & contact.last_name)")
     end
   end
+
+  describe "evaluate" do
+    test "substitution" do
+      assert "hello name" =
+               Excellent.evaluate("hello @(contact.name)", %{
+                 "contact" => %{
+                   "name" => "name"
+                 }
+               })
+    end
+
+    @tag :skip
+    test "addition" do
+      assert {:ok, [block: [{:field, ["contact", "age"]}, {:operator, ["+"]}, {:value, 1}]], _, _,
+              _,
+              _} =
+               Excellent.evaluate("hello @(contact.age+1)", %{
+                 "contact" => %{
+                   "age" => 40
+                 }
+               })
+    end
+  end
 end
