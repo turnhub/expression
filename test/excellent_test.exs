@@ -9,31 +9,40 @@ defmodule ExcellentTest do
 
     test "decimal" do
       value = Decimal.new("1.23")
-      assert {:ok, [block: [value: ^value]], _, _, _, _} = Excellent.parse("@(1.23)")
+
+      assert {:ok, [substitution: [block: [value: ^value]]], _, _, _, _} =
+               Excellent.parse("@(1.23)")
     end
 
     test "datetime" do
       {:ok, value, 0} = DateTime.from_iso8601("2020-11-21T20:13:51.921042Z")
 
-      assert {:ok, [block: [value: ^value]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [value: ^value]]], _, _, _, _} =
                Excellent.parse("@(2020-11-21T20:13:51.921042Z)")
 
       {:ok, value, 0} = DateTime.from_iso8601("2020-02-01T23:23:23Z")
 
-      assert {:ok, [block: [value: ^value]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [value: ^value]]], _, _, _, _} =
                Excellent.parse("@(01-02-2020 23:23:23)")
 
       full_minute = %{value | second: 0}
 
-      assert {:ok, [block: [value: ^full_minute]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [value: ^full_minute]]], _, _, _, _} =
                Excellent.parse("@(01-02-2020 23:23)")
     end
 
     test "boolean" do
-      assert {:ok, [block: [value: true]], _, _, _, _} = Excellent.parse("@(true)")
-      assert {:ok, [block: [value: true]], _, _, _, _} = Excellent.parse("@(True)")
-      assert {:ok, [block: [value: false]], _, _, _, _} = Excellent.parse("@(false)")
-      assert {:ok, [block: [value: false]], _, _, _, _} = Excellent.parse("@(False)")
+      assert {:ok, [substitution: [block: [value: true]]], _, _, _, _} =
+               Excellent.parse("@(true)")
+
+      assert {:ok, [substitution: [block: [value: true]]], _, _, _, _} =
+               Excellent.parse("@(True)")
+
+      assert {:ok, [substitution: [block: [value: false]]], _, _, _, _} =
+               Excellent.parse("@(false)")
+
+      assert {:ok, [substitution: [block: [value: false]]], _, _, _, _} =
+               Excellent.parse("@(False)")
     end
   end
 
@@ -50,7 +59,7 @@ defmodule ExcellentTest do
   describe "blocks" do
     test "block" do
       assert {:ok, [block: [field: ["contact", "name"]]], _, _, _, _} =
-               Excellent.parse_block("@(contact.name)")
+               Excellent.parse_block("(contact.name)")
     end
   end
 
@@ -92,22 +101,28 @@ defmodule ExcellentTest do
 
   describe "logic" do
     test "add" do
-      assert {:ok, [block: [{:value, 1}, {:operator, ["+"]}, {:field, ["a"]}]], _, _, _, _} =
-               Excellent.parse("@(1 + a)")
+      assert {:ok, [substitution: [block: [{:value, 1}, {:operator, ["+"]}, {:field, ["a"]}]]], _,
+              _, _, _} = Excellent.parse("@(1 + a)")
 
-      assert {:ok, [block: [{:field, ["contact", "age"]}, {:operator, ["+"]}, {:value, 1}]], _, _,
-              _, _} = Excellent.parse("@(contact.age+1)")
+      assert {:ok,
+              [
+                substitution: [
+                  block: [{:field, ["contact", "age"]}, {:operator, ["+"]}, {:value, 1}]
+                ]
+              ], _, _, _, _} = Excellent.parse("@(contact.age+1)")
     end
 
     test "join" do
       assert {:ok,
               [
-                block: [
-                  {:field, ["contact", "first_name"]},
-                  {:operator, ["&"]},
-                  {:value, {:string, [" "]}},
-                  {:operator, ["&"]},
-                  {:field, ["contact", "last_name"]}
+                substitution: [
+                  block: [
+                    {:field, ["contact", "first_name"]},
+                    {:operator, ["&"]},
+                    {:value, {:string, [" "]}},
+                    {:operator, ["&"]},
+                    {:field, ["contact", "last_name"]}
+                  ]
                 ]
               ], _, _, _,
               _} = Excellent.parse("@(contact.first_name & \" \" & contact.last_name)")
@@ -116,7 +131,7 @@ defmodule ExcellentTest do
 
   describe "evaluate" do
     test "substitution" do
-      assert "hello name" =
+      assert {:ok, "hello name"} =
                Excellent.evaluate("hello @(contact.name)", %{
                  "contact" => %{
                    "name" => "name"
@@ -124,12 +139,9 @@ defmodule ExcellentTest do
                })
     end
 
-    @tag :skip
     test "addition" do
-      assert {:ok, [block: [{:field, ["contact", "age"]}, {:operator, ["+"]}, {:value, 1}]], _, _,
-              _,
-              _} =
-               Excellent.evaluate("hello @(contact.age+1)", %{
+      assert {:ok, "next year you are 40 years old"} =
+               Excellent.evaluate("next year you are @(contact.age + 1) years old", %{
                  "contact" => %{
                    "age" => 40
                  }

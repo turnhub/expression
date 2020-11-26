@@ -5,7 +5,7 @@ defmodule Excellent do
   import NimbleParsec
   import Excellent.{BooleanHelpers, DateHelpers, OperatorHelpers}
 
-  opening_block = string("@(")
+  opening_block = string("(")
   closing_block = string(")")
 
   function_open = string("(")
@@ -78,7 +78,7 @@ defmodule Excellent do
   opening_substitution = string("@")
 
   text =
-    lookahead_not(choice([opening_block, opening_substitution]))
+    lookahead_not(opening_substitution)
     |> utf8_string([], 1)
     |> times(min: 1)
     |> reduce({Enum, :join, []})
@@ -100,10 +100,16 @@ defmodule Excellent do
       |> concat(function_argument)
     )
 
+  grouping =
+    ignore(ascii_char([?(]))
+    |> concat(parsec(:expression))
+    |> ignore(ascii_char([?)]))
+
   block_argument =
     choice([
       parsec(:function),
       operator(),
+      grouping,
       value,
       field
     ])
@@ -115,16 +121,6 @@ defmodule Excellent do
       |> concat(block_argument)
     )
 
-  substitution =
-    ignore(opening_substitution)
-    |> concat(
-      choice([
-        parsec(:function),
-        field
-      ])
-    )
-    |> tag(:substitution)
-
   block =
     ignore(opening_block)
     |> ignore(space)
@@ -133,6 +129,17 @@ defmodule Excellent do
     |> ignore(space)
     |> ignore(closing_block)
     |> tag(:block)
+
+  substitution =
+    ignore(opening_substitution)
+    |> concat(
+      choice([
+        block,
+        parsec(:function),
+        field
+      ])
+    )
+    |> tag(:substitution)
 
   defcombinatorp(
     :function,
@@ -147,6 +154,17 @@ defmodule Excellent do
   defparsec(:parse_substitution, substitution)
   defparsec(:parse_block, block)
 
+  defcombinatorp(
+    :expression,
+    empty()
+    |> choice([
+      parsec(:function),
+      operator(),
+      value,
+      field
+    ])
+  )
+
   defparsec(
     :parse,
     repeat(
@@ -160,19 +178,39 @@ defmodule Excellent do
 
   def evaluate(expression, context) do
     {:ok, ast, "", _, _, _} = parse(expression)
-    evaluate_ast(ast, context)
+
+    {:ok,
+     evaluate_ast(ast, context)
+     |> Enum.reverse()
+     |> Enum.map(&to_string/1)
+     |> Enum.join("")}
   end
 
   def evaluate_ast(ast, context) do
-    Enum.reduce(ast, "", fn {type, args}, acc ->
-      acc <> partial_ast(type, args, context)
+    Enum.reduce(ast, [], fn {type, args}, acc ->
+      [partial_ast(type, args, context) |> unwrap() | acc]
     end)
   end
 
-  def partial_ast(:text, [text], _context), do: text
-  def partial_ast(:block, args, context), do: evaluate_ast(args, context)
+  def unwrap([value]), do: value
 
-  def partial_ast(:field, args, context) do
-    get_in(context, args) || ""
+  def partial_ast(:substitution, substitution, context),
+    do: evaluate_ast(substitution, context)
+
+  def partial_ast(:text, text, _context), do: text
+  def partial_ast(:value, value, _context), do: value
+  def partial_ast(:field, args, context), do: get_in(context, args) || ""
+
+  def partial_ast(:block, args, context),
+    do: evaluate_block(args, context)
+
+  def evaluate_block([a, {:operator, [op]}, b], context) do
+    case op do
+      "+" ->
+        (evaluate_ast([a], context) |> unwrap()) +
+          (evaluate_ast([b], context) |> unwrap())
+    end
   end
+
+  def evaluate_block(args, context), do: evaluate_ast(args, context)
 end
