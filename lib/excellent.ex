@@ -27,8 +27,7 @@ defmodule Excellent do
   # <comparison>    = "=" | "<>" | ">" | ">=" | "<" | "<="
   # <operator>      = arithmatic | comparison
   # <literal>       = string | integer | decimal | boolean
-
-  # <block_arg>     = function | name | literal
+  # <block_arg>     = block | function | name | literal
   # <block>         = "(", block_arg, [{operator, block_arg}], ")"
 
   # <function_arg>  = function | name | literal
@@ -62,11 +61,12 @@ defmodule Excellent do
       single_quoted_string(),
       double_quoted_string()
     ])
-    |> tag(:literal)
+    |> unwrap_and_tag(:literal)
   )
 
   block_argument =
     choice([
+      parsec(:block),
       parsec(:function),
       parsec(:literal),
       parsec(:variable)
@@ -166,48 +166,94 @@ defmodule Excellent do
   def evaluate(expression, context) do
     case parse(expression) do
       {:ok, ast, "", _, _, _} ->
-        {:ok,
-         evaluate_ast(ast, context)
-         |> Enum.reverse()
-         |> Enum.map(&to_string/1)
-         |> Enum.join("")}
+        resp =
+          ast
+          |> Enum.reduce([], fn
+            {:substitution, ast}, acc ->
+              [eval!(fold_infixl(ast), context) | acc]
+
+            {:text, text}, acc ->
+              [text | acc]
+          end)
+
+        case resp do
+          [value] ->
+            {:ok, value}
+
+          values ->
+            {:ok,
+             resp
+             |> Enum.map(&to_string/1)
+             |> Enum.reverse()
+             |> Enum.join()}
+        end
 
       {:ok, _ast, remainder, _, _, _} ->
         {:error, "Unable to parse: #{inspect(remainder)}"}
     end
   end
 
-  def evaluate_ast(ast, context) do
-    Enum.reduce(ast, [], fn {type, args}, acc ->
-      [partial_ast(type, args, context) |> unwrap() | acc]
+  def fold_infixl(acc) do
+    acc
+    |> Enum.reverse()
+    |> Enum.chunk_every(2)
+    |> List.foldr([], fn
+      [l], [] -> l
+      [r, op], l -> {op, [l, r]}
     end)
   end
 
-  def unwrap([value]), do: value
-  # some literals are already unwrapped
-  def unwrap(value), do: value
+  def eval!(ast, ctx \\ %{})
+  def eval!(ast, _ctx) when is_number(ast), do: ast
+  def eval!(ast, _ctx) when is_binary(ast), do: ast
+  def eval!(ast, _ctx) when is_boolean(ast), do: ast
+  def eval!({:variable, k}, ctx), do: get_var!(ctx, k)
+  def eval!({:literal, value}, _ctx), do: value
+  def eval!({:substitution, ast}, ctx), do: eval!(fold_infixl(ast), ctx)
+  def eval!({:block, ast}, ctx), do: eval!(fold_infixl(ast), ctx)
+  def eval!({:+, [a, b]}, ctx), do: eval!(a, ctx, :num) + eval!(b, ctx, :num)
+  def eval!({:-, [a, b]}, ctx), do: eval!(a, ctx, :num) - eval!(b, ctx, :num)
+  def eval!({:*, [a, b]}, ctx), do: eval!(a, ctx, :num) * eval!(b, ctx, :num)
+  def eval!({:/, [a, b]}, ctx), do: eval!(a, ctx, :num) / eval!(b, ctx, :num)
+  def eval!({:!, [a]}, ctx), do: not eval!(a, ctx, :bool)
+  def eval!({:&&, [a, b]}, ctx), do: eval!(a, ctx, :bool) && eval!(b, ctx, :bool)
+  def eval!({:||, [a, b]}, ctx), do: eval!(a, ctx, :bool) || eval!(b, ctx, :bool)
+  def eval!({:>, [a, b]}, ctx), do: eval!(a, ctx, :num) > eval!(b, ctx, :num)
+  def eval!({:>=, [a, b]}, ctx), do: eval!(a, ctx, :num) >= eval!(b, ctx, :num)
+  def eval!({:<, [a, b]}, ctx), do: eval!(a, ctx, :num) < eval!(b, ctx, :num)
+  def eval!({:<=, [a, b]}, ctx), do: eval!(a, ctx, :num) <= eval!(b, ctx, :num)
+  def eval!({:==, [a, b]}, ctx), do: eval!(a, ctx) == eval!(b, ctx)
+  def eval!({:!=, [a, b]}, ctx), do: eval!(a, ctx) != eval!(b, ctx)
+  def eval!({:^, [a, b]}, ctx), do: :math.pow(eval!(a, ctx), eval!(b, ctx))
 
-  def partial_ast(:substitution, substitution, context),
-    do: evaluate_ast(substitution, context)
+  defp eval!(ast, ctx, type), do: ast |> eval!(ctx) |> guard_type!(type)
 
-  def partial_ast(:text, text, _context), do: text
-  def partial_ast(:literal, literal, _context), do: literal
-  def partial_ast(:variable, args, context), do: get_in(context, args) || ""
+  defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
+  defp guard_nil!(nil, k), do: raise("variable #{k} undefined or null")
+  defp guard_nil!(v, _), do: v
 
-  def partial_ast(:block, args, context),
-    do: evaluate_block(args, context)
+  defp guard_type!(v, :bool) when is_boolean(v), do: v
+  defp guard_type!(v, :bool), do: raise("expression is not a boolean: `#{inspect(v)}`")
+  defp guard_type!(v, :num) when is_number(v), do: v
+  defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
 
-  def evaluate_block([a, {:operator, [op]}, b], context) do
-    case op do
-      "+" ->
-        (evaluate_ast([a], context) |> unwrap()) +
-          (evaluate_ast([b], context) |> unwrap())
+  # def evaluate_block([a, {:operator, [op]}, b], context) do
+  #   IO.puts("hitting logic")
 
-      "*" ->
-        (evaluate_ast([a], context) |> unwrap()) *
-          (evaluate_ast([b], context) |> unwrap())
-    end
-  end
+  #   case op do
+  #     "+" ->
+  #       (evaluate_ast([a], context) |> unwrap()) +
+  #         (evaluate_ast([b], context) |> unwrap())
 
-  def evaluate_block(args, context), do: evaluate_ast(args, context)
+  #     "*" ->
+  #       (evaluate_ast([a], context) |> unwrap()) *
+  #         (evaluate_ast([b], context) |> unwrap())
+  #   end
+  # end
+
+  # def evaluate_block(args, context) do
+  #   IO.puts("catch all hit")
+  #   IO.inspect(args, label: "args")
+  #   evaluate_ast(args, context)
+  # end
 end

@@ -3,26 +3,26 @@ defmodule Excellent.OperatorHelpers do
 
   def arithmatic do
     choice([
-      string("+"),
-      string("-"),
-      string("*"),
-      string("/"),
-      string("^")
+      string("+") |> replace(:+),
+      string("-") |> replace(:-),
+      string("*") |> replace(:*),
+      string("/") |> replace(:/),
+      string("^") |> replace(:^)
     ])
   end
 
   def concatenation do
-    string("&")
+    string("&") |> replace(:&)
   end
 
   def comparison do
     choice([
-      string("="),
-      string("<>"),
-      string(">"),
-      string(">="),
-      string("<"),
-      string("<=")
+      string("=") |> replace(:=),
+      string("<>") |> replace(:<>),
+      string(">") |> replace(:>),
+      string(">=") |> replace(:>=),
+      string("<") |> replace(:<),
+      string("<=") |> replace(:<=)
     ])
   end
 
@@ -32,6 +32,5 @@ defmodule Excellent.OperatorHelpers do
       concatenation(),
       comparison()
     ])
-    |> tag(:operator)
   end
 end

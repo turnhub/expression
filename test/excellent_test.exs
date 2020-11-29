@@ -10,38 +10,38 @@ defmodule ExcellentTest do
     test "decimal" do
       value = Decimal.new("1.23")
 
-      assert {:ok, [substitution: [block: [literal: [^value]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: ^value]]], _, _, _, _} =
                Excellent.parse("@(1.23)")
     end
 
     test "datetime" do
       {:ok, value, 0} = DateTime.from_iso8601("2020-11-21T20:13:51.921042Z")
 
-      assert {:ok, [substitution: [block: [literal: [^value]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: ^value]]], _, _, _, _} =
                Excellent.parse("@(2020-11-21T20:13:51.921042Z)")
 
       {:ok, value, 0} = DateTime.from_iso8601("2020-02-01T23:23:23Z")
 
-      assert {:ok, [substitution: [block: [literal: [^value]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: ^value]]], _, _, _, _} =
                Excellent.parse("@(01-02-2020 23:23:23)")
 
       full_minute = %{value | second: 0}
 
-      assert {:ok, [substitution: [block: [literal: [^full_minute]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: ^full_minute]]], _, _, _, _} =
                Excellent.parse("@(01-02-2020 23:23)")
     end
 
     test "boolean" do
-      assert {:ok, [substitution: [block: [literal: [true]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: true]]], _, _, _, _} =
                Excellent.parse("@(true)")
 
-      assert {:ok, [substitution: [block: [literal: [true]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: true]]], _, _, _, _} =
                Excellent.parse("@(True)")
 
-      assert {:ok, [substitution: [block: [literal: [false]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: false]]], _, _, _, _} =
                Excellent.parse("@(false)")
 
-      assert {:ok, [substitution: [block: [literal: [false]]]], _, _, _, _} =
+      assert {:ok, [substitution: [block: [literal: false]]], _, _, _, _} =
                Excellent.parse("@(False)")
     end
   end
@@ -89,7 +89,7 @@ defmodule ExcellentTest do
                     },
                     {
                       :literal,
-                      [1]
+                      1
                     }
                   ]
                 ]
@@ -106,14 +106,13 @@ defmodule ExcellentTest do
 
   describe "logic" do
     test "add" do
-      assert {:ok,
-              [substitution: [block: [{:literal, [1]}, {:operator, ["+"]}, {:variable, ["a"]}]]],
-              _, _, _, _} = Excellent.parse("@(1 + a)")
+      assert {:ok, [substitution: [block: [{:literal, 1}, :+, {:variable, ["a"]}]]], _, _, _, _} =
+               Excellent.parse("@(1 + a)")
 
       assert {:ok,
               [
                 substitution: [
-                  block: [{:variable, ["contact", "age"]}, {:operator, ["+"]}, {:literal, [1]}]
+                  block: [{:variable, ["contact", "age"]}, :+, {:literal, 1}]
                 ]
               ], _, _, _, _} = Excellent.parse("@(contact.age+1)")
     end
@@ -124,9 +123,9 @@ defmodule ExcellentTest do
                 substitution: [
                   block: [
                     {:variable, ["contact", "first_name"]},
-                    {:operator, ["&"]},
-                    {:literal, [" "]},
-                    {:operator, ["&"]},
+                    :&,
+                    {:literal, " "},
+                    :&,
                     {:variable, ["contact", "last_name"]}
                   ]
                 ]
@@ -136,8 +135,13 @@ defmodule ExcellentTest do
   end
 
   describe "evaluate" do
-    test "operator precedence" do
-      assert {:ok, "7"} = Excellent.evaluate("@(1 + 2 * 3)")
+    test "example calculation 1" do
+      assert {:ok, 8} = Excellent.evaluate("@(2 + (2 * 3))")
+      assert {:ok, 12} = Excellent.evaluate("@(2 + 2 * 3)")
+    end
+
+    test "example calculation 2" do
+      assert {:ok, 0.999744} = Excellent.evaluate("@(1 + (2 - 3) * 4 / 5 ^ 6)")
     end
 
     test "substitution" do
