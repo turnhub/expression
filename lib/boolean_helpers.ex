@@ -24,8 +24,4 @@ defmodule Excellent.BooleanHelpers do
       boolean_false()
     ])
   end
-
-  # def cast_boolean("true"), do: true
-  # def cast_boolean("false"), do: false
-  # def cast_boolean(binary), do: binary |> String.downcase() |> cast_boolean()
 end

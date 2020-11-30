@@ -3,95 +3,139 @@ defmodule Excellent do
   Documentation for `Excellent`.
   """
   import NimbleParsec
-  import Excellent.{BooleanHelpers, DateHelpers, OperatorHelpers}
+  import Excellent.{BooleanHelpers, DateHelpers, LiteralHelpers, OperatorHelpers}
 
-  opening_block = string("(")
-  closing_block = string(")")
+  # Taking inspiration from https://github.com/slapers/ex_sel/
+  # and trying to wrap my head around the grammer using EBNF as per
+  # https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form
 
-  function_open = string("(")
-  function_close = string(")")
+  # <alpha>         = "a".."z" | "A".."Z"
+  # <digit>         = "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+  # <integer>       = ["-"], digit, {digit}
+  # <decimal>       = ["-"], integer, ".", integer
+  # <alphanum>      = alpha | digit
+  # <true>          = "t" | "T", "r" | "R", "u" | "U", "e" | "E"
+  # <false>         = "f" | "F", "a" | "A", "l" | "L", "s" | "S", "e" | "E"
+  # <boolean>       = true | false
+  # <name>          = alpha, {alphanum | digit | "_" | "-" }
+  # <variable>      = name, {[".", name]}
 
-  # identifiers must start with a letter
-  identifier =
+  # <substitution>  = "@", expression
+  # <expression>    = block | function | variable
+  # <string>        = ["'], [utf8], ["']
+  # <arithmatic>    = "+" | "-" | "*" | "/" | "^" | "&"
+  # <comparison>    = "=" | "<>" | ">" | ">=" | "<" | "<="
+  # <operator>      = arithmatic | comparison
+  # <literal>       = string | integer | decimal | boolean
+  # <block_arg>     = block | function | name | literal
+  # <block>         = "(", block_arg, [{operator, block_arg}], ")"
+
+  # <function_arg>  = function | name | literal
+  # <function>      = name, "(", [function_arg, {", ", function_arg}] , ")"
+
+  escaped_at = string("@@") |> tag(:escaped_at)
+  opening_substitution = string("@")
+  opening_bracket = string("(")
+  closing_bracket = string(")")
+  dot = string(".")
+  space = string(" ") |> times(min: 0)
+
+  name =
     ascii_string([?a..?z, ?A..?Z], min: 1)
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
     |> reduce({Enum, :join, []})
 
-  int =
-    optional(string("-"))
-    |> concat(integer(min: 1))
-    |> reduce({Enum, :join, [""]})
-    |> map({String, :to_integer, []})
+  defcombinator(
+    :variable,
+    name
+    |> repeat(ignore(dot) |> concat(name))
+    |> tag(:variable)
+  )
 
-  decimal =
-    optional(string("-"))
-    |> concat(integer(min: 1))
-    |> concat(string("."))
-    |> concat(integer(min: 1))
-    |> reduce({Enum, :join, [""]})
-    |> map({Decimal, :new, []})
-
-  single_quoted_string =
-    ignore(string(~s(')))
-    |> repeat(
-      lookahead_not(ascii_char([?']))
-      |> choice([string(~s(\')), utf8_char([])])
-    )
-    |> ignore(string(~s(')))
-    |> reduce({List, :to_string, []})
-    |> tag(:string)
-
-  double_quoted_string =
-    ignore(string(~s(")))
-    |> repeat(
-      lookahead_not(ascii_char([?"]))
-      |> choice([string(~s(\")), utf8_char([])])
-    )
-    |> ignore(string(~s(")))
-    |> reduce({List, :to_string, []})
-    |> tag(:string)
-
-  dot_access =
-    ignore(string("."))
-    |> concat(identifier)
-
-  field =
-    identifier
-    |> repeat(dot_access)
-    |> tag(:field)
-
-  value =
+  defcombinator(
+    :literal,
     choice([
       datetime(),
-      decimal,
-      int,
+      decimal(),
+      int(),
       boolean(),
-      single_quoted_string,
-      double_quoted_string
+      single_quoted_string(),
+      double_quoted_string()
     ])
-    |> unwrap_and_tag(:value)
+    |> unwrap_and_tag(:literal)
+  )
 
-  space =
-    string(" ")
-    |> times(min: 0)
+  ignore_surrounding_whitespace = fn p ->
+    ignore(optional(space))
+    |> concat(p)
+    |> ignore(optional(space))
+  end
 
-  opening_substitution = string("@")
+  defcombinatorp(
+    :aexpr_factor,
+    choice([
+      ignore(opening_bracket) |> parsec(:aexpr) |> ignore(closing_bracket),
+      parsec(:literal),
+      parsec(:function),
+      parsec(:variable)
+    ])
+    |> ignore_surrounding_whitespace.()
+  )
 
-  text =
-    lookahead_not(opening_substitution)
-    |> utf8_string([], 1)
-    |> times(min: 1)
-    |> reduce({Enum, :join, []})
-    |> tag(:text)
+  defparsecp(
+    :aexpr_exponent,
+    parsec(:aexpr_factor)
+    |> repeat(exponent() |> parsec(:aexpr_factor))
+    |> reduce(:fold_infixl)
+  )
+
+  defparsecp(
+    :aexpr_term,
+    parsec(:aexpr_exponent)
+    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent))
+    |> reduce(:fold_infixl)
+  )
+
+  defparsec(
+    :aexpr,
+    parsec(:aexpr_term)
+    |> repeat(
+      choice([
+        plus(),
+        minus(),
+        concatenate(),
+        gte(),
+        lte(),
+        neq(),
+        gt(),
+        lt(),
+        eq()
+      ])
+      |> parsec(:aexpr_term)
+    )
+    |> reduce(:fold_infixl)
+  )
+
+  defcombinator(
+    :block,
+    ignore(opening_bracket)
+    |> ignore(space)
+    |> lookahead_not(closing_bracket)
+    |> concat(parsec(:aexpr))
+    |> ignore(space)
+    |> ignore(closing_bracket)
+    |> tag(:block)
+  )
 
   function_argument =
     choice([
       parsec(:function),
-      field,
-      value
+      parsec(:variable),
+      parsec(:literal)
     ])
 
-  function_arguments =
+  defcombinator(
+    :function_arguments,
     function_argument
     |> repeat(
       ignore(space)
@@ -99,118 +143,152 @@ defmodule Excellent do
       |> ignore(space)
       |> concat(function_argument)
     )
+  )
 
-  grouping =
-    ignore(ascii_char([?(]))
-    |> concat(parsec(:expression))
-    |> ignore(ascii_char([?)]))
-
-  block_argument =
-    choice([
-      parsec(:function),
-      operator(),
-      grouping,
-      value,
-      field
-    ])
-
-  block_arguments =
-    block_argument
-    |> repeat(
-      ignore(space)
-      |> concat(block_argument)
-    )
-
-  block =
-    ignore(opening_block)
-    |> ignore(space)
-    |> lookahead_not(closing_block)
-    |> concat(block_arguments)
-    |> ignore(space)
-    |> ignore(closing_block)
-    |> tag(:block)
-
-  substitution =
-    ignore(opening_substitution)
-    |> concat(
-      choice([
-        block,
-        parsec(:function),
-        field
-      ])
-    )
-    |> tag(:substitution)
-
-  defcombinatorp(
+  defcombinator(
     :function,
-    identifier
-    |> concat(ignore(function_open))
-    |> optional(tag(function_arguments, :arguments))
-    |> concat(ignore(function_close))
+    name
+    |> ignore(opening_bracket)
+    |> optional(
+      ignore(space)
+      |> lookahead_not(closing_bracket)
+      |> concat(parsec(:function_arguments))
+    )
+    |> ignore(closing_bracket)
     |> tag(:function)
   )
 
-  defparsec(:parse_function, parsec(:function))
-  defparsec(:parse_substitution, substitution)
-  defparsec(:parse_block, block)
-
-  defcombinatorp(
+  defcombinator(
     :expression,
-    empty()
-    |> choice([
+    choice([
+      parsec(:block),
       parsec(:function),
-      operator(),
-      value,
-      field
+      parsec(:variable)
     ])
+  )
+
+  defcombinator(
+    :text,
+    empty()
+    |> lookahead_not(opening_substitution)
+    |> utf8_string([], 1)
+    |> times(min: 1)
+    |> reduce({Enum, :join, []})
+    |> tag(:text)
+  )
+
+  defcombinator(
+    :substitution,
+    ignore(opening_substitution)
+    |> parsec(:expression)
+    |> tag(:substitution)
   )
 
   defparsec(
     :parse,
     repeat(
       choice([
-        block,
-        substitution,
-        text
+        escaped_at,
+        parsec(:substitution),
+        parsec(:text)
       ])
     )
   )
 
+  def evaluate(expression, context \\ %{})
+
   def evaluate(expression, context) do
-    {:ok, ast, "", _, _, _} = parse(expression)
+    case parse(expression) do
+      {:ok, ast, "", _, _, _} ->
+        resp =
+          ast
+          |> Enum.reduce([], fn
+            {:escaped_at, ["@@"]}, acc ->
+              ["@" | acc]
 
-    {:ok,
-     evaluate_ast(ast, context)
-     |> Enum.reverse()
-     |> Enum.map(&to_string/1)
-     |> Enum.join("")}
-  end
+            {:substitution, ast}, acc ->
+              [eval!(fold_infixl(ast), context) | acc]
 
-  def evaluate_ast(ast, context) do
-    Enum.reduce(ast, [], fn {type, args}, acc ->
-      [partial_ast(type, args, context) |> unwrap() | acc]
-    end)
-  end
+            {:text, text}, acc ->
+              [text | acc]
+          end)
 
-  def unwrap([value]), do: value
+        case resp do
+          [value] ->
+            {:ok, value}
 
-  def partial_ast(:substitution, substitution, context),
-    do: evaluate_ast(substitution, context)
+          values ->
+            {:ok,
+             values
+             |> Enum.map(&to_string/1)
+             |> Enum.reverse()
+             |> Enum.join()}
+        end
 
-  def partial_ast(:text, text, _context), do: text
-  def partial_ast(:value, value, _context), do: value
-  def partial_ast(:field, args, context), do: get_in(context, args) || ""
-
-  def partial_ast(:block, args, context),
-    do: evaluate_block(args, context)
-
-  def evaluate_block([a, {:operator, [op]}, b], context) do
-    case op do
-      "+" ->
-        (evaluate_ast([a], context) |> unwrap()) +
-          (evaluate_ast([b], context) |> unwrap())
+      {:ok, _ast, remainder, _, _, _} ->
+        {:error, "Unable to parse: #{inspect(remainder)}"}
     end
   end
 
-  def evaluate_block(args, context), do: evaluate_ast(args, context)
+  def fold_infixl(acc) do
+    acc
+    |> Enum.reverse()
+    |> Enum.chunk_every(2)
+    |> List.foldr([], fn
+      [l], [] -> l
+      [r, op], l -> {op, [l, r]}
+    end)
+  end
+
+  def eval!(ast, ctx \\ %{})
+  def eval!(ast, _ctx) when is_number(ast), do: ast
+  def eval!(ast, _ctx) when is_binary(ast), do: ast
+  def eval!(ast, _ctx) when is_boolean(ast), do: ast
+  def eval!({:variable, k}, ctx), do: get_var!(ctx, k)
+  def eval!({:literal, value}, _ctx), do: value
+  def eval!({:substitution, ast}, ctx), do: eval!(fold_infixl(ast), ctx)
+  def eval!({:block, ast}, ctx), do: eval!(fold_infixl(ast), ctx)
+  def eval!({:+, [a, b]}, ctx), do: eval!(a, ctx, :num) + eval!(b, ctx, :num)
+  def eval!({:-, [a, b]}, ctx), do: eval!(a, ctx, :num) - eval!(b, ctx, :num)
+  def eval!({:*, [a, b]}, ctx), do: eval!(a, ctx, :num) * eval!(b, ctx, :num)
+  def eval!({:/, [a, b]}, ctx), do: eval!(a, ctx, :num) / eval!(b, ctx, :num)
+  def eval!({:>, [a, b]}, ctx), do: eval!(a, ctx, :num) > eval!(b, ctx, :num)
+  def eval!({:>=, [a, b]}, ctx), do: eval!(a, ctx, :num) >= eval!(b, ctx, :num)
+  def eval!({:<, [a, b]}, ctx), do: eval!(a, ctx, :num) < eval!(b, ctx, :num)
+  def eval!({:<=, [a, b]}, ctx), do: eval!(a, ctx, :num) <= eval!(b, ctx, :num)
+  def eval!({:==, [a, b]}, ctx), do: eval!(a, ctx) == eval!(b, ctx)
+  def eval!({:!=, [a, b]}, ctx), do: eval!(a, ctx) != eval!(b, ctx)
+  def eval!({:^, [a, b]}, ctx), do: :math.pow(eval!(a, ctx), eval!(b, ctx))
+  def eval!({:&, [a, b]}, ctx), do: [a, b] |> Enum.map(&eval!(&1, ctx)) |> Enum.join("")
+
+  defp eval!(ast, ctx, type), do: ast |> eval!(ctx) |> guard_type!(type)
+
+  defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
+  defp guard_nil!(nil, k), do: raise("variable #{k} undefined or null")
+  defp guard_nil!(v, _), do: v
+
+  defp guard_type!(v, :bool) when is_boolean(v), do: v
+  defp guard_type!(v, :bool), do: raise("expression is not a boolean: `#{inspect(v)}`")
+  defp guard_type!(v, :num) when is_number(v), do: v
+  defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
+
+  # def evaluate_block([a, {:operator, [op]}, b], context) do
+  #   IO.puts("hitting logic")
+
+  #   case op do
+  #     "+" ->
+  #       (evaluate_ast([a], context) |> unwrap()) +
+  #         (evaluate_ast([b], context) |> unwrap())
+
+  #     "*" ->
+  #       (evaluate_ast([a], context) |> unwrap()) *
+  #         (evaluate_ast([b], context) |> unwrap())
+  #   end
+  # end
+
+  # def evaluate_block(args, context) do
+  #   IO.puts("catch all hit")
+  #   IO.inspect(args, label: "args")
+  #   evaluate_ast(args, context)
+  # end
 end
