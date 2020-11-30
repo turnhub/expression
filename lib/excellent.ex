@@ -33,6 +33,7 @@ defmodule Excellent do
   # <function_arg>  = function | name | literal
   # <function>      = name, "(", [function_arg, {", ", function_arg}] , ")"
 
+  escaped_at = string("@@") |> tag(:escaped_at)
   opening_substitution = string("@")
   opening_bracket = string("(")
   closing_bracket = string(")")
@@ -98,27 +99,22 @@ defmodule Excellent do
   defparsec(
     :aexpr,
     parsec(:aexpr_term)
-    |> repeat(choice([plus(), minus(), concatenate()]) |> parsec(:aexpr_term))
+    |> repeat(
+      choice([
+        plus(),
+        minus(),
+        concatenate(),
+        gte(),
+        lte(),
+        neq(),
+        gt(),
+        lt(),
+        eq()
+      ])
+      |> parsec(:aexpr_term)
+    )
     |> reduce(:fold_infixl)
   )
-
-  # block_argument =
-  #   choice([
-  #     parsec(:block),
-  #     parsec(:function),
-  #     parsec(:literal),
-  #     # parsec(:variable),
-  #     parsec(:aexpr),
-  #   ])
-
-  # defcombinator(
-  #   :block_arguments,
-  #   block_argument
-  #   |> repeat(
-  #     ignore(space)
-  #     |> concat(block_argument)
-  #   )
-  # )
 
   defcombinator(
     :block,
@@ -192,6 +188,7 @@ defmodule Excellent do
     :parse,
     repeat(
       choice([
+        escaped_at,
         parsec(:substitution),
         parsec(:text)
       ])
@@ -206,6 +203,9 @@ defmodule Excellent do
         resp =
           ast
           |> Enum.reduce([], fn
+            {:escaped_at, ["@@"]}, acc ->
+              ["@" | acc]
+
             {:substitution, ast}, acc ->
               [eval!(fold_infixl(ast), context) | acc]
 
@@ -252,9 +252,6 @@ defmodule Excellent do
   def eval!({:-, [a, b]}, ctx), do: eval!(a, ctx, :num) - eval!(b, ctx, :num)
   def eval!({:*, [a, b]}, ctx), do: eval!(a, ctx, :num) * eval!(b, ctx, :num)
   def eval!({:/, [a, b]}, ctx), do: eval!(a, ctx, :num) / eval!(b, ctx, :num)
-  def eval!({:!, [a]}, ctx), do: not eval!(a, ctx, :bool)
-  def eval!({:&&, [a, b]}, ctx), do: eval!(a, ctx, :bool) && eval!(b, ctx, :bool)
-  def eval!({:||, [a, b]}, ctx), do: eval!(a, ctx, :bool) || eval!(b, ctx, :bool)
   def eval!({:>, [a, b]}, ctx), do: eval!(a, ctx, :num) > eval!(b, ctx, :num)
   def eval!({:>=, [a, b]}, ctx), do: eval!(a, ctx, :num) >= eval!(b, ctx, :num)
   def eval!({:<, [a, b]}, ctx), do: eval!(a, ctx, :num) < eval!(b, ctx, :num)
@@ -262,6 +259,7 @@ defmodule Excellent do
   def eval!({:==, [a, b]}, ctx), do: eval!(a, ctx) == eval!(b, ctx)
   def eval!({:!=, [a, b]}, ctx), do: eval!(a, ctx) != eval!(b, ctx)
   def eval!({:^, [a, b]}, ctx), do: :math.pow(eval!(a, ctx), eval!(b, ctx))
+  def eval!({:&, [a, b]}, ctx), do: [a, b] |> Enum.map(&eval!(&1, ctx)) |> Enum.join("")
 
   defp eval!(ast, ctx, type), do: ast |> eval!(ctx) |> guard_type!(type)
 

@@ -138,11 +138,11 @@ defmodule ExcellentTest do
   end
 
   describe "evaluate" do
-    test "example calculation with explicit precedence" do
+    test "calculation with explicit precedence" do
       assert {:ok, 8} = Excellent.evaluate("@(2 + (2 * 3))")
     end
 
-    test "example calculation with default precedence" do
+    test "calculation with default precedence" do
       assert {:ok, 8} = Excellent.evaluate("@(2 + 2 * 3)")
     end
 
@@ -154,8 +154,37 @@ defmodule ExcellentTest do
       assert {:ok, 16.0} = Excellent.evaluate("@(2 * 2 ^ 3)")
     end
 
-    test "example calculation 2" do
+    test "example calculation from floip expression docs" do
       assert {:ok, 0.999744} = Excellent.evaluate("@(1 + (2 - 3) * 4 / 5 ^ 6)")
+    end
+
+    test "example logical comparison" do
+      assert {:ok, true} ==
+               Excellent.evaluate("@(contact.age > 18)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, true} ==
+               Excellent.evaluate("@(contact.age >= 20)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, false} ==
+               Excellent.evaluate("@(contact.age < 18)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, true} ==
+               Excellent.evaluate("@(contact.age <= 20)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, false} ==
+               Excellent.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, true} ==
+               Excellent.evaluate("@(contact.age != 18)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, true} ==
+               Excellent.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 18}})
+
+    end
+
+    test "escaping @s" do
+      assert {:ok, "user@example.org"} = Excellent.evaluate("user@@example.org")
+      assert {:ok, "user@example.org"} = Excellent.evaluate("@(\"user\" & \"@example.org\")")
     end
 
     test "substitution" do
