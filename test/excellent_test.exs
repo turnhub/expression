@@ -106,13 +106,17 @@ defmodule ExcellentTest do
 
   describe "logic" do
     test "add" do
-      assert {:ok, [substitution: [block: [{:literal, 1}, :+, {:variable, ["a"]}]]], _, _, _, _} =
-               Excellent.parse("@(1 + a)")
+      assert {:ok,
+              [
+                substitution: [
+                  block: [+: [literal: 1, variable: ["a"]]]
+                ]
+              ], "", _, _, _} = Excellent.parse("@(1 + a)")
 
       assert {:ok,
               [
                 substitution: [
-                  block: [{:variable, ["contact", "age"]}, :+, {:literal, 1}]
+                    block: [+: [{:variable, ["contact", "age"]}, {:literal, 1}]]
                 ]
               ], _, _, _, _} = Excellent.parse("@(contact.age+1)")
     end
@@ -122,11 +126,10 @@ defmodule ExcellentTest do
               [
                 substitution: [
                   block: [
-                    {:variable, ["contact", "first_name"]},
-                    :&,
-                    {:literal, " "},
-                    :&,
-                    {:variable, ["contact", "last_name"]}
+                    &: [
+                      {:&, [variable: ["contact", "first_name"], literal: " "]},
+                      {:variable, ["contact", "last_name"]}
+                    ]
                   ]
                 ]
               ], _, _, _,
@@ -135,9 +138,12 @@ defmodule ExcellentTest do
   end
 
   describe "evaluate" do
-    test "example calculation 1" do
+    test "example calculation with explicit precedence" do
       assert {:ok, 8} = Excellent.evaluate("@(2 + (2 * 3))")
-      assert {:ok, 12} = Excellent.evaluate("@(2 + 2 * 3)")
+    end
+
+    test "example calculation with default precedence" do
+      assert {:ok, 8} = Excellent.evaluate("@(2 + 2 * 3)")
     end
 
     test "example calculation 2" do

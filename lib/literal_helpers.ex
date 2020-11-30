@@ -17,6 +17,10 @@ defmodule Excellent.LiteralHelpers do
     |> map({Decimal, :new, []})
   end
 
+  def numeric do
+    choice([int(), decimal()])
+  end
+
   def single_quoted_string do
     ignore(string(~s(')))
     |> repeat(

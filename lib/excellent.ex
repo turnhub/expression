@@ -64,31 +64,61 @@ defmodule Excellent do
     |> unwrap_and_tag(:literal)
   )
 
-  block_argument =
+  ignore_surrounding_whitespace = fn p ->
+    ignore(optional(space))
+    |> concat(p)
+    |> ignore(optional(space))
+  end
+
+  defcombinatorp(
+    :aexpr_factor,
     choice([
-      parsec(:block),
-      parsec(:function),
+      ignore(opening_bracket) |> parsec(:aexpr) |> ignore(closing_bracket),
       parsec(:literal),
+      parsec(:function),
       parsec(:variable)
     ])
-
-  defcombinator(
-    :block_arguments,
-    block_argument
-    |> repeat(
-      ignore(space)
-      |> concat(operator())
-      |> ignore(space)
-      |> concat(block_argument)
-    )
+    |> ignore_surrounding_whitespace.()
   )
+
+  defparsecp(
+    :aexpr_term,
+    parsec(:aexpr_factor)
+    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_factor))
+    |> reduce(:fold_infixl)
+  )
+
+  defparsec(
+    :aexpr,
+    parsec(:aexpr_term)
+    |> repeat(choice([plus(), minus(), concatenate()]) |> parsec(:aexpr_term))
+    |> reduce(:fold_infixl)
+  )
+
+  # block_argument =
+  #   choice([
+  #     parsec(:block),
+  #     parsec(:function),
+  #     parsec(:literal),
+  #     # parsec(:variable),
+  #     parsec(:aexpr),
+  #   ])
+
+  # defcombinator(
+  #   :block_arguments,
+  #   block_argument
+  #   |> repeat(
+  #     ignore(space)
+  #     |> concat(block_argument)
+  #   )
+  # )
 
   defcombinator(
     :block,
     ignore(opening_bracket)
     |> ignore(space)
     |> lookahead_not(closing_bracket)
-    |> concat(parsec(:block_arguments))
+    |> concat(parsec(:aexpr))
     |> ignore(space)
     |> ignore(closing_bracket)
     |> tag(:block)
@@ -182,7 +212,7 @@ defmodule Excellent do
 
           values ->
             {:ok,
-             resp
+             values
              |> Enum.map(&to_string/1)
              |> Enum.reverse()
              |> Enum.join()}
