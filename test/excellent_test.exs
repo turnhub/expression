@@ -116,7 +116,7 @@ defmodule ExcellentTest do
       assert {:ok,
               [
                 substitution: [
-                    block: [+: [{:variable, ["contact", "age"]}, {:literal, 1}]]
+                  block: [+: [{:variable, ["contact", "age"]}, {:literal, 1}]]
                 ]
               ], _, _, _, _} = Excellent.parse("@(contact.age+1)")
     end
@@ -144,6 +144,14 @@ defmodule ExcellentTest do
 
     test "example calculation with default precedence" do
       assert {:ok, 8} = Excellent.evaluate("@(2 + 2 * 3)")
+    end
+
+    test "exponent precendence over addition" do
+      assert {:ok, 10.0} = Excellent.evaluate("@(2 + 2 ^ 3)")
+    end
+
+    test "exponent precendence over multiplication" do
+      assert {:ok, 16.0} = Excellent.evaluate("@(2 * 2 ^ 3)")
     end
 
     test "example calculation 2" do

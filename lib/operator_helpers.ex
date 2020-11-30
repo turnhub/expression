@@ -6,5 +6,6 @@ defmodule Excellent.OperatorHelpers do
   def times, do: ascii_char([?*]) |> replace(:*) |> label("*")
   def divide, do: ascii_char([?/]) |> replace(:/) |> label("/")
   def concatenate, do: ascii_char([?&]) |> replace(:&) |> label("&")
-  def power, do: ascii_char([?^]) |> replace(:^) |> label("^")
+  def exponent, do: ascii_char([?^]) |> replace(:^) |> label("^")
+  def silly, do: ascii_char([?!]) |> replace(:!) |> label("!")
 end

@@ -82,9 +82,16 @@ defmodule Excellent do
   )
 
   defparsecp(
-    :aexpr_term,
+    :aexpr_exponent,
     parsec(:aexpr_factor)
-    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_factor))
+    |> repeat(exponent() |> parsec(:aexpr_factor))
+    |> reduce(:fold_infixl)
+  )
+
+  defparsecp(
+    :aexpr_term,
+    parsec(:aexpr_exponent)
+    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent))
     |> reduce(:fold_infixl)
   )
 
