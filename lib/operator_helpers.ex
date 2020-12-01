@@ -9,8 +9,8 @@ defmodule Excellent.OperatorHelpers do
   def exponent, do: ascii_char([?^]) |> replace(:^) |> label("^")
   def gte, do: string(">=") |> replace(:>=) |> label(">=")
   def lte, do: string("<=") |> replace(:>=) |> label(">=")
-  def neq, do: string("!=") |> replace(:!=) |> label("!=")
-  def eq, do: string("==") |> replace(:==) |> label("==")
+  def neq, do: choice([string("!="), string("<>")]) |> replace(:!=) |> label("!=")
+  def eq, do: choice([string("=="), string("=")]) |> replace(:==) |> label("==")
   def gt, do: ascii_char([?>]) |> replace(:>) |> label(">")
   def lt, do: ascii_char([?<]) |> replace(:<) |> label("<")
 end
