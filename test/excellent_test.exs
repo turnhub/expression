@@ -224,5 +224,13 @@ defmodule ExcellentTest do
       assert dt.month == 12
       assert dt.day == 30
     end
+
+    test "function calls default arguments" do
+      expected = Timex.format!(DateTime.utc_now(), "%Y-%m-%d %H:%M:%S", :strftime)
+      assert {:ok, expected} == Excellent.evaluate("@(DATEVALUE(NOW()))")
+
+      expected = Timex.format!(DateTime.utc_now(), "%Y-%m-%d", :strftime)
+      assert {:ok, expected} == Excellent.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")
+    end
   end
 end
