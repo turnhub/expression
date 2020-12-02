@@ -1,32 +1,50 @@
 defmodule Excellent.Callbacks do
-  @reserved_words ~w[and if]
+  @reserved_words ~w[and if or]
+
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
 
+  @doc """
+  Convert a string function name into an atom meant to handle
+  that function
+
+  Reserved words such as `and`, `if`, and `or` are automatically suffixed
+  with an `_` underscore.
+  """
   def atom_function_name(function_name) when function_name in @reserved_words,
     do: atom_function_name("#{function_name}_")
 
   def atom_function_name(function_name) do
-    function_name
-    |> String.downcase()
-    |> String.to_atom()
+    String.to_atom(function_name)
   end
 
+  @doc """
+  Handle a function call while evaluating the AST.
+
+  Handlers in this module are either:
+
+  1. The function name as is
+  2. The function name with an underscore suffix if the function name is a reserved word
+  3. The function name suffixed with `_vargs` if the takes a variable set of arguments
+  """
+  @spec handle(function_name :: binary, arguments :: [any], context :: map) ::
+          {:ok, any} | {:error, :not_implemented}
   def handle(function_name, arguments, context) do
+    function_name = String.downcase(function_name)
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 
     cond do
       # Check if the exact function signature has been implemented
       function_exported?(__MODULE__, exact_function_name, length(arguments) + 1) ->
-        apply(__MODULE__, exact_function_name, [context] ++ arguments)
+        {:ok, apply(__MODULE__, exact_function_name, [context] ++ arguments)}
 
       # Check if it's been implemented to accept a variable amount of arguments
       function_exported?(__MODULE__, vargs_function_name, 2) ->
-        apply(__MODULE__, vargs_function_name, [context, arguments])
+        {:ok, apply(__MODULE__, vargs_function_name, [context, arguments])}
 
       # Otherwise fail
       true ->
-        {:error, :not_implemented}
+        {:error, "#{function_name} is not implemented."}
     end
   end
 
@@ -325,7 +343,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> Excellent.Callbacks.handle("and", [true, true], %{})
-      true
+      {:ok, true}
       iex> Excellent.Callbacks.and_vargs(%{}, [true, true])
       true
       iex> Excellent.Callbacks.and_vargs(%{}, [true, false])
@@ -351,9 +369,9 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> Excellent.Callbacks.handle("if", [true, "Yes", "No"], %{})
-      "Yes"
+      {:ok, "Yes"}
       iex> Excellent.Callbacks.handle("if", [false, "Yes", "No"], %{})
-      "No"
+      {:ok, "No"}
   """
   def if_(_ctx, condition, yes, no) do
     if(condition, do: yes, else: no)
@@ -369,11 +387,11 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> Excellent.Callbacks.handle("or", [true, false], %{})
-      true
+      {:ok, true}
       iex> Excellent.Callbacks.handle("or", [true, true], %{})
-      true
+      {:ok, true}
       iex> Excellent.Callbacks.handle("or", [false, false], %{})
-      false
+      {:ok, false}
   """
   def or_vargs(_ctx, arguments) do
     Enum.any?(arguments, fn
@@ -408,7 +426,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> Excellent.Callbacks.handle("max", [1, 2, 3], %{})
-      3
+      {:ok, 3}
   """
   def max_vargs(_ctx, arguments) do
     Enum.max(arguments)
@@ -424,7 +442,7 @@ defmodule Excellent.Callbacks do
   #  Example
 
       iex> Excellent.Callbacks.handle("min", [1, 2, 3], %{})
-      1
+      {:ok, 1}
   """
   def min_vargs(_ctx, arguments) do
     Enum.min(arguments)
@@ -451,7 +469,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> Excellent.Callbacks.handle("sum", [1, 2, 3], %{})
-      6
+      {:ok, 6}
 
   """
   def sum_vargs(_ctx, arguments) do
@@ -520,7 +538,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> Excellent.Callbacks.handle("concatenate", ["name", " ", "surname"], %{})
-      "name surname"
+      {:ok, "name surname"}
   """
   def concatenate_vargs(_ctx, arguments) do
     Enum.join(arguments, "")
@@ -946,4 +964,84 @@ defmodule Excellent.Callbacks do
     |> Enum.slice((start - 1)..(stop - 1))
     |> Enum.join(" ")
   end
+
+  @doc """
+  Returns TRUE if the argument is a number.
+
+  ```
+  @ISNUMBER(contact.age) will return TRUE if the contact's age is a number.
+  ```
+
+  # Example
+
+      iex> Excellent.Callbacks.isnumber(%{}, 1)
+      true
+      iex> Excellent.Callbacks.isnumber(%{}, 1.0)
+      true
+      iex> Excellent.Callbacks.isnumber(%{}, Decimal.new("1.0"))
+      true
+      iex> Excellent.Callbacks.isnumber(%{}, "1.0")
+      true
+      iex> Excellent.Callbacks.isnumber(%{}, "a")
+      false
+
+  """
+  def isnumber(_ctx, var) when is_float(var) or is_integer(var), do: true
+
+  def isnumber(_ctx, %{__struct__: Decimal}), do: true
+
+  def isnumber(_ctx, var) when is_binary(var) do
+    Decimal.new(var)
+    true
+  rescue
+    Decimal.Error ->
+      false
+  end
+
+  def isnumber(_ctx, _var), do: false
+
+  @doc """
+  Returns TRUE if the argument is a boolean.
+
+  ```
+  @ISBOOL(block.value) will return TRUE if the block returned a boolean value.
+  ```
+
+  # Example
+
+      iex> Excellent.Callbacks.isbool(%{}, true)
+      true
+      iex> Excellent.Callbacks.isbool(%{}, false)
+      true
+      iex> Excellent.Callbacks.isbool(%{}, 1)
+      false
+      iex> Excellent.Callbacks.isbool(%{}, 0)
+      false
+      iex> Excellent.Callbacks.isbool(%{}, "true")
+      false
+      iex> Excellent.Callbacks.isbool(%{}, "false")
+      false
+  """
+  def isbool(_ctx, var) when var in [true, false], do: true
+  def isbool(_ctx, _var), do: false
+
+  @doc """
+  Returns TRUE if the argument is a string.
+
+  ```
+  @ISSTRING(contact.name) will return TRUE if the contact's name is a string.
+  ```
+
+  # Example
+
+      iex> Excellent.Callbacks.isstring(%{}, "hello")
+      true
+      iex> Excellent.Callbacks.isstring(%{}, false)
+      false
+      iex> Excellent.Callbacks.isstring(%{}, 1)
+      false
+      iex> Excellent.Callbacks.isstring(%{}, Decimal.new("1.0"))
+      false
+  """
+  def isstring(_ctx, binary), do: is_binary(binary)
 end

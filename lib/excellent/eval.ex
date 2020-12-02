@@ -2,6 +2,8 @@ defmodule Excellent.Eval do
   import Excellent.Ast, only: [fold_infixl: 1]
 
   def evaluate(ast, context, mod) do
+    context = Excellent.Context.new(context, mod)
+
     resp =
       ast
       |> Enum.reduce([], fn
@@ -35,8 +37,17 @@ defmodule Excellent.Eval do
   def eval!({:literal, value}, _ctx, _mod), do: value
   def eval!({:substitution, ast}, ctx, mod), do: eval!(fold_infixl(ast), ctx, mod)
   def eval!({:block, ast}, ctx, mod), do: eval!(fold_infixl(ast), ctx, mod)
-  def eval!({:function, [name]}, ctx, mod), do: mod.handle(name, [], ctx)
-  def eval!({:function, [name, ast]}, ctx, mod), do: mod.handle(name, eval!(ast, ctx, mod), ctx)
+  #  function calls without arguments
+  def eval!({:function, [name]}, ctx, mod),
+    do: eval!({:function, [name, {:arguments, []}]}, ctx, mod)
+
+  def eval!({:function, [name, ast]}, ctx, mod) do
+    case mod.handle(name, eval!(ast, ctx, mod), ctx) do
+      {:ok, value} -> value
+      {:error, reason} -> "ERROR: #{inspect(reason)}"
+    end
+  end
+
   def eval!({:arguments, ast}, ctx, mod), do: Enum.map(ast, &eval!(&1, ctx, mod))
   def eval!({:+, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) + eval!(b, ctx, mod, :num)
   def eval!({:-, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) - eval!(b, ctx, mod, :num)
@@ -54,6 +65,7 @@ defmodule Excellent.Eval do
   defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
 
   defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
+
   defp guard_nil!(nil, k), do: raise("variable #{k} undefined or null")
   defp guard_nil!(v, _), do: v
 

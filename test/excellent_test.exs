@@ -232,5 +232,31 @@ defmodule ExcellentTest do
       expected = Timex.format!(DateTime.utc_now(), "%Y-%m-%d", :strftime)
       assert {:ok, expected} == Excellent.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")
     end
+
+    test "function calls with expressions" do
+      assert {:ok,
+              [
+                text: ["Dear "],
+                substitution: [
+                  function: [
+                    "IF",
+                    {:arguments,
+                     [
+                       {
+                         :==,
+                         [variable: ["contact", "gender"], literal: "M"]
+                       },
+                       {:literal, "Sir"},
+                       {:literal, "lovely client"}
+                     ]}
+                  ]
+                ]
+              ]} = Excellent.parse("Dear @IF(contact.gender = 'M', 'Sir', 'lovely client')")
+
+      assert {:ok, "Dear lovely client"} =
+               Excellent.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'lovely client')", %{
+                 "contact" => %{"gender" => "O"}
+               })
+    end
   end
 end

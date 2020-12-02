@@ -38,8 +38,8 @@ defmodule Excellent do
   """
   alias Excellent.{Ast, Eval}
 
-  def parse(expression) do
-    case Ast.parse(expression) do
+  def parse_expression(expression) do
+    case Ast.aexpr(expression) do
       {:ok, ast, "", _, _, _} ->
         {:ok, ast}
 
@@ -48,10 +48,20 @@ defmodule Excellent do
     end
   end
 
-  def evaluate(expression, context \\ %{}, mod \\ Excellent.Callbacks)
+  def parse(text) do
+    case Ast.parse(text) do
+      {:ok, ast, "", _, _, _} ->
+        {:ok, ast}
 
-  def evaluate(expression, context, mod) do
-    with {:ok, ast} <- parse(expression),
+      {:ok, _ast, remainder, _, _, _} ->
+        {:error, "Unable to parse: #{inspect(remainder)}"}
+    end
+  end
+
+  def evaluate(text, context \\ %{}, mod \\ Excellent.Callbacks)
+
+  def evaluate(text, context, mod) do
+    with {:ok, ast} <- parse(text),
          {:ok, result} <- Eval.evaluate(ast, context, mod) do
       {:ok, result}
     end

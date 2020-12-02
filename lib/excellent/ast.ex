@@ -126,6 +126,7 @@ defmodule Excellent.Ast do
 
   function_argument =
     choice([
+      parsec(:aexpr),
       parsec(:function),
       parsec(:variable),
       parsec(:literal)
