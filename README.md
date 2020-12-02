@@ -81,6 +81,12 @@ iex> Excellent.evaluate("@(FaLsE)")
 {:ok, false}
 ```
 
+# Future extensions
+
+- It may be worth implementing a binary only expression parser, something
+  that is guaranteed to only return a `true` or `false`. That could be useful
+  when building decision trees with dynamic conditionals depending on context.
+
 ## Installation
 
 > This is not available in Hex.pm or Hexdocs.pm yet
