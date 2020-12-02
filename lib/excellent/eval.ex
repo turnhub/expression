@@ -2,7 +2,7 @@ defmodule Excellent.Eval do
   import Excellent.Ast, only: [fold_infixl: 1]
 
   def evaluate(ast, context, mod) do
-    context = Excellent.Context.new(context, mod)
+    context = Excellent.Context.new(context)
 
     resp =
       ast

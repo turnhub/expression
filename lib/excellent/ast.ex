@@ -49,7 +49,7 @@ defmodule Excellent.Ast do
     |> tag(:variable)
   )
 
-  defcombinator(
+  defparsec(
     :literal,
     choice([
       datetime(),

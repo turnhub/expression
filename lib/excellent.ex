@@ -38,6 +38,19 @@ defmodule Excellent do
   """
   alias Excellent.{Ast, Eval}
 
+  def parse_literal(binary) do
+    case Ast.literal(binary) do
+      {:ok, [{:literal, literal}], "", _, _, _} ->
+        {:literal, literal}
+
+      {:ok, _ast, _remainder, _, _, _} ->
+        {:error, binary}
+
+      {:error, _reason, _remainder, _, _, _} ->
+        {:error, binary}
+    end
+  end
+
   def parse_expression(expression) do
     case Ast.aexpr(expression) do
       {:ok, ast, "", _, _, _} ->

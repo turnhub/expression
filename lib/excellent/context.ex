@@ -28,45 +28,39 @@ defmodule Excellent.Context do
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
   """
-  def new(ctx, mod \\ Excellent.Callbacks)
-
-  def new(ctx, mod) when is_map(ctx) do
+  def new(ctx) when is_map(ctx) do
     ctx
     # Ensure all keys are strings
     |> Enum.map(&string_key/1)
-    |> Enum.map(&iterate(&1, mod))
+    |> Enum.map(&iterate(&1))
     |> Enum.into(%{})
   end
 
   defp string_key({key, value}), do: {to_string(key), value}
 
-  defp iterate({key, value}, mod) when is_map(value) or is_list(value) do
-    {key, evaluate(value, mod)}
+  defp iterate({key, value}) when is_map(value) or is_list(value) do
+    {key, evaluate(value)}
   end
 
-  defp iterate({key, value}, mod) when is_binary(value), do: {key, evaluate(value, mod)}
+  defp iterate({key, value}) when is_binary(value), do: {key, evaluate(value)}
 
-  defp iterate({key, value}, _mod), do: {key, value}
+  defp iterate({key, value}), do: {key, value}
 
-  defp evaluate(ctx, mod) when is_map(ctx) and not is_struct(ctx) do
-    new(ctx, mod)
+  defp evaluate(ctx) when is_map(ctx) and not is_struct(ctx) do
+    new(ctx)
   end
 
-  defp evaluate(ctx, mod) when is_list(ctx) do
+  defp evaluate(ctx) when is_list(ctx) do
     ctx
-    |> Enum.map(&evaluate(&1, mod))
+    |> Enum.map(&evaluate(&1))
   end
 
-  defp evaluate(value, _mod) when not is_binary(value), do: value
+  defp evaluate(value) when not is_binary(value), do: value
 
-  defp evaluate(binary, mod) when is_binary(binary) do
-    with {:ok, ast} <- Excellent.parse_expression(binary),
-         {:ok, value} <- Excellent.Eval.evaluate([substitution: ast], %{}, mod) do
-      value
-    else
-      _ -> binary
+  defp evaluate(binary) when is_binary(binary) do
+    case Excellent.parse_literal(binary) do
+      {:literal, literal} -> literal
+      {:error, _reason} -> binary
     end
-  rescue
-    RuntimeError -> binary
   end
 end
