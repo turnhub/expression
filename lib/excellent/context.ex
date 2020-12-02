@@ -18,9 +18,12 @@ defmodule Excellent.Context do
     %{"boolean" => true}
     iex> Excellent.Context.new(%{float: 1.234})
     %{"float" => 1.234}
-    iex> ctx = Excellent.Context.new(%{decimal: "1.234"})
+    iex> now = DateTime.utc_now()
+    iex> ctx = Excellent.Context.new(%{decimal: "1.234", nested: %{date: now}})
     iex> ctx["decimal"]
     #Decimal<1.234>
+    iex> now == ctx["nested"]["date"]
+    true
     iex> Excellent.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
@@ -45,7 +48,7 @@ defmodule Excellent.Context do
 
   defp iterate({key, value}, _mod), do: {key, value}
 
-  defp evaluate(ctx, mod) when is_map(ctx) do
+  defp evaluate(ctx, mod) when is_map(ctx) and not is_struct(ctx) do
     new(ctx, mod)
   end
 

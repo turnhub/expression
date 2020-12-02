@@ -37,12 +37,12 @@ iex> Excellent.evaluate("Your next appointment is @(EDATE(contact.appointment, 1
 })
 {:ok, "Your next appointment is 2021-01-02 12:38:14.426663Z"}
 
-iex> Excellent.evaluate("Your next appointment is @(EDATE(contact.appointment, 1))", %{
+iex> Excellent.evaluate("Your next appointment is @(DATEVALUE(EDATE(contact.appointment, 1), \"%Y-%m-%d\"))", %{
   "contact" => %{
     "appointment" => "2020-12-13T23:35:55"
   }
 })
-{:ok, "Your next appointment is 2021-01-13 23:35:55.0Z"}
+{:ok, "Your next appointment is 2021-01-13"}
 
 iex> Excellent.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'Client')", %{
   "contact" => %{
