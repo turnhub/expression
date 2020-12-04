@@ -258,5 +258,12 @@ defmodule ExcellentTest do
                  "contact" => %{"gender" => "O"}
                })
     end
+
+    test "evaluate_expression" do
+      assert {:ok, true} ==
+               Excellent.evaluate_expression("contact.age > 10", %{contact: %{age: 21}})
+
+      assert {:ok, 2} == Excellent.evaluate_expression("1 + 1")
+    end
   end
 end

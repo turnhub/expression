@@ -61,6 +61,15 @@ defmodule Excellent do
     end
   end
 
+  def evaluate_expression(expression, context \\ %{}, mod \\ Excellent.Callbacks)
+
+  def evaluate_expression(expression, context, mod) do
+    with {:ok, ast} <- parse_expression(expression),
+         {:ok, result} <- Eval.evaluate([substitution: ast], context, mod) do
+      {:ok, result}
+    end
+  end
+
   def parse(text) do
     case Ast.parse(text) do
       {:ok, ast, "", _, _, _} ->
