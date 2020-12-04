@@ -259,11 +259,11 @@ defmodule ExcellentTest do
                })
     end
 
-    test "evaluate_expression" do
+    test "evaluate_block" do
       assert {:ok, true} ==
-               Excellent.evaluate_expression("contact.age > 10", %{contact: %{age: 21}})
+               Excellent.evaluate_block("contact.age > 10", %{contact: %{age: 21}})
 
-      assert {:ok, 2} == Excellent.evaluate_expression("1 + 1")
+      assert {:ok, 2} == Excellent.evaluate_block("1 + 1")
     end
   end
 end
