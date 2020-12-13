@@ -7,8 +7,21 @@ defmodule Expression.MixProject do
       version: "0.1.0",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      package: package(),
+      description: description()
     ]
+  end
+
+  defp package() do
+    [
+      licenses: ["Apache-2.0"],
+      links: %{"GitHub" => "https://github.com/turnhub/expression"}
+    ]
+  end
+
+  defp description() do
+    "A Excel like expression parser, compatible with FLOIP Expression language."
   end
 
   # Run "mix help compile.app" to learn about applications.
