@@ -1,4 +1,26 @@
 defmodule Expression.Callbacks do
+  @moduledoc """
+  The function callbacks for the standard function set available
+  in FLOIP expressions.
+
+  This should be relatively swappable with another implementation.
+  The only requirement is the `handle/3` function.
+
+  FLOIP functions are case insensitive. All functions in this callback
+  module are implemented as lowercase names.
+
+  Some functions accept a variable amount of arguments. Elixir doesn't
+  support variable arguments in functions.
+
+  If a function accepts a variable number of arguments the convention
+  is to call the `<function_name>_vargs/2` callback where the context
+  is given as the first argument and the argument list as a second
+  argument.
+
+  Reserved names such as `and`, `if`, and `or` are suffixed with an
+  underscore.
+  """
+
   @reserved_words ~w[and if or]
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
@@ -875,9 +897,10 @@ defmodule Expression.Callbacks do
 
     # This slicing seems off.
     [part] =
-      cond do
-        n < 0 -> Enum.slice(parts, n, 1)
-        true -> Enum.slice(parts, n - 1, 1)
+      if n < 0 do
+        Enum.slice(parts, n, 1)
+      else
+        Enum.slice(parts, n - 1, 1)
       end
 
     part

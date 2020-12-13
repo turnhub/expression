@@ -1,4 +1,5 @@
 defmodule Expression.LiteralHelpers do
+  @moduledoc false
   import NimbleParsec
 
   def int do

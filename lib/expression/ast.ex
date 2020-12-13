@@ -1,4 +1,8 @@
 defmodule Expression.Ast do
+  @moduledoc """
+  Parse a string and turn it into an AST which
+  can be evaluated by Expression.Eval
+  """
   import NimbleParsec
   import Expression.{BooleanHelpers, DateHelpers, LiteralHelpers, OperatorHelpers}
 

@@ -1,4 +1,5 @@
 defmodule Expression.OperatorHelpers do
+  @moduledoc false
   import NimbleParsec
 
   def plus, do: ascii_char([?+]) |> replace(:+) |> label("+")

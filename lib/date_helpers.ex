@@ -1,4 +1,5 @@
 defmodule Expression.DateHelpers do
+  @moduledoc false
   import NimbleParsec
 
   def us_date do

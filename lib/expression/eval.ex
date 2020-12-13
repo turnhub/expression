@@ -1,4 +1,7 @@
 defmodule Expression.Eval do
+  @moduledoc """
+  Take an AST and evaluate it.
+  """
   import Expression.Ast, only: [fold_infixl: 1]
 
   def evaluate(ast, context, mod) do

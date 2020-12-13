@@ -39,7 +39,9 @@ defmodule Expression.MixProject do
       {:timex, "~> 3.6"},
       {:number, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
-      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false}
+      {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:credo, "~> 1.5", only: [:dev], runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]
   end
 end

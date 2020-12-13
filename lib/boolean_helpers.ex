@@ -1,4 +1,5 @@
 defmodule Expression.BooleanHelpers do
+  @moduledoc false
   import NimbleParsec
 
   def boolean_true do
