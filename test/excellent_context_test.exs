@@ -1,4 +1,4 @@
-defmodule ExcellentContextTest do
+defmodule ExpressionContextTest do
   use ExUnit.Case
-  doctest Excellent.Context
+  doctest Expression.Context
 end

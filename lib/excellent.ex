@@ -1,9 +1,9 @@
-defmodule Excellent do
+defmodule Expression do
   @moduledoc """
-  Documentation for `Excellent`, a library to parse and evaluate
+  Documentation for `Expression`, a library to parse and evaluate
   [Floip](https://floip.gitbook.io/flow-specification/expressions) compatible expressions
 
-  Excellent is an expression language which consists of the functions provided
+  Expression is an expression language which consists of the functions provided
   by Excel with a few additions.
 
   Function and variable names are not case-sensitive so UPPER is equivalent to upper:
@@ -15,7 +15,7 @@ defmodule Excellent do
   ```
 
   For templating, RapidPro uses the @ character to denote either a single variable substitution
-  or the beginning of an Excellent block. `@` was chosen as it is known how to type by a broad
+  or the beginning of an Expression block. `@` was chosen as it is known how to type by a broad
   number of users regardless of keyboard. It does have the disadvantage of being used in
   email addresses and Twitter handles, but these are rarely ambiguous and escaping can be
   done easily via doubling of the character (`@@`).
@@ -36,7 +36,7 @@ defmodule Excellent do
   ```
 
   """
-  alias Excellent.{Ast, Eval}
+  alias Expression.{Ast, Eval}
 
   def parse_literal(binary) do
     case Ast.literal(binary) do
@@ -61,7 +61,7 @@ defmodule Excellent do
     end
   end
 
-  def evaluate_block(expression, context \\ %{}, mod \\ Excellent.Callbacks)
+  def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks)
 
   def evaluate_block(expression, context, mod) do
     with {:ok, ast} <- parse_expression(expression),
@@ -80,7 +80,7 @@ defmodule Excellent do
     end
   end
 
-  def evaluate(text, context \\ %{}, mod \\ Excellent.Callbacks)
+  def evaluate(text, context \\ %{}, mod \\ Expression.Callbacks)
 
   def evaluate(text, context, mod) do
     with {:ok, ast} <- parse(text),

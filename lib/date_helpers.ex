@@ -1,4 +1,4 @@
-defmodule Excellent.DateHelpers do
+defmodule Expression.DateHelpers do
   import NimbleParsec
 
   def us_date do

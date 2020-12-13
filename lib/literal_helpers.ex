@@ -1,4 +1,4 @@
-defmodule Excellent.LiteralHelpers do
+defmodule Expression.LiteralHelpers do
   import NimbleParsec
 
   def int do

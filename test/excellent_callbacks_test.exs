@@ -1,4 +1,4 @@
-defmodule ExcellentCallbacksTest do
+defmodule ExpressionCallbacksTest do
   use ExUnit.Case
-  doctest Excellent.Callbacks
+  doctest Expression.Callbacks
 end

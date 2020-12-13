@@ -1,6 +1,6 @@
-defmodule Excellent.Ast do
+defmodule Expression.Ast do
   import NimbleParsec
-  import Excellent.{BooleanHelpers, DateHelpers, LiteralHelpers, OperatorHelpers}
+  import Expression.{BooleanHelpers, DateHelpers, LiteralHelpers, OperatorHelpers}
 
   # Taking inspiration from https://github.com/slapers/ex_sel/
   # and trying to wrap my head around the grammer using EBNF as per

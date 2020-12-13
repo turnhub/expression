@@ -1,4 +1,4 @@
-defmodule Excellent.Callbacks do
+defmodule Expression.Callbacks do
   @reserved_words ~w[and if or]
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
@@ -57,7 +57,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> to_string(Excellent.Callbacks.date(%{}, 2012, 12, 25))
+      iex> to_string(Expression.Callbacks.date(%{}, 2012, 12, 25))
       "2012-12-25 00:00:00Z"
 
   """
@@ -91,10 +91,10 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> date = Excellent.Callbacks.date(%{}, 2020, 12, 20)
-      iex> Excellent.Callbacks.datevalue(%{}, date)
+      iex> date = Expression.Callbacks.date(%{}, 2020, 12, 20)
+      iex> Expression.Callbacks.datevalue(%{}, date)
       "2020-12-20 00:00:00"
-      iex> Excellent.Callbacks.datevalue(%{}, date, "%Y-%m-%d")
+      iex> Expression.Callbacks.datevalue(%{}, date, "%Y-%m-%d")
       "2020-12-20"
   """
   def datevalue(ctx, date, format \\ "%Y-%m-%d %H:%M:%S")
@@ -113,7 +113,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> now = DateTime.utc_now()
-      iex> day = Excellent.Callbacks.day(%{}, now)
+      iex> day = Expression.Callbacks.day(%{}, now)
       iex> day == now.day
       true
   """
@@ -132,7 +132,7 @@ defmodule Excellent.Callbacks do
 
       iex> now = DateTime.utc_now()
       iex> future = Timex.shift(now, months: 1)
-      iex> date = Excellent.Callbacks.edate(%{}, now, 1)
+      iex> date = Expression.Callbacks.edate(%{}, now, 1)
       iex> future == date
       true
   """
@@ -150,7 +150,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> now = DateTime.utc_now()
-      iex> hour = Excellent.Callbacks.hour(%{}, now)
+      iex> hour = Expression.Callbacks.hour(%{}, now)
       iex> now.hour == hour
       true
   """
@@ -168,7 +168,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> now = DateTime.utc_now()
-      iex> minute = Excellent.Callbacks.minute(%{}, now)
+      iex> minute = Expression.Callbacks.minute(%{}, now)
       iex> now.minute == minute
       true
   """
@@ -186,7 +186,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> now = DateTime.utc_now()
-      iex> month = Excellent.Callbacks.month(%{}, now)
+      iex> month = Expression.Callbacks.month(%{}, now)
       iex> now.month == month
       true
   """
@@ -203,7 +203,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-    iex> DateTime.utc_now() == Excellent.Callbacks.now(%{})
+    iex> DateTime.utc_now() == Expression.Callbacks.now(%{})
   """
   def now(_ctx) do
     DateTime.utc_now()
@@ -219,7 +219,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> now = DateTime.utc_now()
-      iex> second = Excellent.Callbacks.second(%{}, now)
+      iex> second = Expression.Callbacks.second(%{}, now)
       iex> now.second == second
       true
 
@@ -237,7 +237,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.time(%{}, 12, 13, 14)
+      iex> Expression.Callbacks.time(%{}, 12, 13, 14)
       %Time{hour: 12, minute: 13, second: 14}
 
   """
@@ -254,10 +254,10 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.timevalue(%{}, "2:30")
+      iex> Expression.Callbacks.timevalue(%{}, "2:30")
       %Time{hour: 2, minute: 30, second: 0}
 
-      iex> Excellent.Callbacks.timevalue(%{}, "2:30:55")
+      iex> Expression.Callbacks.timevalue(%{}, "2:30:55")
       %Time{hour: 2, minute: 30, second: 55}
   """
   def timevalue(_ctx, expression) do
@@ -289,7 +289,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> today = Date.utc_today()
-      iex> today == Excellent.Callbacks.today(%{})
+      iex> today == Expression.Callbacks.today(%{})
       true
 
   """
@@ -308,7 +308,7 @@ defmodule Excellent.Callbacks do
 
       iex> today = DateTime.utc_now()
       iex> expected = Timex.weekday(today)
-      iex> weekday = Excellent.Callbacks.weekday(%{}, today)
+      iex> weekday = Expression.Callbacks.weekday(%{}, today)
       iex> weekday == expected
       true
   """
@@ -326,7 +326,7 @@ defmodule Excellent.Callbacks do
   # Example
 
       iex> %{year: year} = now = DateTime.utc_now()
-      iex> year == Excellent.Callbacks.year(%{}, now)
+      iex> year == Expression.Callbacks.year(%{}, now)
 
   """
   def year(_ctx, %{year: year} = _date) do
@@ -342,13 +342,13 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.handle("and", [true, true], %{})
+      iex> Expression.Callbacks.handle("and", [true, true], %{})
       {:ok, true}
-      iex> Excellent.Callbacks.and_vargs(%{}, [true, true])
+      iex> Expression.Callbacks.and_vargs(%{}, [true, true])
       true
-      iex> Excellent.Callbacks.and_vargs(%{}, [true, false])
+      iex> Expression.Callbacks.and_vargs(%{}, [true, false])
       false
-      iex> Excellent.Callbacks.and_vargs(%{}, [false, false])
+      iex> Expression.Callbacks.and_vargs(%{}, [false, false])
       false
 
   """
@@ -368,9 +368,9 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.handle("if", [true, "Yes", "No"], %{})
+      iex> Expression.Callbacks.handle("if", [true, "Yes", "No"], %{})
       {:ok, "Yes"}
-      iex> Excellent.Callbacks.handle("if", [false, "Yes", "No"], %{})
+      iex> Expression.Callbacks.handle("if", [false, "Yes", "No"], %{})
       {:ok, "No"}
   """
   def if_(_ctx, condition, yes, no) do
@@ -386,11 +386,11 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.handle("or", [true, false], %{})
+      iex> Expression.Callbacks.handle("or", [true, false], %{})
       {:ok, true}
-      iex> Excellent.Callbacks.handle("or", [true, true], %{})
+      iex> Expression.Callbacks.handle("or", [true, true], %{})
       {:ok, true}
-      iex> Excellent.Callbacks.handle("or", [false, false], %{})
+      iex> Expression.Callbacks.handle("or", [false, false], %{})
       {:ok, false}
   """
   def or_vargs(_ctx, arguments) do
@@ -409,7 +409,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.abs(%{}, -1)
+      iex> Expression.Callbacks.abs(%{}, -1)
       1
   """
   def abs(_ctx, number) do
@@ -425,7 +425,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.handle("max", [1, 2, 3], %{})
+      iex> Expression.Callbacks.handle("max", [1, 2, 3], %{})
       {:ok, 3}
   """
   def max_vargs(_ctx, arguments) do
@@ -441,7 +441,7 @@ defmodule Excellent.Callbacks do
 
   #  Example
 
-      iex> Excellent.Callbacks.handle("min", [1, 2, 3], %{})
+      iex> Expression.Callbacks.handle("min", [1, 2, 3], %{})
       {:ok, 1}
   """
   def min_vargs(_ctx, arguments) do
@@ -468,7 +468,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.handle("sum", [1, 2, 3], %{})
+      iex> Expression.Callbacks.handle("sum", [1, 2, 3], %{})
       {:ok, 6}
 
   """
@@ -485,7 +485,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.char(%{}, 65)
+      iex> Expression.Callbacks.char(%{}, 65)
       "A"
 
   """
@@ -502,7 +502,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.clean(%{}, <<65, 0, 66, 0, 67>>)
+      iex> Expression.Callbacks.clean(%{}, <<65, 0, 66, 0, 67>>)
       "ABC"
   """
   def clean(_ctx, binary) do
@@ -521,7 +521,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.code(%{}, "A")
+      iex> Expression.Callbacks.code(%{}, "A")
       65
   """
   def code(_ctx, <<code>>) do
@@ -537,7 +537,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.handle("concatenate", ["name", " ", "surname"], %{})
+      iex> Expression.Callbacks.handle("concatenate", ["name", " ", "surname"], %{})
       {:ok, "name surname"}
   """
   def concatenate_vargs(_ctx, arguments) do
@@ -553,13 +553,13 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.fixed(%{}, 4.209922, 2, false)
+      iex> Expression.Callbacks.fixed(%{}, 4.209922, 2, false)
       "4.21"
-      iex> Excellent.Callbacks.fixed(%{}, 4000.424242, 4, true)
+      iex> Expression.Callbacks.fixed(%{}, 4000.424242, 4, true)
       "4,000.4242"
-      iex> Excellent.Callbacks.fixed(%{}, 3.7979, 2, false)
+      iex> Expression.Callbacks.fixed(%{}, 3.7979, 2, false)
       "3.80"
-      iex> Excellent.Callbacks.fixed(%{}, 3.7979, 2)
+      iex> Expression.Callbacks.fixed(%{}, 3.7979, 2)
       "3.80"
 
   """
@@ -586,7 +586,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.left(%{}, "foobar", 4)
+      iex> Expression.Callbacks.left(%{}, "foobar", 4)
       "foob"
   """
   def left(_ctx, binary, size) do
@@ -602,9 +602,9 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.len(%{}, "foo")
+      iex> Expression.Callbacks.len(%{}, "foo")
       3
-      iex> Excellent.Callbacks.len(%{}, "zoë")
+      iex> Expression.Callbacks.len(%{}, "zoë")
       3
   """
   def len(_ctx, binary) do
@@ -620,7 +620,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.lower(%{}, "Foo Bar")
+      iex> Expression.Callbacks.lower(%{}, "Foo Bar")
       "foo bar"
 
   """
@@ -637,7 +637,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.proper(%{}, "foo bar")
+      iex> Expression.Callbacks.proper(%{}, "foo bar")
       "Foo Bar"
   """
   def proper(_ctx, binary) do
@@ -656,7 +656,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.rept(%{}, "*", 10)
+      iex> Expression.Callbacks.rept(%{}, "*", 10)
       "**********"
   """
   def rept(_ctx, value, amount) do
@@ -672,7 +672,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.right(%{}, "testing", 3)
+      iex> Expression.Callbacks.right(%{}, "testing", 3)
       "ing"
 
   """
@@ -689,7 +689,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-    iex> Excellent.Callbacks.substitute(%{}, "I can't", "can't", "can do")
+    iex> Expression.Callbacks.substitute(%{}, "I can't", "can't", "can do")
     "I can do"
 
   """
@@ -706,9 +706,9 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-    iex> Excellent.Callbacks.unichar(%{}, 65)
+    iex> Expression.Callbacks.unichar(%{}, 65)
     "A"
-    iex> Excellent.Callbacks.unichar(%{}, 233)
+    iex> Expression.Callbacks.unichar(%{}, 233)
     "é"
 
   """
@@ -725,9 +725,9 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.unicode(%{}, "A")
+      iex> Expression.Callbacks.unicode(%{}, "A")
       65
-      iex> Excellent.Callbacks.unicode(%{}, "é")
+      iex> Expression.Callbacks.unicode(%{}, "é")
       233
   """
   def unicode(_ctx, <<code::utf8>>) do
@@ -743,7 +743,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.upper(%{}, "foo")
+      iex> Expression.Callbacks.upper(%{}, "foo")
       "FOO"
   """
   def upper(_ctx, binary) do
@@ -759,7 +759,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.first_word(%{}, "foo bar baz")
+      iex> Expression.Callbacks.first_word(%{}, "foo bar baz")
       "foo"
 
   """
@@ -777,11 +777,11 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.percent(%{}, 2/10)
+      iex> Expression.Callbacks.percent(%{}, 2/10)
       "20%"
-      iex> Excellent.Callbacks.percent(%{}, "0.2")
+      iex> Expression.Callbacks.percent(%{}, "0.2")
       "20%"
-      iex> Excellent.Callbacks.percent(%{}, Decimal.new("0.2"))
+      iex> Expression.Callbacks.percent(%{}, Decimal.new("0.2"))
       "20%"
   """
   def percent(ctx, float) when is_float(float) do
@@ -805,7 +805,7 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.read_digits(%{}, "+271")
+      iex> Expression.Callbacks.read_digits(%{}, "+271")
       "plus two seven one"
 
   """
@@ -840,9 +840,9 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.remove_first_word(%{}, "foo bar")
+      iex> Expression.Callbacks.remove_first_word(%{}, "foo bar")
       "bar"
-      iex> Excellent.Callbacks.remove_first_word(%{}, "foo-bar", "-")
+      iex> Expression.Callbacks.remove_first_word(%{}, "foo-bar", "-")
       "bar"
   """
   def remove_first_word(_ctx, binary, separator \\ " ")
@@ -859,11 +859,11 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.word(%{}, "hello cow-boy", 2)
+      iex> Expression.Callbacks.word(%{}, "hello cow-boy", 2)
       "cow"
-      iex> Excellent.Callbacks.word(%{}, "hello cow-boy", 2, true)
+      iex> Expression.Callbacks.word(%{}, "hello cow-boy", 2, true)
       "cow-boy"
-      iex> Excellent.Callbacks.word(%{}, "hello cow-boy", -1)
+      iex> Expression.Callbacks.word(%{}, "hello cow-boy", -1)
       "boy"
 
   """
@@ -892,9 +892,9 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.word_count(%{}, "hello cow-boy")
+      iex> Expression.Callbacks.word_count(%{}, "hello cow-boy")
       3
-      iex> Excellent.Callbacks.word_count(%{}, "hello cow-boy", true)
+      iex> Expression.Callbacks.word_count(%{}, "hello cow-boy", true)
       2
   """
   def word_count(ctx, binary, by_spaces \\ false)
@@ -916,13 +916,13 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.word_slice(%{}, "RapidPro expressions are fun", 2, 4)
+      iex> Expression.Callbacks.word_slice(%{}, "RapidPro expressions are fun", 2, 4)
       "expressions are"
-      iex> Excellent.Callbacks.word_slice(%{}, "RapidPro expressions are fun", 2)
+      iex> Expression.Callbacks.word_slice(%{}, "RapidPro expressions are fun", 2)
       "expressions are fun"
-      iex> Excellent.Callbacks.word_slice(%{}, "RapidPro expressions are fun", 1, -2)
+      iex> Expression.Callbacks.word_slice(%{}, "RapidPro expressions are fun", 1, -2)
       "RapidPro expressions"
-      iex> Excellent.Callbacks.word_slice(%{}, "RapidPro expressions are fun", -1)
+      iex> Expression.Callbacks.word_slice(%{}, "RapidPro expressions are fun", -1)
       "fun"
   """
   def word_slice(_ctx, binary, start) when start > 0 do
@@ -974,15 +974,15 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.isnumber(%{}, 1)
+      iex> Expression.Callbacks.isnumber(%{}, 1)
       true
-      iex> Excellent.Callbacks.isnumber(%{}, 1.0)
+      iex> Expression.Callbacks.isnumber(%{}, 1.0)
       true
-      iex> Excellent.Callbacks.isnumber(%{}, Decimal.new("1.0"))
+      iex> Expression.Callbacks.isnumber(%{}, Decimal.new("1.0"))
       true
-      iex> Excellent.Callbacks.isnumber(%{}, "1.0")
+      iex> Expression.Callbacks.isnumber(%{}, "1.0")
       true
-      iex> Excellent.Callbacks.isnumber(%{}, "a")
+      iex> Expression.Callbacks.isnumber(%{}, "a")
       false
 
   """
@@ -1009,17 +1009,17 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.isbool(%{}, true)
+      iex> Expression.Callbacks.isbool(%{}, true)
       true
-      iex> Excellent.Callbacks.isbool(%{}, false)
+      iex> Expression.Callbacks.isbool(%{}, false)
       true
-      iex> Excellent.Callbacks.isbool(%{}, 1)
+      iex> Expression.Callbacks.isbool(%{}, 1)
       false
-      iex> Excellent.Callbacks.isbool(%{}, 0)
+      iex> Expression.Callbacks.isbool(%{}, 0)
       false
-      iex> Excellent.Callbacks.isbool(%{}, "true")
+      iex> Expression.Callbacks.isbool(%{}, "true")
       false
-      iex> Excellent.Callbacks.isbool(%{}, "false")
+      iex> Expression.Callbacks.isbool(%{}, "false")
       false
   """
   def isbool(_ctx, var) when var in [true, false], do: true
@@ -1034,13 +1034,13 @@ defmodule Excellent.Callbacks do
 
   # Example
 
-      iex> Excellent.Callbacks.isstring(%{}, "hello")
+      iex> Expression.Callbacks.isstring(%{}, "hello")
       true
-      iex> Excellent.Callbacks.isstring(%{}, false)
+      iex> Expression.Callbacks.isstring(%{}, false)
       false
-      iex> Excellent.Callbacks.isstring(%{}, 1)
+      iex> Expression.Callbacks.isstring(%{}, 1)
       false
-      iex> Excellent.Callbacks.isstring(%{}, Decimal.new("1.0"))
+      iex> Expression.Callbacks.isstring(%{}, Decimal.new("1.0"))
       false
   """
   def isstring(_ctx, binary), do: is_binary(binary)

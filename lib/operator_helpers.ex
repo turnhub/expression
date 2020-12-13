@@ -1,4 +1,4 @@
-defmodule Excellent.OperatorHelpers do
+defmodule Expression.OperatorHelpers do
   import NimbleParsec
 
   def plus, do: ascii_char([?+]) |> replace(:+) |> label("+")

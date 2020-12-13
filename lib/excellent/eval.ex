@@ -1,8 +1,8 @@
-defmodule Excellent.Eval do
-  import Excellent.Ast, only: [fold_infixl: 1]
+defmodule Expression.Eval do
+  import Expression.Ast, only: [fold_infixl: 1]
 
   def evaluate(ast, context, mod) do
-    context = Excellent.Context.new(context)
+    context = Expression.Context.new(context)
 
     resp =
       ast

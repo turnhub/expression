@@ -1,4 +1,4 @@
-defmodule Excellent.BooleanHelpers do
+defmodule Expression.BooleanHelpers do
   import NimbleParsec
 
   def boolean_true do
