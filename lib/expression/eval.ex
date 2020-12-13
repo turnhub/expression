@@ -72,8 +72,6 @@ defmodule Expression.Eval do
   defp guard_nil!(nil, k), do: raise("variable #{k} undefined or null")
   defp guard_nil!(v, _), do: v
 
-  defp guard_type!(v, :bool) when is_boolean(v), do: v
-  defp guard_type!(v, :bool), do: raise("expression is not a boolean: `#{inspect(v)}`")
   defp guard_type!(v, :num) when is_number(v), do: v
   defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
 end
