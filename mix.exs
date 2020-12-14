@@ -10,7 +10,7 @@ defmodule Expression.MixProject do
       deps: deps(),
       package: package(),
       description: description(),
-      dialyzer: [ignore_warnings: ".dialyzer_ignore.exs"]
+      dialyzer: dialyzer()
     ]
   end
 
@@ -23,6 +23,14 @@ defmodule Expression.MixProject do
 
   defp description() do
     "A Excel like expression parser, compatible with FLOIP Expression language."
+  end
+
+  defp dialyzer() do
+    [
+      plt_core_path: "priv/plts",
+      plt_file: {:no_warn, "priv/plts/dialyzer.plt"},
+      ignore_warnings: ".dialyzer_ignore.exs"
+    ]
   end
 
   # Run "mix help compile.app" to learn about applications.
