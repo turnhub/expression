@@ -51,7 +51,6 @@ defmodule Expression.Callbacks do
   @spec handle(function_name :: binary, arguments :: [any], context :: map) ::
           {:ok, any} | {:error, :not_implemented}
   def handle(function_name, arguments, context) do
-    function_name = String.downcase(function_name)
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 

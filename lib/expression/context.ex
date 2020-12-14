@@ -8,7 +8,11 @@ defmodule Expression.Context do
 
     iex> Expression.Context.new(%{foo: "bar"})
     %{"foo" => "bar"}
+    iex> Expression.Context.new(%{FOO: "bar"})
+    %{"foo" => "bar"}
     iex> Expression.Context.new(%{foo: %{bar: "baz"}})
+    %{"foo" => %{"bar" => "baz"}}
+    iex> Expression.Context.new(%{Foo: %{Bar: "baz"}})
     %{"foo" => %{"bar" => "baz"}}
     iex> Expression.Context.new(%{foo: %{bar: 1}})
     %{"foo" => %{"bar" => 1}}
@@ -33,13 +37,13 @@ defmodule Expression.Context do
   @spec new(map) :: t
   def new(ctx) when is_map(ctx) do
     ctx
-    # Ensure all keys are strings
-    |> Enum.map(&string_key/1)
+    # Ensure all keys are lower case strings
+    |> Enum.map(&downcase_string_key/1)
     |> Enum.map(&iterate(&1))
     |> Enum.into(%{})
   end
 
-  defp string_key({key, value}), do: {to_string(key), value}
+  defp downcase_string_key({key, value}), do: {String.downcase(to_string(key)), value}
 
   defp iterate({key, value}) when is_map(value) or is_list(value) do
     {key, evaluate(value)}
