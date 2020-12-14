@@ -28,6 +28,9 @@ defmodule Expression.Context do
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
   """
+  @type t :: map
+
+  @spec new(map) :: t
   def new(ctx) when is_map(ctx) do
     ctx
     # Ensure all keys are strings

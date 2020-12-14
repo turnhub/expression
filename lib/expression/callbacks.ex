@@ -806,14 +806,17 @@ defmodule Expression.Callbacks do
       iex> Expression.Callbacks.percent(%{}, Decimal.new("0.2"))
       "20%"
   """
+  @spec percent(Expression.Context.t(), float) :: binary
   def percent(ctx, float) when is_float(float) do
     percent(ctx, Decimal.from_float(float))
   end
 
+  @spec percent(Expression.Context.t(), binary) :: binary
   def percent(ctx, binary) when is_binary(binary) do
     percent(ctx, Decimal.new(binary))
   end
 
+  @spec percent(Expression.Context.t(), Decimal.t()) :: binary
   def percent(_ctx, decimal) do
     Number.Percentage.number_to_percentage(Decimal.mult(decimal, 100), precision: 0)
   end

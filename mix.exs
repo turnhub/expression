@@ -9,7 +9,8 @@ defmodule Expression.MixProject do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      description: description()
+      description: description(),
+      dialyzer: [ignore_warnings: ".dialyzer_ignore.exs"]
     ]
   end
 
