@@ -41,6 +41,20 @@ defmodule ExpressionTest do
     end
   end
 
+  describe "case insensitive" do
+    test "variables" do
+      assert {:ok, [substitution: [variable: ["contact", "name"]]]} =
+               Expression.parse("@CONTACT.Name")
+    end
+
+    test "functions" do
+      assert {:ok, [substitution: [function: ["hour"]]]} = Expression.parse("@hour()")
+
+      assert {:ok, [substitution: [function: ["hour", {:arguments, [function: ["now"]]}]]]} =
+               Expression.parse("@hour(Now())")
+    end
+  end
+
   describe "templating" do
     test "substitution" do
       assert {:ok, [substitution: [variable: ["contact"]]]} = Expression.parse("@contact")
@@ -59,14 +73,14 @@ defmodule ExpressionTest do
 
   describe "functions" do
     test "without arguments" do
-      assert {:ok, [substitution: [function: ["HOUR"]]]} = Expression.parse("@HOUR()")
+      assert {:ok, [substitution: [function: ["hour"]]]} = Expression.parse("@HOUR()")
     end
 
     test "with a single argument" do
       assert {:ok,
               [
                 substitution: [
-                  function: ["HOUR", {:arguments, [variable: ["contact", "timestamp"]]}]
+                  function: ["hour", {:arguments, [variable: ["contact", "timestamp"]]}]
                 ]
               ]} = Expression.parse("@HOUR(contact.timestamp)")
     end
@@ -76,7 +90,7 @@ defmodule ExpressionTest do
               [
                 substitution: [
                   function: [
-                    "EDATE",
+                    "edate",
                     {:arguments,
                      [
                        {
@@ -96,7 +110,7 @@ defmodule ExpressionTest do
     test "with functions" do
       assert {:ok,
               [
-                substitution: [function: ["HOUR", {:arguments, [{:function, ["NOW"]}]}]]
+                substitution: [function: ["hour", {:arguments, [{:function, ["now"]}]}]]
               ]} = Expression.parse("@HOUR(NOW())")
     end
   end
@@ -239,7 +253,7 @@ defmodule ExpressionTest do
                 text: ["Dear "],
                 substitution: [
                   function: [
-                    "IF",
+                    "if",
                     {:arguments,
                      [
                        {

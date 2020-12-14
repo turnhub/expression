@@ -44,12 +44,14 @@ defmodule Expression.Ast do
   name =
     ascii_string([?a..?z, ?A..?Z], min: 1)
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
+    |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})
 
   defcombinator(
     :variable,
     name
     |> repeat(ignore(dot) |> concat(name))
+    |> map({String, :downcase, []})
     |> tag(:variable)
   )
 
