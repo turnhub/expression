@@ -185,7 +185,7 @@ defmodule ExpressionTest do
 
     test "escaping @s" do
       assert {:ok, "user@example.org"} = Expression.evaluate("user@@example.org")
-      assert {:ok, "user@example.org"} = Expression.evaluate(~s(@("user" & "@example.org"))
+      assert {:ok, "user@example.org"} = Expression.evaluate("@('user' & '@example.org')")
     end
 
     test "substitution" do
