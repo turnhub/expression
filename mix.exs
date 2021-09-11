@@ -5,7 +5,7 @@ defmodule Expression.MixProject do
     [
       app: :expression,
       version: "0.2.1",
-      elixir: "~> 1.10",
+      elixir: "~> 1.12",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
