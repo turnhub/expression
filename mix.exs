@@ -46,7 +46,6 @@ defmodule Expression.MixProject do
       {:nimble_parsec, "~> 1.1"},
       {:decimal, "~> 2.0"},
       {:date_time_parser, "~> 1.1.2"},
-      {:timex, "~> 3.6"},
       {:number, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
