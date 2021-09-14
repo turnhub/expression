@@ -1069,4 +1069,392 @@ defmodule Expression.Callbacks do
       false
   """
   def isstring(_ctx, binary), do: is_binary(binary)
+
+  defp search_words(haystack, words) do
+    patterns =
+      words
+      |> String.split(" ")
+      |> Enum.map(&Regex.escape/1)
+      |> Enum.map(&Regex.compile!(&1, "i"))
+
+    results =
+      patterns
+      |> Enum.map(&Regex.run(&1, haystack))
+      |> Enum.map(fn
+        [match] -> match
+        nil -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    {patterns, results}
+  end
+
+  @doc """
+  Tests whether all the words are contained in text
+
+  The words can be in any order and may appear more than once.
+
+  ```
+  @(has_all_words("the quick brown FOX", "the fox")) → true
+  @(has_all_words("the quick brown fox", "red fox")) → false
+  ```
+
+  NOTE: the flowspec supports `.match` which isn't support here yet.
+
+  ```
+  @(has_all_words("the quick brown FOX", "the fox").match) → the FOX
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_all_words(%{}, "the quick brown FOX", "the fox")
+    {:test_result, true, "the FOX"}
+    iex> Expression.Callbacks.has_all_words(%{}, "the quick brown FOX", "red fox")
+    {:test_result, false, "FOX"}
+
+  """
+  def has_all_words(_ctx, haystack, words) do
+    {patterns, results} = search_words(haystack, words)
+
+    {:test_result, Enum.count(patterns) == Enum.count(results), Enum.join(results, " ")}
+  end
+
+  @doc """
+  Tests whether any of the words are contained in the text
+
+  Only one of the words needs to match and it may appear more than once.
+
+  ```
+  @(has_any_word("The Quick Brown Fox", "fox quick")) → true
+  ```
+
+  Unsupported:
+
+  ```
+  @(has_any_word("The Quick Brown Fox", "fox quick").match) → Quick Fox
+  @(has_any_word("The Quick Brown Fox", "red fox").match) → Fox
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "fox quick")
+    {:test_result, true, "Fox Quick"}
+    iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "yellow")
+    {:test_result, false, ""}
+
+  """
+  def has_any_word(_ctx, haystack, words) do
+    {_patterns, results} = search_words(haystack, words)
+
+    {:test_result, Enum.any?(results), Enum.join(results, " ")}
+  end
+
+  @doc """
+  Tests whether text starts with beginning
+
+  Both text values are trimmed of surrounding whitespace, but otherwise matching is
+  strict without any tokenization.
+
+  Supported:
+
+  ```
+  @(has_beginning("The Quick Brown", "the quick")) → true
+  @(has_beginning("The Quick Brown", "the   quick")) → false
+  @(has_beginning("The Quick Brown", "quick brown")) → false
+  ```
+
+  Unsupported
+
+  ```
+  @(has_beginning("The Quick Brown", "the quick").match) → The Quick
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "the quick")
+    {:test_result, true, "The Quick"}
+    iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "the    quick")
+    {:test_result, false, nil}
+    iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "quick brown")
+    {:test_result, false, nil}
+
+  """
+  def has_beginning(_ctx, text, beginning) do
+    case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
+      [first | _remainder] -> {:test_result, true, first}
+      nil -> {:test_result, false, nil}
+    end
+  end
+
+  @date_patterns ~r/
+    (?P<iso_year>\d{4})[\-\/](?P<iso_month>\d{1,2})[\-\/](?P<iso_day>\d{1,2})       |
+    (?P<world_day>\d{1,2})[\-\/](?P<world_month>\d{1,2})[\-\/](?P<world_year>\d{4}) |
+    (?P<us_month>\d{1,2})[\-\/](?P<us_day>\d{1,2})[\-\/](?P<us_year>\d{4})
+  /xu
+
+  defp extract_dateish(expression) do
+    captures = Regex.named_captures(@date_patterns, expression)
+
+    if captures do
+      year_month_day =
+        case captures
+             |> Enum.filter(fn
+               {_key, ""} -> false
+               {_key, _value} -> true
+             end)
+             |> Enum.map(fn {key, value} -> {key, String.to_integer(value)} end)
+             |> Enum.into(%{}) do
+          %{"world_year" => year, "world_month" => month, "world_day" => day} ->
+            [year, month, day]
+
+          %{"iso_year" => year, "iso_month" => month, "iso_day" => day} ->
+            [year, month, day]
+
+          %{"us_year" => year, "us_month" => month, "us_day" => day} ->
+            [year, month, day]
+        end
+
+      apply(Date, :new!, year_month_day)
+    else
+      nil
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a date formatted according to our environment
+
+  This is very naively implemented with a regular expression.
+
+  Supported:
+
+  ```
+  @(has_date("the date is 15/01/2017")) → true
+  @(has_date("there is no date here, just a year 2017")) → false
+  ```
+
+  Unsupported:
+
+  ```
+  @(has_date("the date is 15/01/2017").match) → 2017-01-15T13:24:30.123456-05:00
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_date(%{}, "the date is 15/01/2017")
+    {:test_result, true, ~D[2017-01-15]}
+    iex> Expression.Callbacks.has_date(%{}, "there is no date here, just a year 2017")
+    {:test_result, false, nil}
+
+  """
+  def has_date(_, expression) do
+    date = extract_dateish(expression)
+    {:test_result, !!date, date}
+  end
+
+  @doc """
+  Tests whether `expression` is a date equal to `date_string`
+
+  Supported:
+
+  ```
+  @(has_date_eq("the date is 15/01/2017", "2017-01-15")) → true
+  @(has_date_eq("there is no date here, just a year 2017", "2017-06-01")) → false
+  @(has_date_eq("there is no date here, just a year 2017", "not date")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_date_eq("the date is 15/01/2017", "2017-01-15").match) → 2017-01-15T13:24:30.123456-05:00
+  @(has_date_eq("the date is 15/01/2017 15:00", "2017-01-15").match) → 2017-01-15T15:00:00.000000-05:00
+  ```
+
+  # Examples
+
+    iex> Expression.Callbacks.has_date_eq(%{}, "the date is 15/01/2017", "2017-01-15")
+    {:test_result, true, ~D[2017-01-15]}
+    iex> Expression.Callbacks.has_date_eq(%{}, "there is no date here, just a year 2017", "2017-01-15")
+    {:test_result, false, nil}
+  """
+  def has_date_eq(_ctx, expression, date_string) do
+    found_date = extract_dateish(expression)
+    test_date = extract_dateish(date_string)
+    {:test_result, found_date == test_date, found_date}
+  end
+
+  @doc """
+  Tests whether `expression` is a date after the date `date_string`
+
+  ```
+  @(has_date_gt("the date is 15/01/2017", "2017-01-01")) → true
+  @(has_date_gt("the date is 15/01/2017", "2017-01-01").match) → 2017-01-15T13:24:30.123456-05:00
+  @(has_date_gt("the date is 15/01/2017", "2017-03-15")) → false
+  @(has_date_gt("there is no date here, just a year 2017", "2017-06-01")) → false
+  @(has_date_gt("there is no date here, just a year 2017", "not date")) → ERROR
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_date_gt(%{}, "the date is 15/01/2017", "2017-01-01")
+    {:test_result, true, ~D[2017-01-15]}
+    iex> Expression.Callbacks.has_date_gt(%{}, "the date is 15/01/2017", "2017-03-15")
+    {:test_result, false, ~D[2017-01-15]}
+
+  """
+  def has_date_gt(_ctx, expression, date_string) do
+    found_date = extract_dateish(expression)
+    test_date = extract_dateish(date_string)
+    {:test_result, Date.compare(found_date, test_date) == :gt, found_date}
+  end
+
+  @doc """
+  Tests whether `expression` contains a date before the date `date_string`
+
+  ```
+  @(has_date_lt("the date is 15/01/2017", "2017-06-01")) → true
+  @(has_date_lt("the date is 15/01/2017", "2017-06-01").match) → 2017-01-15T13:24:30.123456-05:00
+  @(has_date_lt("there is no date here, just a year 2017", "2017-06-01")) → false
+  @(has_date_lt("there is no date here, just a year 2017", "not date")) → ERROR
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_date_lt(%{}, "the date is 15/01/2017", "2017-06-01")
+    {:test_result, true, ~D[2017-01-15]}
+    iex> Expression.Callbacks.has_date_lt(%{}, "the date is 15/01/2021", "2017-03-15")
+    {:test_result, false, ~D[2021-01-15]}
+
+  """
+  def has_date_lt(_ctx, expression, date_string) do
+    found_date = extract_dateish(expression)
+    test_date = extract_dateish(date_string)
+    {:test_result, Date.compare(found_date, test_date) == :lt, found_date}
+  end
+
+  @doc """
+  Tests whether an email is contained in text
+
+  ```
+  @(has_email("my email is foo1@bar.com, please respond")) → true
+  @(has_email("my email is foo1@bar.com, please respond").match) → foo1@bar.com
+  @(has_email("my email is <foo@bar2.com>").match) → foo@bar2.com
+  @(has_email("i'm not sharing my email")) → false
+  ```
+
+  # Example:
+
+    iex> Expression.Callbacks.has_email(%{}, "my email is foo1@bar.com, please respond")
+    {:test_result, true, "foo1@bar.com"}
+    iex> Expression.Callbacks.has_email(%{}, "i'm not sharing my email")
+    {:test_result, false, nil}
+
+  """
+  def has_email(_ctx, expression) do
+    case Regex.run(~r/([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/, expression) do
+      [match | _] -> {:test_result, true, match}
+      nil -> {:test_result, false, nil}
+    end
+  end
+
+  @doc """
+  Returns whether the contact is part of group with the passed in UUID
+
+  ```
+  @(has_group(contact.groups, "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d").match) → {name: Testers, uuid: b7cf0d83-f1c9-411c-96fd-c511a4cfa86d}
+  @(has_group(array(), "97fe7029-3a15-4005-b0c7-277b884fc1d5")) → false
+  ```
+
+  # Example:
+
+    iex> contact = %{
+    ...>   "groups" => [%{
+    ...>     "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
+    ...>   }]
+    ...> }
+    iex> Expression.Callbacks.has_group(%{}, contact["groups"], "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d")
+    {:test_result, true, %{"uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"}}
+    iex> Expression.Callbacks.has_group(%{}, contact["groups"], "00000000-0000-0000-0000-000000000000")
+    {:test_result, false, nil}
+
+  """
+  def has_group(_ctx, groups, uuid) do
+    group = Enum.find(groups, nil, &(&1["uuid"] == uuid))
+    {:test_result, !!group, group}
+  end
+
+  defp extract_numberish(expression) do
+    with [match] <-
+           Regex.run(~r/([0-9]+\.?[0-9]+)/u, replace_arabic_numerals(expression), capture: :first),
+         {decimal, ""} <- Decimal.parse(match) do
+      decimal
+    else
+      nil -> {:test_result, false, nil}
+    end
+  end
+
+  defp replace_arabic_numerals(expression) do
+    replace_numerals(expression, %{
+      "٠" => "0",
+      "١" => "1",
+      "٢" => "2",
+      "٣" => "3",
+      "٤" => "4",
+      "٥" => "5",
+      "٦" => "6",
+      "٧" => "7",
+      "٨" => "8",
+      "٩" => "9"
+    })
+  end
+
+  defp replace_numerals(expression, mapping) do
+    mapping
+    |> Enum.reduce(expression, fn {rune, replacement}, expression ->
+      String.replace(expression, rune, replacement)
+    end)
+  end
+
+  @doc """
+  Tests whether `expression` contains a number
+
+  ```
+  @(has_number("the number is 42")) → true
+  @(has_number("the number is 42").match) → 42
+  @(has_number("العدد ٤٢").match) → 42
+  @(has_number("the number is forty two")) → false
+  ```
+
+  # Example
+
+    iex> {:test_result, true, d} = Expression.Callbacks.has_number(%{}, "the number is 42 and 5")
+    iex> d
+    #Decimal<42>
+    iex> {:test_result, true, d} = Expression.Callbacks.has_number(%{}, "العدد ٤٢")
+    iex> d
+    #Decimal<42>
+    iex> {:test_result, true, d} = Expression.Callbacks.has_number(%{}, "٠.٥")
+    iex> d
+    #Decimal<0.5>
+    iex> {:test_result, true, d} = Expression.Callbacks.has_number(%{}, "0.6")
+    iex> d
+    #Decimal<0.6>
+
+  """
+  def has_number(_ctx, expression) do
+    number = extract_numberish(expression)
+    {:test_result, !!number, number}
+  end
+
+  # has_number_eq
+  # has_number_gt
+  # has_number_gte
+  # has_number_lt
+  # has_number_lte
+  # has_only_phrase
+  # has_only_text
+  # has_pattern
+  # has_phone
+  # has_phrase
+  # has_text
+  # has_time
 end
