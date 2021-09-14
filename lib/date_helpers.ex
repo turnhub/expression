@@ -115,13 +115,4 @@ defmodule Expression.DateHelpers do
 
     struct(DateTime, fields)
   end
-
-  # defcombinator(
-  #   :text,
-  #   empty()
-  #   |> utf8_string([], 1)
-  #   |> times(min: 1)
-  #   |> reduce({Enum, :join, []})
-  #   |> tag(:text)
-  # )
 end
