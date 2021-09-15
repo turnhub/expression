@@ -2,11 +2,18 @@ defmodule Expression.DateHelpers do
   @moduledoc false
   import NimbleParsec
 
+  def date_separator do
+    choice([
+      string("-"),
+      string("/")
+    ])
+  end
+
   def us_date do
     integer(2)
-    |> ignore(string("-"))
+    |> ignore(date_separator())
     |> integer(2)
-    |> ignore(string("-"))
+    |> ignore(date_separator())
     |> integer(4)
   end
 
@@ -26,9 +33,9 @@ defmodule Expression.DateHelpers do
 
   def iso_date do
     integer(4)
-    |> ignore(string("-"))
+    |> ignore(date_separator())
     |> integer(2)
-    |> ignore(string("-"))
+    |> ignore(date_separator())
     |> integer(2)
   end
 
@@ -52,6 +59,14 @@ defmodule Expression.DateHelpers do
     iso_date()
     |> ignore(string("T"))
     |> concat(iso_time())
+  end
+
+  def date do
+    choice([
+      tag(us_date(), :us_format),
+      tag(iso_date(), :iso_format)
+    ])
+    |> reduce(:to_date)
   end
 
   def datetime do

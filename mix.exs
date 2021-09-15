@@ -5,7 +5,7 @@ defmodule Expression.MixProject do
     [
       app: :expression,
       version: "0.2.1",
-      elixir: "~> 1.12",
+      elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
@@ -45,10 +45,11 @@ defmodule Expression.MixProject do
     [
       {:nimble_parsec, "~> 1.1"},
       {:decimal, "~> 2.0"},
-      {:timex, "~> 3.6"},
+      {:date_time_parser, "~> 1.1.2"},
       {:number, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
+      {:ex_phone_number, "~> 0.2.1"},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
     ]

@@ -1069,4 +1069,840 @@ defmodule Expression.Callbacks do
       false
   """
   def isstring(_ctx, binary), do: is_binary(binary)
+
+  defp search_words(haystack, words) do
+    patterns =
+      words
+      |> String.split(" ")
+      |> Enum.map(&Regex.escape/1)
+      |> Enum.map(&Regex.compile!(&1, "i"))
+
+    results =
+      patterns
+      |> Enum.map(&Regex.run(&1, haystack))
+      |> Enum.map(fn
+        [match] -> match
+        nil -> nil
+      end)
+      |> Enum.reject(&is_nil/1)
+
+    {patterns, results}
+  end
+
+  @doc """
+  Tests whether all the words are contained in text
+
+  The words can be in any order and may appear more than once.
+
+  ```
+  @(has_all_words("the quick brown FOX", "the fox")) → true
+  @(has_all_words("the quick brown fox", "red fox")) → false
+  ```
+
+  NOTE: the flowspec supports `.match` which isn't support here yet.
+
+  ```
+  @(has_all_words("the quick brown FOX", "the fox").match) → the FOX
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_all_words(%{}, "the quick brown FOX", "the fox")
+    {:ok, true}
+    iex> Expression.Callbacks.has_all_words(%{}, "the quick brown FOX", "red fox")
+    {:ok, false}
+
+  """
+  def has_all_words(_ctx, haystack, words) do
+    {patterns, results} = search_words(haystack, words)
+    # future match result: Enum.join(results, " ")
+    {:ok, Enum.count(patterns) == Enum.count(results)}
+  end
+
+  @doc """
+  Tests whether any of the words are contained in the text
+
+  Only one of the words needs to match and it may appear more than once.
+
+  ```
+  @(has_any_word("The Quick Brown Fox", "fox quick")) → true
+  ```
+
+  Unsupported:
+
+  ```
+  @(has_any_word("The Quick Brown Fox", "fox quick").match) → Quick Fox
+  @(has_any_word("The Quick Brown Fox", "red fox").match) → Fox
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "fox quick")
+    {:ok, true}
+    iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "yellow")
+    {:ok, false}
+
+  """
+  def has_any_word(_ctx, haystack, words) do
+    {_patterns, results} = search_words(haystack, words)
+
+    # future match result Enum.join(results, " ")
+    {:ok, Enum.any?(results)}
+  end
+
+  @doc """
+  Tests whether text starts with beginning
+
+  Both text values are trimmed of surrounding whitespace, but otherwise matching is
+  strict without any tokenization.
+
+  Supported:
+
+  ```
+  @(has_beginning("The Quick Brown", "the quick")) → true
+  @(has_beginning("The Quick Brown", "the   quick")) → false
+  @(has_beginning("The Quick Brown", "quick brown")) → false
+  ```
+
+  Unsupported
+
+  ```
+  @(has_beginning("The Quick Brown", "the quick").match) → The Quick
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "the quick")
+    {:ok, true}
+    iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "the    quick")
+    {:ok, false}
+    iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "quick brown")
+    {:ok, false}
+
+  """
+  def has_beginning(_ctx, text, beginning) do
+    case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
+      # future match result: first
+      [_first | _remainder] -> {:ok, true}
+      nil -> {:ok, false}
+    end
+  end
+
+  defp extract_dateish(expression) do
+    expression = Regex.replace(~r/[a-z]/u, expression, "")
+
+    case DateTimeParser.parse_date(expression) do
+      {:ok, date} -> date
+      {:error, _} -> nil
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a date formatted according to our environment
+
+  This is very naively implemented with a regular expression.
+
+  Supported:
+
+  ```
+  @(has_date("the date is 15/01/2017")) → true
+  @(has_date("there is no date here, just a year 2017")) → false
+  ```
+
+  Unsupported:
+
+  ```
+  @(has_date("the date is 15/01/2017").match) → 2017-01-15T13:24:30.123456-05:00
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_date(%{}, "the date is 15/01/2017")
+    {:ok, true}
+    iex> Expression.Callbacks.has_date(%{}, "there is no date here, just a year 2017")
+    {:ok, false}
+
+  """
+  def has_date(_, expression) do
+    date = extract_dateish(expression)
+    # future match result: date
+    {:ok, !!date}
+  end
+
+  @doc """
+  Tests whether `expression` is a date equal to `date_string`
+
+  Supported:
+
+  ```
+  @(has_date_eq("the date is 15/01/2017", "2017-01-15")) → true
+  @(has_date_eq("there is no date here, just a year 2017", "2017-06-01")) → false
+  @(has_date_eq("there is no date here, just a year 2017", "not date")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_date_eq("the date is 15/01/2017", "2017-01-15").match) → 2017-01-15T13:24:30.123456-05:00
+  @(has_date_eq("the date is 15/01/2017 15:00", "2017-01-15").match) → 2017-01-15T15:00:00.000000-05:00
+  ```
+
+  # Examples
+
+    iex> Expression.Callbacks.has_date_eq(%{}, "the date is 15/01/2017", "2017-01-15")
+    {:ok, true}
+    iex> Expression.Callbacks.has_date_eq(%{}, "there is no date here, just a year 2017", "2017-01-15")
+    {:ok, false}
+  """
+  def has_date_eq(_ctx, expression, date_string) do
+    found_date = extract_dateish(expression)
+    test_date = extract_dateish(date_string)
+    # Future match result: found_date
+    {:ok, found_date == test_date}
+  end
+
+  @doc """
+  Tests whether `expression` is a date after the date `date_string`
+
+  ```
+  @(has_date_gt("the date is 15/01/2017", "2017-01-01")) → true
+  @(has_date_gt("the date is 15/01/2017", "2017-03-15")) → false
+  @(has_date_gt("there is no date here, just a year 2017", "2017-06-01")) → false
+  @(has_date_gt("there is no date here, just a year 2017", "not date")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_date_gt("the date is 15/01/2017", "2017-01-01").match) → 2017-01-15T13:24:30.123456-05:00
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_date_gt(%{}, "the date is 15/01/2017", "2017-01-01")
+    {:ok, true}
+    iex> Expression.Callbacks.has_date_gt(%{}, "the date is 15/01/2017", "2017-03-15")
+    {:ok, false}
+
+  """
+  def has_date_gt(_ctx, expression, date_string) do
+    found_date = extract_dateish(expression)
+    test_date = extract_dateish(date_string)
+    # future match result: found_date
+    {:ok, Date.compare(found_date, test_date) == :gt}
+  end
+
+  @doc """
+  Tests whether `expression` contains a date before the date `date_string`
+
+  ```
+  @(has_date_lt("the date is 15/01/2017", "2017-06-01")) → true
+  @(has_date_lt("there is no date here, just a year 2017", "2017-06-01")) → false
+  @(has_date_lt("there is no date here, just a year 2017", "not date")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_date_lt("the date is 15/01/2017", "2017-06-01").match) → 2017-01-15T13:24:30.123456-05:00
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_date_lt(%{}, "the date is 15/01/2017", "2017-06-01")
+    {:ok, true}
+    iex> Expression.Callbacks.has_date_lt(%{}, "the date is 15/01/2021", "2017-03-15")
+    {:ok, false}
+
+  """
+  def has_date_lt(_ctx, expression, date_string) do
+    found_date = extract_dateish(expression)
+    test_date = extract_dateish(date_string)
+    # future match result: found_date
+    {:ok, Date.compare(found_date, test_date) == :lt}
+  end
+
+  @doc """
+  Tests whether an email is contained in text
+
+  ```
+  @(has_email("my email is foo1@bar.com, please respond")) → true
+  @(has_email("i'm not sharing my email")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_email("my email is foo1@bar.com, please respond").match) → foo1@bar.com
+  @(has_email("my email is <foo@bar2.com>").match) → foo@bar2.com
+  ```
+
+  # Example:
+
+    iex> Expression.Callbacks.has_email(%{}, "my email is foo1@bar.com, please respond")
+    {:ok, true}
+    iex> Expression.Callbacks.has_email(%{}, "i'm not sharing my email")
+    {:ok, false}
+
+  """
+  def has_email(_ctx, expression) do
+    case Regex.run(~r/([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/, expression) do
+      # future match result: match
+      [_match | _] -> {:ok, true}
+      nil -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Returns whether the contact is part of group with the passed in UUID
+
+  ```
+  @(has_group(array(), "97fe7029-3a15-4005-b0c7-277b884fc1d5")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_group(contact.groups, "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d").match) → {name: Testers, uuid: b7cf0d83-f1c9-411c-96fd-c511a4cfa86d}
+  ```
+
+  # Example:
+
+    iex> contact = %{
+    ...>   "groups" => [%{
+    ...>     "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
+    ...>   }]
+    ...> }
+    iex> Expression.Callbacks.has_group(%{}, contact["groups"], "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d")
+    {:ok, true}
+    iex> Expression.Callbacks.has_group(%{}, contact["groups"], "00000000-0000-0000-0000-000000000000")
+    {:ok, false}
+
+  """
+  def has_group(_ctx, groups, uuid) do
+    group = Enum.find(groups, nil, &(&1["uuid"] == uuid))
+    # future match result: group
+    {:ok, !!group}
+  end
+
+  defp extract_numberish(expression) do
+    with [match] <-
+           Regex.run(~r/([0-9]+\.?[0-9]+)/u, replace_arabic_numerals(expression), capture: :first),
+         {decimal, ""} <- Decimal.parse(match) do
+      decimal
+    else
+      # Regex can return nil
+      nil -> nil
+      # Decimal parsing can return :error
+      :error -> nil
+    end
+  end
+
+  defp replace_arabic_numerals(expression) do
+    replace_numerals(expression, %{
+      "٠" => "0",
+      "١" => "1",
+      "٢" => "2",
+      "٣" => "3",
+      "٤" => "4",
+      "٥" => "5",
+      "٦" => "6",
+      "٧" => "7",
+      "٨" => "8",
+      "٩" => "9"
+    })
+  end
+
+  defp replace_numerals(expression, mapping) do
+    mapping
+    |> Enum.reduce(expression, fn {rune, replacement}, expression ->
+      String.replace(expression, rune, replacement)
+    end)
+  end
+
+  defp parse_decimal(float) when is_float(float), do: Decimal.from_float(float)
+
+  defp parse_decimal(number) when is_number(number), do: Decimal.new(number)
+
+  defp parse_decimal(binary) when is_binary(binary) do
+    case Decimal.parse(binary) do
+      {decimal, ""} -> decimal
+      :error -> :error
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a number
+
+  ```
+  @(has_number("the number is 42")) → true
+  @(has_number("the number is forty two")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_number("the number is 42").match) → 42
+  @(has_number("العدد ٤٢").match) → 42
+  ```
+
+  # Example
+
+    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "the number is 42 and 5")
+    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "العدد ٤٢")
+    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "٠.٥")
+    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "0.6")
+
+  """
+  def has_number(_ctx, expression) do
+    number = extract_numberish(expression)
+    # future match result: number
+    {:ok, !!number}
+  end
+
+  @doc """
+  Tests whether `expression` contains a number equal to the value
+
+  ```
+  @(has_number_eq("the number is 42", 42)) → true
+  @(has_number_eq("the number is 42", 40)) → false
+  @(has_number_eq("the number is not there", 40)) → false
+  @(has_number_eq("the number is not there", "foo")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_number_eq("the number is 42", 42).match) → 42
+  ```
+
+  # Example
+
+    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42", 42)
+    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42", 42.0)
+    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42", "42")
+    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42.0", "42")
+    iex> {:ok, false} = Expression.Callbacks.has_number_eq(%{}, "the number is 40", "42")
+    iex> {:ok, false} = Expression.Callbacks.has_number_eq(%{}, "the number is 40", "foo")
+    iex> {:ok, false} = Expression.Callbacks.has_number_eq(%{}, "four hundred", "foo")
+
+  """
+  def has_number_eq(_ctx, expression, decimal) do
+    with %Decimal{} = number <- extract_numberish(expression),
+         %Decimal{} = decimal <- parse_decimal(decimal) do
+      # Future match result: number
+      {:ok, Decimal.eq?(number, decimal)}
+    else
+      nil -> {:ok, false}
+      :error -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a number greater than min
+
+  ```
+  @(has_number_gt("the number is 42", 40)) → true
+  @(has_number_gt("the number is 42", 42)) → false
+  @(has_number_gt("the number is not there", 40)) → false
+  @(has_number_gt("the number is not there", "foo")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_number_gt("the number is 42", 40).match) → 42
+  ```
+
+  # Example
+
+    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42", 40)
+    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42", 40.0)
+    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42", "40")
+    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42.0", "40")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gt(%{}, "the number is 40", "40")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gt(%{}, "the number is 40", "foo")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gt(%{}, "four hundred", "foo")
+  """
+  def has_number_gt(_ctx, expression, decimal) do
+    with %Decimal{} = number <- extract_numberish(expression),
+         %Decimal{} = decimal <- parse_decimal(decimal) do
+      # Future match result: number
+      {:ok, Decimal.gt?(number, decimal)}
+    else
+      nil -> {:ok, false}
+      :error -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a number greater than or equal to min
+
+  ```
+  @(has_number_gte("the number is 42", 42)) → true
+  @(has_number_gte("the number is 42", 45)) → false
+  @(has_number_gte("the number is not there", 40)) → false
+  @(has_number_gte("the number is not there", "foo")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_number_gte("the number is 42", 42).match) → 42
+  ```
+
+  # Example
+
+    iex> {:ok, true} = Expression.Callbacks.has_number_gte(%{}, "the number is 42", 42)
+    iex> {:ok, true} = Expression.Callbacks.has_number_gte(%{}, "the number is 42", 42.0)
+    iex> {:ok, true} = Expression.Callbacks.has_number_gte(%{}, "the number is 42", "42")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "the number is 42.0", "45")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "the number is 40", "45")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "the number is 40", "foo")
+    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "four hundred", "foo")
+  """
+  def has_number_gte(_ctx, expression, decimal) do
+    with %Decimal{} = number <- extract_numberish(expression),
+         %Decimal{} = decimal <- parse_decimal(decimal) do
+      # Future match result: number
+      {:ok, Decimal.gt?(number, decimal) || Decimal.eq?(number, decimal)}
+    else
+      nil -> {:ok, false}
+      :error -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a number less than max
+
+  ```
+  @(has_number_lt("the number is 42", 44)) → true
+  @(has_number_lt("the number is 42", 40)) → false
+  @(has_number_lt("the number is not there", 40)) → false
+  @(has_number_lt("the number is not there", "foo")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_number_lt("the number is 42", 44).match) → 42
+  ```
+
+  # Example
+
+    iex> {:ok, true} = Expression.Callbacks.has_number_lt(%{}, "the number is 42", 44)
+    iex> {:ok, true} = Expression.Callbacks.has_number_lt(%{}, "the number is 42", 44.0)
+    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 42", "40")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 42.0", "40")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 40", "40")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 40", "foo")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "four hundred", "foo")
+  """
+  def has_number_lt(_ctx, expression, decimal) do
+    with %Decimal{} = number <- extract_numberish(expression),
+         %Decimal{} = decimal <- parse_decimal(decimal) do
+      # Future match result: number
+      {:ok, Decimal.lt?(number, decimal)}
+    else
+      nil -> {:ok, false}
+      :error -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a number less than or equal to max
+
+  ```
+  @(has_number_lte("the number is 42", 42)) → true
+  @(has_number_lte("the number is 42", 40)) → false
+  @(has_number_lte("the number is not there", 40)) → false
+  @(has_number_lte("the number is not there", "foo")) → ERROR
+  ```
+
+  Not supported:
+
+  ```
+  @(has_number_lte("the number is 42", 42).match) → 42
+  ```
+
+  # Example
+
+    iex> {:ok, true} = Expression.Callbacks.has_number_lte(%{}, "the number is 42", 42)
+    iex> {:ok, true} = Expression.Callbacks.has_number_lte(%{}, "the number is 42", 42.0)
+    iex> {:ok, true} = Expression.Callbacks.has_number_lte(%{}, "the number is 42", "42")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lte(%{}, "the number is 42.0", "40")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lte(%{}, "the number is 40", "foo")
+    iex> {:ok, false} = Expression.Callbacks.has_number_lte(%{}, "four hundred", "foo")
+
+  """
+  def has_number_lte(_ctx, expression, decimal) do
+    with %Decimal{} = number <- extract_numberish(expression),
+         %Decimal{} = decimal <- parse_decimal(decimal) do
+      # Future match result: number
+      {:ok, Decimal.lt?(number, decimal) || Decimal.eq?(number, decimal)}
+    else
+      nil -> {:ok, false}
+      :error -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether the text contains only phrase
+
+  The phrase must be the only text in the text to match
+
+  ```
+  @(has_only_phrase("Quick Brown", "quick brown")) → true
+  @(has_only_phrase("The Quick Brown Fox", "quick brown")) → false
+  @(has_only_phrase("the Quick Brown fox", "")) → false
+  @(has_only_phrase("", "").match) →
+  @(has_only_phrase("The Quick Brown Fox", "red fox")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_only_phrase("Quick Brown", "quick brown").match) → Quick Brown
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_only_phrase(%{}, "Quick Brown", "quick brown")
+    {:ok, true}
+    iex> Expression.Callbacks.has_only_phrase(%{}, "", "")
+    {:ok, true}
+    iex> Expression.Callbacks.has_only_phrase(%{}, "The Quick Brown Fox", "quick brown")
+    {:ok, false}
+
+  """
+  def has_only_phrase(_ctx, expression, phrase) do
+    case Enum.map([expression, phrase], &String.downcase/1) do
+      # Future match result: expression
+      [same, same] -> {:ok, true}
+      _anything_else -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Returns whether two text values are equal (case sensitive). In the case that they are, it will return the text as the match.
+
+  ```
+  @(has_only_text("foo", "foo")) → true
+  @(has_only_text("foo", "FOO")) → false
+  @(has_only_text("foo", "bar")) → false
+  @(has_only_text("foo", " foo ")) → false
+  @(has_only_text(results.webhook.category, "Failure")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_only_text("foo", "foo").match) → foo
+  @(has_only_text(run.status, "completed").match) → completed
+  @(has_only_text(results.webhook.category, "Success").match) → Success
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_only_text(%{}, "foo", "foo")
+    {:ok, true}
+    iex> Expression.Callbacks.has_only_text(%{}, "", "")
+    {:ok, true}
+    iex> Expression.Callbacks.has_only_text(%{}, "foo", "FOO")
+    {:ok, false}
+
+  """
+  def has_only_text(_ctx, expression, expression) when is_binary(expression),
+    # future match result: expression
+    do: {:ok, true}
+
+  def has_only_text(_ctx, _expression, _something_else),
+    # Future match result: expression
+    do: {:ok, false}
+
+  @doc """
+  Tests whether `expression` matches the regex pattern
+
+  Both text values are trimmed of surrounding whitespace and matching is case-insensitive.
+
+  ```
+  @(has_pattern("Buy cheese please", "buy (\w+)")) → true
+  @(has_pattern("Sell cheese please", "buy (\w+)")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_pattern("Buy cheese please", "buy (\w+)").match) → Buy cheese
+  @(has_pattern("Buy cheese please", "buy (\w+)").extra) → {0: Buy cheese, 1: cheese}
+  ```
+
+  # Examples
+
+    iex> Expression.Callbacks.has_pattern(%{}, "Buy cheese please", "buy (\\\\w+)")
+    {:ok, true}
+    iex> Expression.Callbacks.has_pattern(%{}, "Sell cheese please", "buy (\\\\w+)")
+    {:ok, false}
+
+  """
+  def has_pattern(_ctx, expression, pattern) do
+    with {:ok, regex} <- Regex.compile(String.trim(pattern), "i"),
+         [[_first | _remainder]] <- Regex.scan(regex, String.trim(expression), capture: :all) do
+      # Future match result: first
+      {:ok, true}
+    else
+      _ -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether `expresssion` contains a phone number.
+  The optional country_code argument specifies the country to use for parsing.
+
+  ```
+  @(has_phone("my number is +12067799294 thanks")) → true
+  @(has_phone("my number is none of your business", "US")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_phone("my number is +12067799294").match) → +12067799294
+  @(has_phone("my number is 2067799294", "US").match) → +12067799294
+  @(has_phone("my number is 206 779 9294", "US").match) → +12067799294
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.has_phone(%{}, "my number is +12067799294 thanks")
+    {:ok, true}
+    iex> Expression.Callbacks.has_phone(%{}, "my number is 2067799294 thanks", "US")
+    {:ok, true}
+    iex> Expression.Callbacks.has_phone(%{}, "my number is 206 779 9294 thanks", "US")
+    {:ok, true}
+    iex> Expression.Callbacks.has_phone(%{}, "my number is none of your business", "US")
+    {:ok, false}
+
+  """
+  def has_phone(%{}, expression, country_code \\ "") do
+    letters_removed = Regex.replace(~r/[a-z]/i, expression, "")
+
+    case ExPhoneNumber.parse(letters_removed, country_code) do
+      # Future match result: ExPhoneNumber.format(pn, :es164)
+      {:ok, _pn} -> {:ok, true}
+      _ -> {:ok, false}
+    end
+  end
+
+  @doc """
+  Tests whether phrase is contained in `expression`
+
+  The words in the test phrase must appear in the same order with no other words in between.
+
+  ```
+  @(has_phrase("the quick brown fox", "brown fox")) → true
+  @(has_phrase("the Quick Brown fox", "quick fox")) → false
+  @(has_phrase("the Quick Brown fox", "").match) →
+  ```
+
+  Not supported:
+
+  ```
+  @(has_phrase("the quick brown fox", "brown fox").match) → brown fox
+  ```
+
+  # Examples
+
+    iex> Expression.Callbacks.has_phrase(%{}, "the quick brown fox", "brown fox")
+    {:ok, true}
+    iex> Expression.Callbacks.has_phrase(%{}, "the quick brown fox", "quick fox")
+    {:ok, false}
+    iex> Expression.Callbacks.has_phrase(%{}, "the quick brown fox", "")
+    {:ok, true}
+
+  """
+  def has_phrase(_ctx, expression, phrase) do
+    lower_expression = String.downcase(expression)
+    lower_phrase = String.downcase(phrase)
+    found? = String.contains?(lower_expression, lower_phrase)
+    # Future match result: phrase
+    {:ok, found?}
+  end
+
+  @doc """
+  Tests whether there the `expression` has any characters in it
+
+  ```
+  @(has_text("quick brown")) → true
+  @(has_text("")) → false
+  @(has_text(" \n")) → false
+  @(has_text(contact.fields.not_set)) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_text("quick brown").match) → quick brown
+  @(has_text(123).match) → 123
+  ```
+
+  # Examples
+
+    iex> Expression.Callbacks.has_text(%{}, "quick brown")
+    {:ok, true}
+    iex> Expression.Callbacks.has_text(%{}, "")
+    {:ok, false}
+    iex> Expression.Callbacks.has_text(%{}, " \\n")
+    {:ok, false}
+    iex> Expression.Callbacks.has_text(%{}, 123)
+    {:ok, true}
+    iex> Expression.Callbacks.has_text(%{}, nil)
+    {:ok, false}
+  """
+  def has_text(ctx, expression) when not is_binary(expression),
+    do: has_text(ctx, to_string(expression))
+
+  def has_text(_ctx, expression) when is_binary(expression) do
+    case String.trim(expression) do
+      "" -> {:ok, false}
+      # Future match result: any_other_binary
+      _any_other_binary -> {:ok, true}
+    end
+  end
+
+  @doc """
+  Tests whether `expression` contains a time.
+
+  ```
+  @(has_time("the time is 10:30")) → true
+  @(has_time("the time is 10:30:45").match) → 10:30:45.000000
+  @(has_time("there is no time here, just the number 25")) → false
+  ```
+
+  Not supported:
+
+  ```
+  @(has_time("the time is 10:30").match) → 10:30:00.000000
+  @(has_time("the time is 10 PM").match) → 22:00:00.000000
+  ```
+
+  # Examples
+
+    iex> Expression.Callbacks.has_time(%{}, "the time is 10:30")
+    {:ok, true}
+    iex> Expression.Callbacks.has_time(%{}, "the time is 10:00 pm")
+    {:ok, true}
+    iex> Expression.Callbacks.has_time(%{}, "the time is 10:30:45")
+    {:ok, true}
+    iex> Expression.Callbacks.has_time(%{}, "there is no time here, just the number 25")
+    {:ok, false}
+
+  """
+  def has_time(_ctx, expression) do
+    case DateTimeParser.parse_time(expression) do
+      # Future match result: time
+      {:ok, _time} -> {:ok, true}
+      _ -> {:ok, false}
+    end
+  end
 end
