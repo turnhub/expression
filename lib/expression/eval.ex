@@ -5,6 +5,12 @@ defmodule Expression.Eval do
   import Expression.Ast, only: [fold_infixl: 1]
 
   def evaluate(ast, context, mod) do
+    {:ok, evaluate!(ast, context, mod)}
+  rescue
+    error in RuntimeError -> {:error, error.message}
+  end
+
+  def evaluate!(ast, context, mod) do
     context = Expression.Context.new(context)
 
     resp =
@@ -22,14 +28,13 @@ defmodule Expression.Eval do
 
     case resp do
       [value] ->
-        {:ok, value}
+        value
 
       values ->
-        {:ok,
-         values
-         |> Enum.map(&to_string/1)
-         |> Enum.reverse()
-         |> Enum.join()}
+        values
+        |> Enum.map(&to_string/1)
+        |> Enum.reverse()
+        |> Enum.join()
     end
   end
 
