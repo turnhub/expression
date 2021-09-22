@@ -279,5 +279,16 @@ defmodule ExpressionTest do
 
       assert {:ok, 2} == Expression.evaluate_block("1 + 1")
     end
+
+    test "return an error tuple" do
+      assert {:error, "expression is not a number: `\"not a number\"`"} =
+               Expression.evaluate_block("block.value > 0", %{block: %{value: "not a number"}})
+    end
+
+    test "throw an error" do
+      assert_raise RuntimeError, "expression is not a number: `\"not a number\"`", fn ->
+        Expression.evaluate_block!("block.value > 0", %{block: %{value: "not a number"}})
+      end
+    end
   end
 end

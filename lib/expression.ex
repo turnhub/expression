@@ -70,6 +70,18 @@ defmodule Expression do
     end
   end
 
+  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.Callbacks)
+
+  def evaluate_block!(expression, context, mod) do
+    with {:ok, ast} <- parse_expression(expression),
+         result <- Eval.evaluate!([substitution: ast], context, mod) do
+      result
+    else
+      {:error, ast_error} ->
+        raise ast_error
+    end
+  end
+
   def parse(text) do
     case Ast.parse(text) do
       {:ok, ast, "", _, _, _} ->
