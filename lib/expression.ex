@@ -76,6 +76,9 @@ defmodule Expression do
     with {:ok, ast} <- parse_expression(expression),
          result <- Eval.evaluate!([substitution: ast], context, mod) do
       result
+    else
+      {:error, ast_error} ->
+        raise ast_error
     end
   end
 
