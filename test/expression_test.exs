@@ -4,7 +4,7 @@ defmodule ExpressionTest do
 
   describe "types" do
     test "text" do
-      assert {:ok, [text: ["hello"]]} = Expression.parse("hello")
+      assert {:ok, [text: "hello"]} = Expression.parse("hello")
     end
 
     test "decimal" do
@@ -250,7 +250,7 @@ defmodule ExpressionTest do
     test "function calls with expressions" do
       assert {:ok,
               [
-                text: ["Dear "],
+                text: "Dear ",
                 substitution: [
                   function: [
                     "if",

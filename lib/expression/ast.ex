@@ -179,7 +179,7 @@ defmodule Expression.Ast do
     |> utf8_string([], 1)
     |> times(min: 1)
     |> reduce({Enum, :join, []})
-    |> tag(:text)
+    |> unwrap_and_tag(:text)
   )
 
   defcombinator(
