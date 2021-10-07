@@ -1,5 +1,5 @@
 defmodule ExpressionTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Expression
 
   describe "types" do
@@ -116,6 +116,15 @@ defmodule ExpressionTest do
   end
 
   describe "logic" do
+    test "lte" do
+      assert {
+               :ok,
+               [
+                 {:substitution, [block: [<=: [variable: ["block", "value"], literal: 30]]]}
+               ]
+             } == Expression.parse("@(block.value <= 30)")
+    end
+
     test "add" do
       assert {:ok,
               [
@@ -180,6 +189,9 @@ defmodule ExpressionTest do
 
       assert {:ok, true} ==
                Expression.evaluate("@(contact.age <= 20)", %{"contact" => %{"age" => 20}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age <= 30)", %{"contact" => %{"age" => 20}})
 
       assert {:ok, false} ==
                Expression.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 20}})

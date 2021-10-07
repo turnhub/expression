@@ -9,7 +9,7 @@ defmodule Expression.OperatorHelpers do
   def concatenate, do: ascii_char([?&]) |> replace(:&) |> label("&")
   def exponent, do: ascii_char([?^]) |> replace(:^) |> label("^")
   def gte, do: string(">=") |> replace(:>=) |> label(">=")
-  def lte, do: string("<=") |> replace(:>=) |> label(">=")
+  def lte, do: string("<=") |> replace(:<=) |> label("<=")
   def neq, do: choice([string("!="), string("<>")]) |> replace(:!=) |> label("!=")
   def eq, do: choice([string("=="), string("=")]) |> replace(:==) |> label("==")
   def gt, do: ascii_char([?>]) |> replace(:>) |> label(">")
