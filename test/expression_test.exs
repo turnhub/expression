@@ -297,6 +297,17 @@ defmodule ExpressionTest do
                Expression.evaluate_block("block.value > 0", %{block: %{value: "not a number"}})
     end
 
+    test "return an error tuple when variables are not defined" do
+      assert {:error, "variable \"block.value\" is undefined or null"} =
+               Expression.evaluate_block("block.value > 0", %{block: %{}})
+    end
+
+    test "throw an error when variables are not defined" do
+      assert_raise RuntimeError, "variable \"block.value\" is undefined or null", fn ->
+        Expression.evaluate_block!("block.value > 0", %{block: %{}})
+      end
+    end
+
     test "throw an error" do
       assert_raise RuntimeError, "expression is not a number: `\"not a number\"`", fn ->
         Expression.evaluate_block!("block.value > 0", %{block: %{value: "not a number"}})
