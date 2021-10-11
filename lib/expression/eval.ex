@@ -74,7 +74,9 @@ defmodule Expression.Eval do
 
   defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
 
-  defp guard_nil!(nil, k), do: raise("variable #{k} undefined or null")
+  defp guard_nil!(nil, k),
+    do: raise("variable #{inspect(Enum.join(k, "."))} is undefined or null")
+
   defp guard_nil!(v, _), do: v
 
   defp guard_type!(v, :num) when is_number(v), do: v
