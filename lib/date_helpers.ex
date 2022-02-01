@@ -53,12 +53,11 @@ defmodule Expression.DateHelpers do
     |> integer(2)
     |> ignore(optional(string(".")))
     |> optional(integer(min: 1))
-    |> optional(
-      choice([
-        ignore(string("+")) |> integer(min: 1),
-        string("Z") |> replace(0)
-      ])
-    )
+    |> choice([
+      ignore(string("+")) |> integer(min: 1),
+      string("Z") |> replace(0),
+      empty(),
+    ])
   end
 
   def iso_datetime(combinator \\ empty()) do

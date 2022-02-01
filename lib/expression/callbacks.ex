@@ -82,7 +82,7 @@ defmodule Expression.Callbacks do
 
       # Check if it's been implemented to accept a variable amount of arguments
       function_exported?(module, vargs_function_name, 2) ->
-        {:vars, vargs_function_name, 2}
+        {:vargs, vargs_function_name, 2}
 
       # Otherwise fail
       true ->
@@ -837,7 +837,10 @@ defmodule Expression.Callbacks do
 
   @spec percent(Expression.Context.t(), Decimal.t()) :: binary
   def percent(_ctx, decimal) do
-    Number.Percentage.number_to_percentage(Decimal.mult(decimal, 100), precision: 0)
+    decimal
+    |> Decimal.mult(100)
+    |> Decimal.to_float()
+    |> Number.Percentage.number_to_percentage(precision: 0)
   end
 
   @doc """
