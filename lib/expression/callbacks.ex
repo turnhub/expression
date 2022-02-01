@@ -664,8 +664,7 @@ defmodule Expression.Callbacks do
   def proper(_ctx, binary) do
     binary
     |> String.split(" ")
-    |> Enum.map(&String.capitalize/1)
-    |> Enum.join(" ")
+    |> Enum.map_join(" ", &String.capitalize/1)
   end
 
   @doc """
