@@ -21,6 +21,12 @@ defmodule Expression.Callbacks do
   underscore.
   """
 
+  defmacro __using__(_opts) do
+    quote do
+      defdelegate handle(function_name, arguments, context), to: Expression.Callbacks
+    end
+  end
+
   @reserved_words ~w[and if or]
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
@@ -48,20 +54,35 @@ defmodule Expression.Callbacks do
   2. The function name with an underscore suffix if the function name is a reserved word
   3. The function name suffixed with `_vargs` if the takes a variable set of arguments
   """
+  @callback handle(function_name :: binary, arguments :: [any], context :: map) ::
+              {:ok, any} | {:error, :not_implemented}
   @spec handle(function_name :: binary, arguments :: [any], context :: map) ::
           {:ok, any} | {:error, :not_implemented}
   def handle(function_name, arguments, context) do
+    case implements(function_name, arguments) do
+      {:exact, function_name, _arity} ->
+        {:ok, apply(__MODULE__, function_name, [context] ++ arguments)}
+
+      {:vargs, function_name, _arity} ->
+        {:ok, apply(__MODULE__, function_name, [context, arguments])}
+
+      {:error, reason} ->
+        {:error, reason}
+    end
+  end
+
+  def implements(module \\ __MODULE__, function_name, arguments) do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 
     cond do
       # Check if the exact function signature has been implemented
-      function_exported?(__MODULE__, exact_function_name, length(arguments) + 1) ->
-        {:ok, apply(__MODULE__, exact_function_name, [context] ++ arguments)}
+      function_exported?(module, exact_function_name, length(arguments) + 1) ->
+        {:exact, exact_function_name, length(arguments) + 1}
 
       # Check if it's been implemented to accept a variable amount of arguments
-      function_exported?(__MODULE__, vargs_function_name, 2) ->
-        {:ok, apply(__MODULE__, vargs_function_name, [context, arguments])}
+      function_exported?(module, vargs_function_name, 2) ->
+        {:vargs, vargs_function_name, 2}
 
       # Otherwise fail
       true ->
@@ -816,7 +837,10 @@ defmodule Expression.Callbacks do
 
   @spec percent(Expression.Context.t(), Decimal.t()) :: binary
   def percent(_ctx, decimal) do
-    Number.Percentage.number_to_percentage(Decimal.mult(decimal, 100), precision: 0)
+    decimal
+    |> Decimal.mult(100)
+    |> Decimal.to_float()
+    |> Number.Percentage.number_to_percentage(precision: 0)
   end
 
   @doc """
