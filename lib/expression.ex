@@ -64,9 +64,8 @@ defmodule Expression do
   def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks)
 
   def evaluate_block(expression, context, mod) do
-    with {:ok, ast} <- parse_expression(expression),
-         {:ok, result} <- Eval.evaluate([substitution: ast], context, mod) do
-      {:ok, result}
+    with {:ok, ast} <- parse_expression(expression) do
+      Eval.evaluate([substitution: ast], context, mod)
     end
   end
 
@@ -95,9 +94,8 @@ defmodule Expression do
   def evaluate(text, context \\ %{}, mod \\ Expression.Callbacks)
 
   def evaluate(text, context, mod) do
-    with {:ok, ast} <- parse(text),
-         {:ok, result} <- Eval.evaluate(ast, context, mod) do
-      {:ok, result}
+    with {:ok, ast} <- parse(text) do
+      Eval.evaluate(ast, context, mod)
     end
   end
 end
