@@ -72,7 +72,10 @@ defmodule Expression.Eval do
 
   defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
 
-  defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
+  defp get_var!(ctx, k), do: get_in(ctx, k) |> default_value() |> guard_nil!(k)
+
+  defp default_value(%{"__value__" => default_value}), do: default_value
+  defp default_value(value), do: value
 
   defp guard_nil!(nil, k),
     do: raise("variable #{inspect(Enum.join(k, "."))} is undefined or null")

@@ -177,6 +177,24 @@ defmodule ExpressionTest do
       assert {:ok, 0.999744} = Expression.evaluate("@(1 + (2 - 3) * 4 / 5 ^ 6)")
     end
 
+    test "evaluate map default value" do
+      assert {:ok, "foo"} ==
+               Expression.evaluate("@map", %{
+                 "map" => %{
+                   "__value__" => "foo",
+                   "bar" => "bar"
+                 }
+               })
+
+      assert {:ok, "bar"} ==
+               Expression.evaluate("@map.bar", %{
+                 "map" => %{
+                   "__value__" => "foo",
+                   "bar" => "bar"
+                 }
+               })
+    end
+
     test "example logical comparison" do
       assert {:ok, true} ==
                Expression.evaluate("@(contact.age > 18)", %{"contact" => %{"age" => 20}})
