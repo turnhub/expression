@@ -55,7 +55,7 @@ defmodule Expression.MixProject do
       {:ex_phone_number, "~> 0.2.1"},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
-      {:version_tasks, "~> 0.12.0"}
+      {:version_tasks, "~> 0.12.0", only: [:dev], runtime: false}
     ]
   end
 
