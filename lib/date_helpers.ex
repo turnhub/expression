@@ -56,7 +56,7 @@ defmodule Expression.DateHelpers do
     |> choice([
       ignore(string("+")) |> integer(min: 1),
       string("Z") |> replace(0),
-      empty(),
+      empty()
     ])
   end
 
