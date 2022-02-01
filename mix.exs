@@ -1,11 +1,12 @@
 defmodule Expression.MixProject do
   use Mix.Project
 
-  @version "0.4.0"
+  @version "0.4.1"
 
   def project do
     [
       app: :expression,
+      aliases: aliases(),
       version: @version,
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
@@ -55,6 +56,14 @@ defmodule Expression.MixProject do
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:version_tasks, "~> 0.12.0"}
+    ]
+  end
+
+  defp aliases do
+    [
+      "release.major": ["version.up major", "version.tag"],
+      "release.minor": ["version.up minor", "version.tag"],
+      "release.patch": ["version.up patch", "version.tag"]
     ]
   end
 end
