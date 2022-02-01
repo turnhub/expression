@@ -2,75 +2,83 @@ defmodule Expression.DateHelpers do
   @moduledoc false
   import NimbleParsec
 
-  def date_separator do
-    choice([
+  def date_separator(combinator \\ empty()) do
+    combinator
+    |> choice([
       string("-"),
       string("/")
     ])
   end
 
-  def us_date do
-    integer(2)
+  def us_date(combinator \\ empty()) do
+    combinator
+    |> integer(2)
     |> ignore(date_separator())
     |> integer(2)
     |> ignore(date_separator())
     |> integer(4)
   end
 
-  def us_time do
-    integer(2)
+  def us_time(combinator \\ empty()) do
+    combinator
+    |> integer(2)
     |> ignore(string(":"))
     |> integer(2)
     |> optional(ignore(string(":")))
     |> optional(integer(2))
   end
 
-  def us_datetime do
-    us_date()
+  def us_datetime(combinator \\ empty()) do
+    combinator
+    |> us_date()
     |> ignore(string(" "))
     |> concat(us_time())
   end
 
-  def iso_date do
-    integer(4)
+  def iso_date(combinator \\ empty()) do
+    combinator
+    |> integer(4)
     |> ignore(date_separator())
     |> integer(2)
     |> ignore(date_separator())
     |> integer(2)
   end
 
-  def iso_time do
-    integer(2)
+  def iso_time(combinator \\ empty()) do
+    combinator
+    |> integer(2)
     |> ignore(string(":"))
     |> integer(2)
     |> ignore(string(":"))
     |> integer(2)
     |> ignore(optional(string(".")))
     |> optional(integer(min: 1))
-    |> optional(
-      choice([
-        ignore(string("+")) |> integer(min: 1),
-        string("Z") |> replace(0)
-      ])
-    )
+    |> choice([
+      ignore(string("+")) |> integer(min: 1),
+      string("Z") |> replace(0),
+      empty()
+    ])
   end
 
-  def iso_datetime do
-    iso_date()
+  def iso_datetime(combinator \\ empty()) do
+    combinator
+    |> iso_date()
     |> ignore(string("T"))
     |> concat(iso_time())
   end
 
-  def date do
-    choice([
+  def date(combinator \\ empty()) do
+    combinator
+    |> choice([
       tag(us_date(), :us_format),
       tag(iso_date(), :iso_format)
     ])
     |> reduce(:to_date)
   end
 
-  def datetime do
-    choice([
+  def datetime(combinator \\ empty()) do
+    combinator
+    |> choice([
       tag(us_datetime(), :us_format),
       tag(iso_datetime(), :iso_format)
     ])
