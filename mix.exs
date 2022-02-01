@@ -1,10 +1,12 @@
 defmodule Expression.MixProject do
   use Mix.Project
 
+  @version "0.4.0"
+
   def project do
     [
       app: :expression,
-      version: "0.3.4",
+      version: @version,
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       deps: deps(),
@@ -51,7 +53,8 @@ defmodule Expression.MixProject do
       {:ex_doc, ">= 0.0.0", only: :dev, runtime: false},
       {:ex_phone_number, "~> 0.2.1"},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false}
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:version_tasks, "~> 0.12.0"}
     ]
   end
 end

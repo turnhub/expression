@@ -97,7 +97,7 @@ by adding `expression` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:expression, "~> 0.1.0"}
+    {:expression, "~> 0.4.0"}
   ]
 end
 ```
