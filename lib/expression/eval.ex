@@ -55,6 +55,9 @@ defmodule Expression.Eval do
 
         Enum.at(context_value, index)
 
+      {:attribute, _key}, nil ->
+        nil
+
       {:attribute, key}, context_value ->
         Map.get(context_value, key)
     end)
@@ -91,15 +94,11 @@ defmodule Expression.Eval do
 
   defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
 
-  defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
+  defp get_var!(nil, k), do: "ERROR: #{inspect(k)} cannot be read from value `nil`"
+  defp get_var!(ctx, k), do: get_in(ctx, k)
 
   defp default_value(%{"__value__" => default_value}), do: default_value
   defp default_value(value), do: value
-
-  defp guard_nil!(nil, k),
-    do: raise("variable #{inspect(Enum.join(k, "."))} is undefined or null")
-
-  defp guard_nil!(v, _), do: v
 
   defp guard_type!(v, :num) when is_number(v), do: v
   defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")

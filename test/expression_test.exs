@@ -400,6 +400,27 @@ defmodule ExpressionTest do
       assert {:ok, expected} == Expression.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")
     end
 
+    test "checking for nil vars with if" do
+      assert {:ok, 1} =
+               Expression.evaluate("@IF(value, value, 0)", %{
+                 "value" => 1
+               })
+
+      assert {:ok, 0} =
+               Expression.evaluate("@IF(value, value, 0)", %{
+                 "value" => nil
+               })
+
+      assert {:ok, 0} = Expression.evaluate("@IF(value, value, 0)", %{})
+
+      assert {:ok, 1} =
+               Expression.evaluate("@IF(value.foo, value.foo, 0)", %{
+                 "value" => %{
+                   "foo" => 1
+                 }
+               })
+    end
+
     test "function calls with expressions" do
       assert {
                :ok,
@@ -449,7 +470,7 @@ defmodule ExpressionTest do
       assert {:error, "expression is not a number: `nil`"} =
                Expression.evaluate_block("block.value > 0", %{block: %{}})
 
-      assert {:error, "variable \"block\" is undefined or null"} =
+      assert {:error, "expression is not a number: `nil`"} =
                Expression.evaluate_block("block.value > 0", %{})
     end
 
