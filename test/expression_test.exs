@@ -3,6 +3,28 @@ defmodule ExpressionTest do
   doctest Expression
 
   describe "types" do
+    test "lists with indices" do
+      assert {:ok, [substitution: [variable: ["foo", {:index, [1]}]]]} =
+               Expression.parse("@foo[1]")
+    end
+
+    test "lists with variables" do
+      assert {
+               :ok,
+               [
+                 substitution: [
+                   variable: [
+                     "foo",
+                     {
+                       :index,
+                       [{:substitution, [variable: ["cursor"]]}]
+                     }
+                   ]
+                 ]
+               ]
+             } = Expression.parse("@foo[@cursor]")
+    end
+
     test "text" do
       assert {:ok, [text: "hello"]} = Expression.parse("hello")
     end
@@ -157,6 +179,22 @@ defmodule ExpressionTest do
   end
 
   describe "evaluate" do
+    test "list with indices" do
+      assert {:ok, "bar"} = Expression.evaluate("@foo[1]", %{"foo" => ["baz", "bar"]})
+    end
+
+    test "list with variable" do
+      assert {:ok, "bar"} =
+               Expression.evaluate("@foo[@cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
+    end
+
+    test "list with out of bound indicess" do
+      assert {:ok, nil} =
+               Expression.evaluate("@foo[@cursor]", %{"foo" => ["baz", "bar"], "cursor" => 100})
+
+      assert {:ok, nil} = Expression.evaluate("@foo[100]", %{"foo" => ["baz", "bar"]})
+    end
+
     test "calculation with explicit precedence" do
       assert {:ok, 8} = Expression.evaluate("@(2 + (2 * 3))")
     end

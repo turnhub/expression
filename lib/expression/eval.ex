@@ -41,6 +41,12 @@ defmodule Expression.Eval do
   def eval!(ast, _ctx, _mod) when is_number(ast), do: ast
   def eval!(ast, _ctx, _mod) when is_binary(ast), do: ast
   def eval!(ast, _ctx, _mod) when is_boolean(ast), do: ast
+
+  def eval!({:variable, [k, {:index, ast}]}, ctx, mod) do
+    index = eval!(fold_infixl(ast), ctx, mod)
+    get_var!(ctx, [k]) |> Enum.at(index)
+  end
+
   def eval!({:variable, k}, ctx, _mod), do: get_var!(ctx, k)
   def eval!({:literal, value}, _ctx, _mod), do: value
   def eval!({:substitution, ast}, ctx, mod), do: eval!(fold_infixl(ast), ctx, mod)

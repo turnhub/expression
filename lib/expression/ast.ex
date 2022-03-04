@@ -38,6 +38,8 @@ defmodule Expression.Ast do
   opening_substitution = string("@")
   opening_bracket = string("(")
   closing_bracket = string(")")
+  opening_list_bracket = string("[")
+  closing_list_bracket = string("]")
   dot = string(".")
   space = string(" ") |> times(min: 0)
 
@@ -130,6 +132,31 @@ defmodule Expression.Ast do
     |> tag(:block)
   )
 
+  list_argument =
+    choice([
+      parsec(:substitution),
+      int()
+    ])
+
+  defcombinator(
+    :list_arguments,
+    list_argument
+    |> tag(:index)
+  )
+
+  defcombinator(
+    :list,
+    name
+    |> ignore(opening_list_bracket)
+    |> optional(
+      ignore(space)
+      |> lookahead_not(closing_list_bracket)
+      |> concat(parsec(:list_arguments))
+    )
+    |> ignore(closing_list_bracket)
+    |> tag(:variable)
+  )
+
   function_argument =
     choice([
       parsec(:aexpr),
@@ -168,6 +195,7 @@ defmodule Expression.Ast do
     choice([
       parsec(:block),
       parsec(:function),
+      parsec(:list),
       parsec(:variable)
     ])
   )
