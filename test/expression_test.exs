@@ -188,6 +188,13 @@ defmodule ExpressionTest do
                Expression.evaluate("@foo[@cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
     end
 
+    test "list with out of bound indicess" do
+      assert {:ok, nil} =
+               Expression.evaluate("@foo[@cursor]", %{"foo" => ["baz", "bar"], "cursor" => 100})
+
+      assert {:ok, nil} = Expression.evaluate("@foo[100]", %{"foo" => ["baz", "bar"]})
+    end
+
     test "calculation with explicit precedence" do
       assert {:ok, 8} = Expression.evaluate("@(2 + (2 * 3))")
     end
