@@ -28,10 +28,11 @@ defmodule Expression.Eval do
 
     case resp do
       [value] ->
-        value
+        default_value(value)
 
       values ->
         values
+        |> Enum.map(&default_value/1)
         |> Enum.map(&to_string/1)
         |> Enum.reverse()
         |> Enum.join()
@@ -42,12 +43,24 @@ defmodule Expression.Eval do
   def eval!(ast, _ctx, _mod) when is_binary(ast), do: ast
   def eval!(ast, _ctx, _mod) when is_boolean(ast), do: ast
 
-  def eval!({:variable, [k, {:index, ast}]}, ctx, mod) do
-    index = eval!(fold_infixl(ast), ctx, mod)
-    get_var!(ctx, [k]) |> Enum.at(index)
+  def eval!({:variable, [k | remainder]}, ctx, mod) do
+    value = get_var!(ctx, [k])
+
+    Enum.reduce(remainder, value, fn
+      {:list, index}, context_value when is_integer(index) ->
+        Enum.at(context_value, index)
+
+      {:list, value}, context_value ->
+        index = eval!(value, ctx, mod)
+
+        Enum.at(context_value, index)
+
+      {:attribute, key}, context_value ->
+        Map.get(context_value, key)
+    end)
   end
 
-  def eval!({:variable, k}, ctx, _mod), do: get_var!(ctx, k)
+  # def eval!({:list, value}, ctx, _mod), do: Enum.at(ctx, value)
   def eval!({:literal, value}, _ctx, _mod), do: value
   def eval!({:substitution, ast}, ctx, mod), do: eval!(fold_infixl(ast), ctx, mod)
   def eval!({:block, ast}, ctx, mod), do: eval!(fold_infixl(ast), ctx, mod)
@@ -78,7 +91,7 @@ defmodule Expression.Eval do
 
   defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
 
-  defp get_var!(ctx, k), do: get_in(ctx, k) |> default_value() |> guard_nil!(k)
+  defp get_var!(ctx, k), do: get_in(ctx, k) |> guard_nil!(k)
 
   defp default_value(%{"__value__" => default_value}), do: default_value
   defp default_value(value), do: value

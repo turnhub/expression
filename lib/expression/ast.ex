@@ -49,11 +49,18 @@ defmodule Expression.Ast do
     |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})
 
+  defparsec(:attribute, name)
+
   defcombinator(
     :variable,
     name
-    |> repeat(ignore(dot) |> concat(name))
-    |> map({String, :downcase, []})
+    |> repeat(
+      choice([
+        parsec(:parse_list) |> unwrap_and_tag(:list),
+        parsec(:parse_attribute) |> unwrap_and_tag(:attribute),
+        name |> map({String, :downcase, []})
+      ])
+    )
     |> tag(:variable)
   )
 
@@ -132,31 +139,6 @@ defmodule Expression.Ast do
     |> tag(:block)
   )
 
-  list_argument =
-    choice([
-      parsec(:substitution),
-      int()
-    ])
-
-  defcombinator(
-    :list_arguments,
-    list_argument
-    |> tag(:index)
-  )
-
-  defcombinator(
-    :list,
-    name
-    |> ignore(opening_list_bracket)
-    |> optional(
-      ignore(space)
-      |> lookahead_not(closing_list_bracket)
-      |> concat(parsec(:list_arguments))
-    )
-    |> ignore(closing_list_bracket)
-    |> tag(:variable)
-  )
-
   function_argument =
     choice([
       parsec(:aexpr),
@@ -195,7 +177,6 @@ defmodule Expression.Ast do
     choice([
       parsec(:block),
       parsec(:function),
-      parsec(:list),
       parsec(:variable)
     ])
   )
@@ -226,6 +207,19 @@ defmodule Expression.Ast do
         parsec(:text)
       ])
     )
+  )
+
+  defparsec(
+    :parse_list,
+    ignore(opening_list_bracket)
+    |> choice([int(), parsec(:expression)])
+    |> ignore(closing_list_bracket)
+  )
+
+  defparsec(
+    :parse_attribute,
+    ignore(dot)
+    |> repeat(parsec(:attribute))
   )
 
   def fold_infixl(acc) do
