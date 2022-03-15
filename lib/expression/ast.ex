@@ -44,7 +44,7 @@ defmodule Expression.Ast do
   space = string(" ") |> times(min: 0)
 
   name =
-    ascii_string([?a..?z, ?A..?Z], min: 1)
+    ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
     |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})
