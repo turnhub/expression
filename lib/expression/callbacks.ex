@@ -620,7 +620,7 @@ defmodule Expression.Callbacks do
   end
 
   @doc """
-  Returns the first characters in a text string
+  Returns the first characters in a text string. This is Unicode safe.
 
   ```
   You entered PIN @LEFT(step.value, 4)
@@ -630,9 +630,13 @@ defmodule Expression.Callbacks do
 
       iex> Expression.Callbacks.left(%{}, "foobar", 4)
       "foob"
+
+      iex> Expression.Callbacks.left(%{}, "Умерла Мадлен Олбрайт - первая женщина на посту главы Госдепа США", 20)
+      "Умерла Мадлен Олбрай"
+
   """
   def left(_ctx, binary, size) do
-    binary_part(binary, 0, size)
+    String.slice(binary, 0, size)
   end
 
   @doc """
@@ -705,7 +709,8 @@ defmodule Expression.Callbacks do
   end
 
   @doc """
-  Returns the last characters in a text string
+  Returns the last characters in a text string.
+  This is Unicode safe.
 
   ```
   Your input ended with ...@RIGHT(step.value, 3)
@@ -715,6 +720,9 @@ defmodule Expression.Callbacks do
 
       iex> Expression.Callbacks.right(%{}, "testing", 3)
       "ing"
+
+      iex> Expression.Callbacks.right(%{}, "Умерла Мадлен Олбрайт - первая женщина на посту главы Госдепа США", 20)
+      "ту главы Госдепа США"
 
   """
   def right(_ctx, binary, size) do
