@@ -19,7 +19,7 @@ defmodule Expression.MixProject do
 
   defp package() do
     [
-      licenses: ["Apache-2.0"],
+      licenses: ["AGPL-3.0"],
       links: %{"GitHub" => "https://github.com/turnhub/expression"}
     ]
   end
