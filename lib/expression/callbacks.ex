@@ -1139,15 +1139,15 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_all_words(%{}, "the quick brown FOX", "the fox")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_all_words(%{}, "the quick brown FOX", "red fox")
-    {:ok, false}
+    false
 
   """
   def has_all_words(_ctx, haystack, words) do
     {patterns, results} = search_words(haystack, words)
     # future match result: Enum.join(results, " ")
-    {:ok, Enum.count(patterns) == Enum.count(results)}
+    Enum.count(patterns) == Enum.count(results)
   end
 
   @doc """
@@ -1169,16 +1169,16 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "fox quick")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "yellow")
-    {:ok, false}
+    false
 
   """
   def has_any_word(_ctx, haystack, words) do
     {_patterns, results} = search_words(haystack, words)
 
     # future match result Enum.join(results, " ")
-    {:ok, Enum.any?(results)}
+    Enum.any?(results)
   end
 
   @doc """
@@ -1204,18 +1204,18 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "the quick")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "the    quick")
-    {:ok, false}
+    false
     iex> Expression.Callbacks.has_beginning(%{}, "The Quick Brown", "quick brown")
-    {:ok, false}
+    false
 
   """
   def has_beginning(_ctx, text, beginning) do
     case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
       # future match result: first
-      [_first | _remainder] -> {:ok, true}
-      nil -> {:ok, false}
+      [_first | _remainder] -> true
+      nil -> false
     end
   end
 
@@ -1249,15 +1249,13 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_date(%{}, "the date is 15/01/2017")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_date(%{}, "there is no date here, just a year 2017")
-    {:ok, false}
+    false
 
   """
   def has_date(_, expression) do
-    date = extract_dateish(expression)
-    # future match result: date
-    {:ok, !!date}
+    !!extract_dateish(expression)
   end
 
   @doc """
@@ -1281,15 +1279,15 @@ defmodule Expression.Callbacks do
   # Examples
 
     iex> Expression.Callbacks.has_date_eq(%{}, "the date is 15/01/2017", "2017-01-15")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_date_eq(%{}, "there is no date here, just a year 2017", "2017-01-15")
-    {:ok, false}
+    false
   """
   def has_date_eq(_ctx, expression, date_string) do
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
     # Future match result: found_date
-    {:ok, found_date == test_date}
+    found_date == test_date
   end
 
   @doc """
@@ -1311,16 +1309,16 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_date_gt(%{}, "the date is 15/01/2017", "2017-01-01")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_date_gt(%{}, "the date is 15/01/2017", "2017-03-15")
-    {:ok, false}
+    false
 
   """
   def has_date_gt(_ctx, expression, date_string) do
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
     # future match result: found_date
-    {:ok, Date.compare(found_date, test_date) == :gt}
+    Date.compare(found_date, test_date) == :gt
   end
 
   @doc """
@@ -1341,16 +1339,16 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_date_lt(%{}, "the date is 15/01/2017", "2017-06-01")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_date_lt(%{}, "the date is 15/01/2021", "2017-03-15")
-    {:ok, false}
+    false
 
   """
   def has_date_lt(_ctx, expression, date_string) do
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
     # future match result: found_date
-    {:ok, Date.compare(found_date, test_date) == :lt}
+    Date.compare(found_date, test_date) == :lt
   end
 
   @doc """
@@ -1371,16 +1369,16 @@ defmodule Expression.Callbacks do
   # Example:
 
     iex> Expression.Callbacks.has_email(%{}, "my email is foo1@bar.com, please respond")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_email(%{}, "i'm not sharing my email")
-    {:ok, false}
+    false
 
   """
   def has_email(_ctx, expression) do
     case Regex.run(~r/([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/, expression) do
       # future match result: match
-      [_match | _] -> {:ok, true}
-      nil -> {:ok, false}
+      [_match | _] -> true
+      nil -> false
     end
   end
 
@@ -1405,15 +1403,15 @@ defmodule Expression.Callbacks do
     ...>   }]
     ...> }
     iex> Expression.Callbacks.has_group(%{}, contact["groups"], "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_group(%{}, contact["groups"], "00000000-0000-0000-0000-000000000000")
-    {:ok, false}
+    false
 
   """
   def has_group(_ctx, groups, uuid) do
     group = Enum.find(groups, nil, &(&1["uuid"] == uuid))
     # future match result: group
-    {:ok, !!group}
+    !!group
   end
 
   defp extract_numberish(expression) do
