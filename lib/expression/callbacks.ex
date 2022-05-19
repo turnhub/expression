@@ -1477,16 +1477,16 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "the number is 42 and 5")
-    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "العدد ٤٢")
-    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "٠.٥")
-    iex> {:ok, true} = Expression.Callbacks.has_number(%{}, "0.6")
+    iex> true = Expression.Callbacks.has_number(%{}, "the number is 42 and 5")
+    iex> true = Expression.Callbacks.has_number(%{}, "العدد ٤٢")
+    iex> true = Expression.Callbacks.has_number(%{}, "٠.٥")
+    iex> true = Expression.Callbacks.has_number(%{}, "0.6")
 
   """
   def has_number(_ctx, expression) do
     number = extract_numberish(expression)
     # future match result: number
-    {:ok, !!number}
+    !!number
   end
 
   @doc """
@@ -1507,23 +1507,23 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42", 42)
-    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42", 42.0)
-    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42", "42")
-    iex> {:ok, true} = Expression.Callbacks.has_number_eq(%{}, "the number is 42.0", "42")
-    iex> {:ok, false} = Expression.Callbacks.has_number_eq(%{}, "the number is 40", "42")
-    iex> {:ok, false} = Expression.Callbacks.has_number_eq(%{}, "the number is 40", "foo")
-    iex> {:ok, false} = Expression.Callbacks.has_number_eq(%{}, "four hundred", "foo")
+    iex> true = Expression.Callbacks.has_number_eq(%{}, "the number is 42", 42)
+    iex> true = Expression.Callbacks.has_number_eq(%{}, "the number is 42", 42.0)
+    iex> true = Expression.Callbacks.has_number_eq(%{}, "the number is 42", "42")
+    iex> true = Expression.Callbacks.has_number_eq(%{}, "the number is 42.0", "42")
+    iex> false = Expression.Callbacks.has_number_eq(%{}, "the number is 40", "42")
+    iex> false = Expression.Callbacks.has_number_eq(%{}, "the number is 40", "foo")
+    iex> false = Expression.Callbacks.has_number_eq(%{}, "four hundred", "foo")
 
   """
   def has_number_eq(_ctx, expression, decimal) do
     with %Decimal{} = number <- extract_numberish(expression),
          %Decimal{} = decimal <- parse_decimal(decimal) do
       # Future match result: number
-      {:ok, Decimal.eq?(number, decimal)}
+      Decimal.eq?(number, decimal)
     else
-      nil -> {:ok, false}
-      :error -> {:ok, false}
+      nil -> false
+      :error -> false
     end
   end
 
@@ -1545,22 +1545,22 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42", 40)
-    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42", 40.0)
-    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42", "40")
-    iex> {:ok, true} = Expression.Callbacks.has_number_gt(%{}, "the number is 42.0", "40")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gt(%{}, "the number is 40", "40")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gt(%{}, "the number is 40", "foo")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gt(%{}, "four hundred", "foo")
+    iex> true = Expression.Callbacks.has_number_gt(%{}, "the number is 42", 40)
+    iex> true = Expression.Callbacks.has_number_gt(%{}, "the number is 42", 40.0)
+    iex> true = Expression.Callbacks.has_number_gt(%{}, "the number is 42", "40")
+    iex> true = Expression.Callbacks.has_number_gt(%{}, "the number is 42.0", "40")
+    iex> false = Expression.Callbacks.has_number_gt(%{}, "the number is 40", "40")
+    iex> false = Expression.Callbacks.has_number_gt(%{}, "the number is 40", "foo")
+    iex> false = Expression.Callbacks.has_number_gt(%{}, "four hundred", "foo")
   """
   def has_number_gt(_ctx, expression, decimal) do
     with %Decimal{} = number <- extract_numberish(expression),
          %Decimal{} = decimal <- parse_decimal(decimal) do
       # Future match result: number
-      {:ok, Decimal.gt?(number, decimal)}
+      Decimal.gt?(number, decimal)
     else
-      nil -> {:ok, false}
-      :error -> {:ok, false}
+      nil -> false
+      :error -> false
     end
   end
 
@@ -1582,22 +1582,22 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> {:ok, true} = Expression.Callbacks.has_number_gte(%{}, "the number is 42", 42)
-    iex> {:ok, true} = Expression.Callbacks.has_number_gte(%{}, "the number is 42", 42.0)
-    iex> {:ok, true} = Expression.Callbacks.has_number_gte(%{}, "the number is 42", "42")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "the number is 42.0", "45")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "the number is 40", "45")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "the number is 40", "foo")
-    iex> {:ok, false} = Expression.Callbacks.has_number_gte(%{}, "four hundred", "foo")
+    iex> true = Expression.Callbacks.has_number_gte(%{}, "the number is 42", 42)
+    iex> true = Expression.Callbacks.has_number_gte(%{}, "the number is 42", 42.0)
+    iex> true = Expression.Callbacks.has_number_gte(%{}, "the number is 42", "42")
+    iex> false = Expression.Callbacks.has_number_gte(%{}, "the number is 42.0", "45")
+    iex> false = Expression.Callbacks.has_number_gte(%{}, "the number is 40", "45")
+    iex> false = Expression.Callbacks.has_number_gte(%{}, "the number is 40", "foo")
+    iex> false = Expression.Callbacks.has_number_gte(%{}, "four hundred", "foo")
   """
   def has_number_gte(_ctx, expression, decimal) do
     with %Decimal{} = number <- extract_numberish(expression),
          %Decimal{} = decimal <- parse_decimal(decimal) do
       # Future match result: number
-      {:ok, Decimal.gt?(number, decimal) || Decimal.eq?(number, decimal)}
+      Decimal.gt?(number, decimal) || Decimal.eq?(number, decimal)
     else
-      nil -> {:ok, false}
-      :error -> {:ok, false}
+      nil -> false
+      :error -> false
     end
   end
 
@@ -1619,22 +1619,22 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> {:ok, true} = Expression.Callbacks.has_number_lt(%{}, "the number is 42", 44)
-    iex> {:ok, true} = Expression.Callbacks.has_number_lt(%{}, "the number is 42", 44.0)
-    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 42", "40")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 42.0", "40")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 40", "40")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "the number is 40", "foo")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lt(%{}, "four hundred", "foo")
+    iex> true = Expression.Callbacks.has_number_lt(%{}, "the number is 42", 44)
+    iex> true = Expression.Callbacks.has_number_lt(%{}, "the number is 42", 44.0)
+    iex> false = Expression.Callbacks.has_number_lt(%{}, "the number is 42", "40")
+    iex> false = Expression.Callbacks.has_number_lt(%{}, "the number is 42.0", "40")
+    iex> false = Expression.Callbacks.has_number_lt(%{}, "the number is 40", "40")
+    iex> false = Expression.Callbacks.has_number_lt(%{}, "the number is 40", "foo")
+    iex> false = Expression.Callbacks.has_number_lt(%{}, "four hundred", "foo")
   """
   def has_number_lt(_ctx, expression, decimal) do
     with %Decimal{} = number <- extract_numberish(expression),
          %Decimal{} = decimal <- parse_decimal(decimal) do
       # Future match result: number
-      {:ok, Decimal.lt?(number, decimal)}
+      Decimal.lt?(number, decimal)
     else
-      nil -> {:ok, false}
-      :error -> {:ok, false}
+      nil -> false
+      :error -> false
     end
   end
 
@@ -1656,22 +1656,22 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> {:ok, true} = Expression.Callbacks.has_number_lte(%{}, "the number is 42", 42)
-    iex> {:ok, true} = Expression.Callbacks.has_number_lte(%{}, "the number is 42", 42.0)
-    iex> {:ok, true} = Expression.Callbacks.has_number_lte(%{}, "the number is 42", "42")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lte(%{}, "the number is 42.0", "40")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lte(%{}, "the number is 40", "foo")
-    iex> {:ok, false} = Expression.Callbacks.has_number_lte(%{}, "four hundred", "foo")
+    iex> true = Expression.Callbacks.has_number_lte(%{}, "the number is 42", 42)
+    iex> true = Expression.Callbacks.has_number_lte(%{}, "the number is 42", 42.0)
+    iex> true = Expression.Callbacks.has_number_lte(%{}, "the number is 42", "42")
+    iex> false = Expression.Callbacks.has_number_lte(%{}, "the number is 42.0", "40")
+    iex> false = Expression.Callbacks.has_number_lte(%{}, "the number is 40", "foo")
+    iex> false = Expression.Callbacks.has_number_lte(%{}, "four hundred", "foo")
 
   """
   def has_number_lte(_ctx, expression, decimal) do
     with %Decimal{} = number <- extract_numberish(expression),
          %Decimal{} = decimal <- parse_decimal(decimal) do
       # Future match result: number
-      {:ok, Decimal.lt?(number, decimal) || Decimal.eq?(number, decimal)}
+      Decimal.lt?(number, decimal) || Decimal.eq?(number, decimal)
     else
-      nil -> {:ok, false}
-      :error -> {:ok, false}
+      nil -> false
+      :error -> false
     end
   end
 
@@ -1697,18 +1697,18 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_only_phrase(%{}, "Quick Brown", "quick brown")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_only_phrase(%{}, "", "")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_only_phrase(%{}, "The Quick Brown Fox", "quick brown")
-    {:ok, false}
+    false
 
   """
   def has_only_phrase(_ctx, expression, phrase) do
     case Enum.map([expression, phrase], &String.downcase/1) do
       # Future match result: expression
-      [same, same] -> {:ok, true}
-      _anything_else -> {:ok, false}
+      [same, same] -> true
+      _anything_else -> false
     end
   end
 
@@ -1734,20 +1734,20 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_only_text(%{}, "foo", "foo")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_only_text(%{}, "", "")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_only_text(%{}, "foo", "FOO")
-    {:ok, false}
+    false
 
   """
   def has_only_text(_ctx, expression, expression) when is_binary(expression),
     # future match result: expression
-    do: {:ok, true}
+    do: true
 
   def has_only_text(_ctx, _expression, _something_else),
     # Future match result: expression
-    do: {:ok, false}
+    do: false
 
   @doc """
   Tests whether `expression` matches the regex pattern
@@ -1769,18 +1769,18 @@ defmodule Expression.Callbacks do
   # Examples
 
     iex> Expression.Callbacks.has_pattern(%{}, "Buy cheese please", "buy (\\\\w+)")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_pattern(%{}, "Sell cheese please", "buy (\\\\w+)")
-    {:ok, false}
+    false
 
   """
   def has_pattern(_ctx, expression, pattern) do
     with {:ok, regex} <- Regex.compile(String.trim(pattern), "i"),
          [[_first | _remainder]] <- Regex.scan(regex, String.trim(expression), capture: :all) do
       # Future match result: first
-      {:ok, true}
+      true
     else
-      _ -> {:ok, false}
+      _ -> false
     end
   end
 
@@ -1804,13 +1804,13 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_phone(%{}, "my number is +12067799294 thanks")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_phone(%{}, "my number is 2067799294 thanks", "US")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_phone(%{}, "my number is 206 779 9294 thanks", "US")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_phone(%{}, "my number is none of your business", "US")
-    {:ok, false}
+    false
 
   """
   def has_phone(%{}, expression, country_code \\ "") do
@@ -1818,8 +1818,8 @@ defmodule Expression.Callbacks do
 
     case ExPhoneNumber.parse(letters_removed, country_code) do
       # Future match result: ExPhoneNumber.format(pn, :es164)
-      {:ok, _pn} -> {:ok, true}
-      _ -> {:ok, false}
+      {:ok, _pn} -> true
+      _ -> false
     end
   end
 
@@ -1843,11 +1843,11 @@ defmodule Expression.Callbacks do
   # Examples
 
     iex> Expression.Callbacks.has_phrase(%{}, "the quick brown fox", "brown fox")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_phrase(%{}, "the quick brown fox", "quick fox")
-    {:ok, false}
+    false
     iex> Expression.Callbacks.has_phrase(%{}, "the quick brown fox", "")
-    {:ok, true}
+    true
 
   """
   def has_phrase(_ctx, expression, phrase) do
@@ -1855,7 +1855,7 @@ defmodule Expression.Callbacks do
     lower_phrase = String.downcase(phrase)
     found? = String.contains?(lower_expression, lower_phrase)
     # Future match result: phrase
-    {:ok, found?}
+    found?
   end
 
   @doc """
@@ -1878,24 +1878,24 @@ defmodule Expression.Callbacks do
   # Examples
 
     iex> Expression.Callbacks.has_text(%{}, "quick brown")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_text(%{}, "")
-    {:ok, false}
+    false
     iex> Expression.Callbacks.has_text(%{}, " \\n")
-    {:ok, false}
+    false
     iex> Expression.Callbacks.has_text(%{}, 123)
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_text(%{}, nil)
-    {:ok, false}
+    false
   """
   def has_text(ctx, expression) when not is_binary(expression),
     do: has_text(ctx, to_string(expression))
 
   def has_text(_ctx, expression) when is_binary(expression) do
     case String.trim(expression) do
-      "" -> {:ok, false}
+      "" -> false
       # Future match result: any_other_binary
-      _any_other_binary -> {:ok, true}
+      _any_other_binary -> true
     end
   end
 
@@ -1918,20 +1918,20 @@ defmodule Expression.Callbacks do
   # Examples
 
     iex> Expression.Callbacks.has_time(%{}, "the time is 10:30")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_time(%{}, "the time is 10:00 pm")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_time(%{}, "the time is 10:30:45")
-    {:ok, true}
+    true
     iex> Expression.Callbacks.has_time(%{}, "there is no time here, just the number 25")
-    {:ok, false}
+    false
 
   """
   def has_time(_ctx, expression) do
     case DateTimeParser.parse_time(expression) do
       # Future match result: time
-      {:ok, _time} -> {:ok, true}
-      _ -> {:ok, false}
+      {:ok, _time} -> true
+      _ -> false
     end
   end
 end
