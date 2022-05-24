@@ -25,15 +25,6 @@ defmodule Expression.Parser do
     |> reduce({Enum, :join, []})
     |> unwrap_and_tag(:atom)
 
-  # expression = variable | literal | function
-  expression =
-    choice([
-      parsec(:aexpr),
-      literal
-      # parsec(:function),
-      # parsec(:variable)
-    ])
-
   ignore_surrounding_whitespace = fn p ->
     ignore(optional(string(" ")))
     |> concat(p)
@@ -46,14 +37,20 @@ defmodule Expression.Parser do
     |> ignore_surrounding_whitespace.()
 
   # arguments = expression "," expression
-  arguments =
-    repeat(
-      choice([
-        expression,
-        ignore(argument_separator)
-      ])
-    )
-    |> tag(:args)
+  defparsec(
+    :arguments,
+    parsec(:aexpr)
+    |> optional(ignore(argument_separator) |> parsec(:arguments))
+  )
+
+  # repeat(
+  #   # choice([
+  #   # expression,
+  #   parsec(:aexpr),
+  #   ignore(argument_separator)
+  #   # ])
+  # )
+  # |> tag(:args)
 
   defcombinatorp(
     :aexpr_factor,
@@ -127,7 +124,7 @@ defmodule Expression.Parser do
     atom
     |> tag(:name)
     |> ignore(string("("))
-    |> optional(arguments)
+    |> optional(parsec(:arguments) |> tag(:args))
     |> ignore(string(")"))
     |> optional(parsec(:attribute))
     |> tag(:function)
@@ -143,20 +140,27 @@ defmodule Expression.Parser do
 
   expression_block =
     ignore(string("@"))
+    |> lookahead_not(string("@"))
     |> ignore(string("("))
-    |> concat(expression)
+    |> concat(parsec(:aexpr))
     |> ignore(string(")"))
-    |> tag(:block)
+    |> tag(:expression_block)
 
-  substitution =
+  expression =
     ignore(string("@"))
+    |> lookahead_not(string("@"))
     |> concat(
       choice([
         parsec(:function),
         parsec(:variable)
       ])
     )
-    |> tag(:substitution)
+    |> tag(:expression)
+
+  escaped_at =
+    ignore(string("@"))
+    |> string("@")
+    |> unwrap_and_tag(:text)
 
   text =
     empty()
@@ -166,5 +170,5 @@ defmodule Expression.Parser do
     |> reduce({Enum, :join, []})
     |> unwrap_and_tag(:text)
 
-  defparsec(:parse, repeat(choice([expression_block, substitution, text])))
+  defparsec(:parse, repeat(choice([expression_block, expression, escaped_at, text])))
 end
