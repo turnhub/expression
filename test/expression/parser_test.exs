@@ -7,7 +7,7 @@ defmodule Expression.ParserTest do
   end
 
   test "expression" do
-    assert_ast([expression: [variable: [atom: "foo"]]], "@foo")
+    assert_ast([expression: [atom: "foo"]], "@foo")
   end
 
   test "escaped at" do
@@ -21,26 +21,26 @@ defmodule Expression.ParserTest do
 
   describe "expression blocks" do
     test "variables" do
-      assert_ast([expression_block: [variable: [atom: "foo"]]], "@(foo)")
+      assert_ast([expression: [atom: "foo"]], "@(foo)")
     end
 
     test "literals" do
-      assert_ast([expression_block: [literal: 1]], "@(1)")
-      assert_ast([expression_block: [literal: -1]], "@(-1)")
-      assert_ast([expression_block: [literal: true]], "@(tRuE)")
-      assert_ast([expression_block: [literal: false]], "@(fAlSe)")
-      assert_ast([expression_block: [literal: Decimal.new("1.23")]], "@(1.23)")
-      assert_ast([expression_block: [literal: Decimal.new("-1.23")]], "@(-1.23)")
+      assert_ast([expression: [literal: 1]], "@(1)")
+      assert_ast([expression: [literal: -1]], "@(-1)")
+      assert_ast([expression: [literal: true]], "@(tRuE)")
+      assert_ast([expression: [literal: false]], "@(fAlSe)")
+      assert_ast([expression: [literal: Decimal.new("1.23")]], "@(1.23)")
+      assert_ast([expression: [literal: Decimal.new("-1.23")]], "@(-1.23)")
 
       assert_ast(
-        [expression_block: [literal: ~U[2022-05-24 00:00:00.0Z]]],
+        [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],
         "@(2022-05-24T00:00:00)"
       )
     end
 
     test "functions" do
       assert_ast(
-        [expression_block: [function: [name: [atom: "now"], args: [literal: 1]]]],
+        [expression: [function: [name: "now", args: [literal: 1]]]],
         "@(now(1))"
       )
     end
@@ -48,48 +48,58 @@ defmodule Expression.ParserTest do
     test "attributes" do
       assert_ast(
         [
-          expression_block: [
-            function: [name: [atom: "now"], args: [literal: 1], attribute: [atom: "year"]]
+          expression: [
+            attribute: [
+              function: [
+                {:name, "now"},
+                {:args, [literal: 1]}
+              ],
+              atom: "year"
+            ]
           ]
         ],
         "@(now(1).year)"
       )
 
       assert_ast(
-        [expression_block: [variable: [atom: "foo", attribute: [atom: "bar"]]]],
+        [
+          expression: [
+            attribute: [atom: "foo", atom: "bar"]
+          ]
+        ],
         "@(foo.bar)"
       )
     end
 
     test "arithmatic" do
-      assert_ast([expression_block: [+: [literal: 1, literal: 1]]], "@(1 + 1)")
+      assert_ast([expression: [+: [literal: 1, literal: 1]]], "@(1 + 1)")
 
       assert_ast(
-        [expression_block: [+: [literal: 1, *: [literal: 2, literal: 3]]]],
+        [expression: [+: [literal: 1, *: [literal: 2, literal: 3]]]],
         "@(1 + (2 * 3))"
       )
 
       assert_ast(
-        [expression_block: [+: [literal: 1, *: [literal: 2, literal: 3]]]],
+        [expression: [+: [literal: 1, *: [literal: 2, literal: 3]]]],
         "@(1 + 2 * 3)"
       )
 
       assert_ast(
-        [expression_block: [*: [literal: 1, +: [literal: 2, literal: 3]]]],
+        [expression: [*: [literal: 1, +: [literal: 2, literal: 3]]]],
         "@(1 * (2 + 3))"
       )
 
       assert_ast(
-        [expression_block: [+: [*: [literal: 1, literal: 2], literal: 3]]],
+        [expression: [+: [*: [literal: 1, literal: 2], literal: 3]]],
         "@(1 * 2 + 3)"
       )
 
       assert_ast(
         [
-          expression_block: [
+          expression: [
             +: [
-              *: [literal: 1, literal: 2],
-              function: [name: [atom: "foo"], attribute: [atom: "year"]]
+              {:*, [literal: 1, literal: 2]},
+              {:attribute, [function: [name: "foo"], atom: "year"]}
             ]
           ]
         ],
@@ -104,7 +114,7 @@ defmodule Expression.ParserTest do
         [
           expression: [
             function: [
-              name: [atom: "foo"]
+              name: "foo"
             ]
           ]
         ],
@@ -117,7 +127,7 @@ defmodule Expression.ParserTest do
         [
           expression: [
             function: [
-              name: [atom: "foo"],
+              name: "foo",
               args: [literal: 1]
             ]
           ]
@@ -131,8 +141,8 @@ defmodule Expression.ParserTest do
         [
           expression: [
             function: [
-              name: [atom: "foo"],
-              args: [variable: [atom: "bar"]]
+              name: "foo",
+              args: [atom: "bar"]
             ]
           ]
         ],
@@ -145,8 +155,8 @@ defmodule Expression.ParserTest do
         [
           expression: [
             function: [
-              name: [atom: "foo"],
-              args: [literal: 1, variable: [atom: "bar"]]
+              name: "foo",
+              args: [literal: 1, atom: "bar"]
             ]
           ]
         ],
@@ -159,11 +169,11 @@ defmodule Expression.ParserTest do
         [
           expression: [
             function: [
-              name: [atom: "if"],
+              name: "if",
               args: [
-                variable: [atom: "foo"],
-                function: [name: [atom: "bar"], args: [literal: 1, variable: [atom: "auz"]]],
-                function: [name: [atom: "baz"], args: [literal: 2, literal: 3]]
+                atom: "foo",
+                function: [name: "bar", args: [literal: 1, atom: "auz"]],
+                function: [name: "baz", args: [literal: 2, literal: 3]]
               ]
             ]
           ]
@@ -176,11 +186,7 @@ defmodule Expression.ParserTest do
   describe "attributes" do
     test "on variables" do
       assert_ast(
-        [
-          expression: [
-            variable: [atom: "foo", attribute: [atom: "bar"]]
-          ]
-        ],
+        [expression: [attribute: [atom: "foo", atom: "bar"]]],
         "@foo.bar"
       )
     end
@@ -189,12 +195,9 @@ defmodule Expression.ParserTest do
       assert_ast(
         [
           expression: [
-            variable: [
-              atom: "foo",
-              attribute: [
-                atom: "bar",
-                attribute: [atom: "baz"]
-              ]
+            attribute: [
+              attribute: [atom: "foo", atom: "bar"],
+              atom: "baz"
             ]
           ]
         ],
@@ -206,13 +209,12 @@ defmodule Expression.ParserTest do
       assert_ast(
         [
           expression: [
-            function: [
-              name: [atom: "regex"],
-              args: [
-                variable: [atom: "haystack"],
-                variable: [atom: "needle"]
+            attribute: [
+              function: [
+                {:name, "regex"},
+                {:args, [atom: "haystack", atom: "needle"]}
               ],
-              attribute: [atom: "match"]
+              atom: "match"
             ]
           ]
         ],
@@ -224,10 +226,15 @@ defmodule Expression.ParserTest do
       assert_ast(
         [
           expression: [
-            function: [
-              name: [atom: "regex"],
-              args: [variable: [atom: "haystack"], variable: [atom: "needle"]],
-              attribute: [atom: "match", attribute: [atom: "deep"]]
+            attribute: [
+              attribute: [
+                {
+                  :function,
+                  [name: "regex", args: [atom: "haystack", atom: "needle"]]
+                },
+                {:atom, "match"}
+              ],
+              atom: "deep"
             ]
           ]
         ],

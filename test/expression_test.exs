@@ -393,8 +393,10 @@ defmodule ExpressionTest do
     end
 
     test "function calls default arguments" do
-      expected = Timex.format!(DateTime.utc_now(), "%Y-%m-%d %H:%M:%S", :strftime)
-      assert {:ok, expected} == Expression.evaluate("@(DATEVALUE(NOW()))")
+      now = NaiveDateTime.utc_now()
+      assert {:ok, returned} = Expression.evaluate("@(DATEVALUE(NOW()))")
+      parsed = Timex.parse!(returned, "%Y-%m-%d %H:%M:%S", :strftime)
+      assert NaiveDateTime.diff(now, parsed) < :timer.seconds(1)
 
       expected = Timex.format!(DateTime.utc_now(), "%Y-%m-%d", :strftime)
       assert {:ok, expected} == Expression.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")

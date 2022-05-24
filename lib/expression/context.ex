@@ -46,28 +46,28 @@ defmodule Expression.Context do
   defp downcase_string_key({key, value}), do: {String.downcase(to_string(key)), value}
 
   defp iterate({key, value}) when is_map(value) or is_list(value) do
-    {key, evaluate(value)}
+    {key, evaluate!(value)}
   end
 
-  defp iterate({key, value}) when is_binary(value), do: {key, evaluate(value)}
+  defp iterate({key, value}) when is_binary(value), do: {key, evaluate!(value)}
 
   defp iterate({key, value}), do: {key, value}
 
-  defp evaluate(ctx) when is_map(ctx) and not is_struct(ctx) do
+  defp evaluate!(ctx) when is_map(ctx) and not is_struct(ctx) do
     new(ctx)
   end
 
-  defp evaluate(ctx) when is_list(ctx) do
+  defp evaluate!(ctx) when is_list(ctx) do
     ctx
-    |> Enum.map(&evaluate(&1))
+    |> Enum.map(&evaluate!(&1))
   end
 
-  defp evaluate(value) when not is_binary(value), do: value
+  defp evaluate!(value) when not is_binary(value), do: value
 
-  defp evaluate(binary) when is_binary(binary) do
-    case Expression.parse_literal(binary) do
-      {:literal, literal} -> literal
-      {:error, _reason} -> binary
+  defp evaluate!(binary) when is_binary(binary) do
+    with {:ok, ast, "", _, _, _} <- Expression.Parser.literal(binary),
+         [{:literal, _literal}] <- ast do
+      Expression.Eval2.eval!(ast, %{})
     end
   end
 end

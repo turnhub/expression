@@ -1175,10 +1175,9 @@ defmodule Expression.Callbacks do
 
   """
   def has_any_word(_ctx, haystack, words) do
-    {_patterns, results} = search_words(haystack, words)
+    {_patterns, results} = search_words(words, haystack)
 
-    # future match result Enum.join(results, " ")
-    Enum.any?(results)
+    %{"__value__" => Enum.any?(results), "match" => Enum.join(results, " ")}
   end
 
   @doc """

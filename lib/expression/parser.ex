@@ -6,7 +6,8 @@ defmodule Expression.Parser do
   import Expression.OperatorHelpers
 
   # literal = 1, 2.1, "three", 'four', true, false, ISO dates
-  literal =
+  defparsec(
+    :literal,
     choice([
       datetime(),
       decimal(),
@@ -16,6 +17,7 @@ defmodule Expression.Parser do
       double_quoted_string()
     ])
     |> unwrap_and_tag(:literal)
+  )
 
   # atom = atom
   atom =
@@ -23,7 +25,6 @@ defmodule Expression.Parser do
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
     |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})
-    |> unwrap_and_tag(:atom)
 
   ignore_surrounding_whitespace = fn p ->
     ignore(optional(string(" ")))
@@ -43,19 +44,10 @@ defmodule Expression.Parser do
     |> optional(ignore(argument_separator) |> parsec(:arguments))
   )
 
-  # repeat(
-  #   # choice([
-  #   # expression,
-  #   parsec(:aexpr),
-  #   ignore(argument_separator)
-  #   # ])
-  # )
-  # |> tag(:args)
-
-  defcombinatorp(
+  defparsec(
     :aexpr_factor,
     choice([
-      literal,
+      parsec(:literal),
       parsec(:function),
       parsec(:variable),
       ignore(string("(")) |> parsec(:aexpr) |> ignore(string(")"))
@@ -63,17 +55,26 @@ defmodule Expression.Parser do
     |> ignore_surrounding_whitespace.()
   )
 
-  defparsecp(
-    :aexpr_exponent,
+  attribute =
+    empty()
+    |> ascii_char([?.])
+    |> replace(:attribute)
+    |> label(".")
+
+  defparsec(
+    :aexpr_exponent_or_attribute,
     parsec(:aexpr_factor)
-    |> repeat(exponent() |> parsec(:aexpr_factor))
+    |> repeat(
+      choice([exponent(), attribute])
+      |> parsec(:aexpr_factor)
+    )
     |> reduce(:fold_infixl)
   )
 
-  defparsecp(
+  defparsec(
     :aexpr_term,
-    parsec(:aexpr_exponent)
-    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent))
+    parsec(:aexpr_exponent_or_attribute)
+    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent_or_attribute))
     |> reduce(:fold_infixl)
   )
 
@@ -97,6 +98,14 @@ defmodule Expression.Parser do
     |> reduce(:fold_infixl)
   )
 
+  # defparsec(
+  #   :attribute,
+  #   parsec(:aexpr)
+  #   |> repeat(string(".") |> replace(:attribute) |> label("."))
+  #   |> concat(atom)
+  #   |> reduce(:fold_infixl)
+  # )
+
   def fold_infixl(acc) do
     acc
     |> Enum.reverse()
@@ -107,26 +116,14 @@ defmodule Expression.Parser do
     end)
   end
 
-  # attribute = expression "." atom
-  # access = expression "[" expression  "]"
-
-  defparsec(
-    :attribute,
-    ignore(string("."))
-    |> concat(atom)
-    |> optional(parsec(:attribute))
-    |> tag(:attribute)
-  )
-
   # function  = "(" arguments ")"
   defparsec(
     :function,
     atom
-    |> tag(:name)
+    |> unwrap_and_tag(:name)
     |> ignore(string("("))
     |> optional(parsec(:arguments) |> tag(:args))
     |> ignore(string(")"))
-    |> optional(parsec(:attribute))
     |> tag(:function)
   )
 
@@ -134,27 +131,28 @@ defmodule Expression.Parser do
   defparsec(
     :variable,
     atom
-    |> optional(parsec(:attribute))
-    |> tag(:variable)
+    |> unwrap_and_tag(:atom)
   )
 
   expression_block =
     ignore(string("@"))
     |> lookahead_not(string("@"))
     |> ignore(string("("))
-    |> concat(parsec(:aexpr))
+    |> parsec(:aexpr)
     |> ignore(string(")"))
-    |> tag(:expression_block)
+    |> tag(:expression)
 
   expression =
     ignore(string("@"))
     |> lookahead_not(string("@"))
-    |> concat(
+    |> repeat(
       choice([
+        attribute,
         parsec(:function),
         parsec(:variable)
       ])
     )
+    |> reduce(:fold_infixl)
     |> tag(:expression)
 
   escaped_at =
