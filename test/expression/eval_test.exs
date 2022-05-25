@@ -19,6 +19,11 @@ defmodule Expression.EvalTest do
     assert [true] == Eval.eval!(ast, %{})
   end
 
+  test "email addresses" do
+    {:ok, ast, "", _, _, _} = Parser.parse("email info@example.com for more information")
+    assert ["email info", "@example.com", " for more information"] == Eval.eval!(ast, %{})
+  end
+
   test "attributes on functions" do
     {:ok, ast, "", _, _, _} =
       Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox").match])

@@ -37,8 +37,31 @@ defmodule Expression.Eval do
     get_in(context, [atom])
   end
 
-  def eval!({:attribute, [ast, {:atom, key}]}, context, mod) do
-    get_in(eval!(ast, context, mod), [key])
+  def eval!({:attribute, [{:atom, subject}, {:atom, key}]}, context, _mod) do
+    get_in(context, [subject, key]) || "@#{subject}.#{key}"
+  end
+
+  def eval!({:attribute, [subject_ast, {:atom, key}]}, context, mod) do
+    subject = eval!(subject_ast, context, mod)
+    get_in(subject, [key])
+  end
+
+  def to_expression!({:atom, atom}, ast),
+    do:
+      ["#{atom}" | to_expression!(ast, [])]
+      |> Enum.reverse()
+      |> Enum.join(".")
+
+  def to_expression([], []), do: []
+
+  def to_expression!(literal, []),
+    do: [to_string(literal)] |> IO.inspect(label: "literal? #{inspect(literal)}")
+
+  def to_expression!(ast) do
+    ast
+    |> Enum.reduce([], &to_expression!/2)
+    |> Enum.reverse()
+    |> Enum.join()
   end
 
   def eval!({:function, opts}, context, mod) do
