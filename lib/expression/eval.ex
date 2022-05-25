@@ -46,24 +46,6 @@ defmodule Expression.Eval do
     get_in(subject, [key])
   end
 
-  def to_expression!({:atom, atom}, ast),
-    do:
-      ["#{atom}" | to_expression!(ast, [])]
-      |> Enum.reverse()
-      |> Enum.join(".")
-
-  def to_expression([], []), do: []
-
-  def to_expression!(literal, []),
-    do: [to_string(literal)] |> IO.inspect(label: "literal? #{inspect(literal)}")
-
-  def to_expression!(ast) do
-    ast
-    |> Enum.reduce([], &to_expression!/2)
-    |> Enum.reverse()
-    |> Enum.join()
-  end
-
   def eval!({:function, opts}, context, mod) do
     name = opts[:name] || raise "Functions need a name"
     arguments = opts[:args] || []
