@@ -26,6 +26,16 @@ defmodule Expression.Parser do
     |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})
 
+  range =
+    int()
+    |> ignore(string(".."))
+    |> concat(int())
+    |> optional(
+      ignore(string("//"))
+      |> concat(int())
+    )
+    |> tag(:range)
+
   ignore_surrounding_whitespace = fn p ->
     ignore(optional(string(" ")))
     |> concat(p)
@@ -47,6 +57,7 @@ defmodule Expression.Parser do
   defparsec(
     :aexpr_factor,
     choice([
+      range,
       parsec(:literal),
       parsec(:function),
       parsec(:variable),
@@ -116,6 +127,15 @@ defmodule Expression.Parser do
     end)
   end
 
+  defparsec(
+    :list,
+    parsec(:aexpr)
+    |> ignore(string("["))
+    |> parsec(:aexpr)
+    |> ignore(string("]"))
+    |> tag(:list)
+  )
+
   # function  = "(" arguments ")"
   defparsec(
     :function,
@@ -148,6 +168,7 @@ defmodule Expression.Parser do
     |> repeat(
       choice([
         attribute,
+        parsec(:list),
         parsec(:function),
         parsec(:variable)
       ])

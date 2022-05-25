@@ -2,306 +2,49 @@ defmodule ExpressionTest do
   use ExUnit.Case, async: true
   doctest Expression
 
-  describe "frikking" do
-    test "list indices" do
-      assert {:ok, [1], "", %{}, {1, 0}, 3} ==
-               Expression.Ast.parse_list("[1]")
-    end
-
-    test "attributes" do
-      assert {:ok, ["bar"], "", %{}, {1, 0}, 4} ==
-               Expression.Ast.parse_attribute(".bar")
-    end
-  end
-
-  describe "types" do
-    test "lists with indices" do
-      assert {:ok, [substitution: [variable: ["foo", {:list, 1}]]]} = Expression.parse("@foo[1]")
-    end
-
-    test "lists with variables" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   variable: ["foo", {:list, {:variable, ["cursor"]}}]
-                 ]
-               ]
-             } = Expression.parse("@foo[cursor]")
-    end
-
-    test "normal attributes" do
-      assert {:ok, [substitution: [variable: ["foo", {:attribute, "bar"}]]]} =
-               Expression.parse("@foo.bar")
-    end
-
-    test "attributes from list items" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   variable: [
-                     "foo",
-                     {:list, 0},
-                     {:attribute, "bar"}
-                   ]
-                 ]
-               ]
-             } = Expression.parse("@foo[0].bar")
-    end
-
-    test "text" do
-      assert {:ok, [text: "hello"]} = Expression.parse("hello")
-    end
-
-    test "decimal" do
-      value = Decimal.new("1.23")
-
-      assert {:ok, [substitution: [block: [literal: ^value]]]} = Expression.parse("@(1.23)")
-    end
-
-    test "datetime" do
-      {:ok, value, 0} = DateTime.from_iso8601("2020-11-21T20:13:51.921042Z")
-
-      assert {:ok, [substitution: [block: [literal: ^value]]]} =
-               Expression.parse("@(2020-11-21T20:13:51.921042Z)")
-
-      {:ok, value, 0} = DateTime.from_iso8601("2020-02-01T23:23:23Z")
-
-      assert {:ok, [substitution: [block: [literal: ^value]]]} =
-               Expression.parse("@(01-02-2020 23:23:23)")
-
-      full_minute = %{value | second: 0}
-
-      assert {:ok, [substitution: [block: [literal: ^full_minute]]]} =
-               Expression.parse("@(01-02-2020 23:23)")
-    end
-
-    test "boolean" do
-      assert {:ok, [substitution: [block: [literal: true]]]} = Expression.parse("@(true)")
-
-      assert {:ok, [substitution: [block: [literal: true]]]} = Expression.parse("@(True)")
-
-      assert {:ok, [substitution: [block: [literal: false]]]} = Expression.parse("@(false)")
-
-      assert {:ok, [substitution: [block: [literal: false]]]} = Expression.parse("@(False)")
-    end
-  end
-
-  describe "case insensitive" do
-    test "variables" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   variable: ["contact", {:attribute, "name"}]
-                 ]
-               ]
-             } = Expression.parse("@CONTACT.Name")
-    end
-
-    test "functions" do
-      assert {:ok, [substitution: [function: ["hour"]]]} = Expression.parse("@hour()")
-
-      assert {:ok, [substitution: [function: ["hour", {:arguments, [function: ["now"]]}]]]} =
-               Expression.parse("@hour(Now())")
-    end
-  end
-
-  describe "templating" do
-    test "substitution" do
-      assert {:ok, [substitution: [variable: ["contact"]]]} = Expression.parse("@contact")
-
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   variable: ["contact", {:attribute, "name"}]
-                 ]
-               ]
-             } = Expression.parse("@contact.name")
-    end
-  end
-
-  describe "blocks" do
-    test "block" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   block: [
-                     variable: ["contact", {:attribute, "name"}]
-                   ]
-                 ]
-               ]
-             } = Expression.parse("@(contact.name)")
-    end
-  end
-
-  describe "functions" do
-    test "without arguments" do
-      assert {:ok, [substitution: [function: ["hour"]]]} = Expression.parse("@HOUR()")
-    end
-
-    test "with a single argument" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   function: [
-                     "hour",
-                     {
-                       :arguments,
-                       [
-                         variable: [
-                           "contact",
-                           {:attribute, "timestamp"}
-                         ]
-                       ]
-                     }
-                   ]
-                 ]
-               ]
-             } = Expression.parse("@HOUR(contact.timestamp)")
-    end
-
-    test "with a multiple argument" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   function: [
-                     "edate",
-                     {
-                       :arguments,
-                       [
-                         variable: ["date", {:attribute, "today"}],
-                         literal: 1
-                       ]
-                     }
-                   ]
-                 ]
-               ]
-             } = Expression.parse("@EDATE(date.today, 1)")
-    end
-
-    test "with functions" do
-      assert {:ok,
-              [
-                substitution: [function: ["hour", {:arguments, [{:function, ["now"]}]}]]
-              ]} = Expression.parse("@HOUR(NOW())")
-    end
-  end
-
-  describe "logic" do
-    test "lte" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   block: [
-                     <=: [
-                       variable: ["block", {:attribute, "value"}],
-                       literal: 30
-                     ]
-                   ]
-                 ]
-               ]
-             } == Expression.parse("@(block.value <= 30)")
-    end
-
-    test "add" do
-      assert {:ok,
-              [
-                substitution: [
-                  block: [+: [literal: 1, variable: ["a"]]]
-                ]
-              ]} = Expression.parse("@(1 + a)")
-
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   block: [
-                     +: [
-                       variable: ["contact", {:attribute, "age"}],
-                       literal: 1
-                     ]
-                   ]
-                 ]
-               ]
-             } = Expression.parse("@(contact.age+1)")
-    end
-
-    test "join" do
-      assert {
-               :ok,
-               [
-                 substitution: [
-                   block: [
-                     &: [
-                       &: [
-                         variable: [
-                           "contact",
-                           {:attribute, "first_name"}
-                         ],
-                         literal: " "
-                       ],
-                       variable: [
-                         "contact",
-                         {:attribute, "last_name"}
-                       ]
-                     ]
-                   ]
-                 ]
-               ]
-             } = Expression.parse("@(contact.first_name & \" \" & contact.last_name)")
-    end
-  end
-
   describe "evaluate" do
     test "list with indices" do
-      assert {:ok, "bar"} = Expression.evaluate("@foo[1]", %{"foo" => ["baz", "bar"]})
+      assert "bar" == Expression.to_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end
 
     test "list with variable" do
-      assert {:ok, "bar"} =
-               Expression.evaluate("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
+      assert "bar" =
+               Expression.to_string!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
     end
 
     test "list with attribute" do
-      assert {:ok, "bar"} = Expression.evaluate("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
+      assert "bar" = Expression.to_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
     end
 
     test "list with out of bound indicess" do
-      assert {:ok, nil} =
-               Expression.evaluate("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 100})
+      assert [nil] ==
+               Expression.evaluate!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 100})
 
-      assert {:ok, nil} = Expression.evaluate("@foo[100]", %{"foo" => ["baz", "bar"]})
+      assert [nil] == Expression.evaluate!("@foo[100]", %{"foo" => ["baz", "bar"]})
     end
 
     test "calculation with explicit precedence" do
-      assert {:ok, 8} = Expression.evaluate("@(2 + (2 * 3))")
+      assert {:ok, [8]} = Expression.evaluate("@(2 + (2 * 3))")
     end
 
     test "calculation with default precedence" do
-      assert {:ok, 8} = Expression.evaluate("@(2 + 2 * 3)")
+      assert {:ok, [8]} = Expression.evaluate("@(2 + 2 * 3)")
     end
 
     test "exponent precendence over addition" do
-      assert {:ok, 10.0} = Expression.evaluate("@(2 + 2 ^ 3)")
+      assert {:ok, [10.0]} = Expression.evaluate("@(2 + 2 ^ 3)")
     end
 
     test "exponent precendence over multiplication" do
-      assert {:ok, 16.0} = Expression.evaluate("@(2 * 2 ^ 3)")
+      assert {:ok, [16.0]} = Expression.evaluate("@(2 * 2 ^ 3)")
     end
 
     test "example calculation from floip expression docs" do
-      assert {:ok, 0.999744} = Expression.evaluate("@(1 + (2 - 3) * 4 / 5 ^ 6)")
+      assert {:ok, [0.999744]} = Expression.evaluate("@(1 + (2 - 3) * 4 / 5 ^ 6)")
     end
 
     test "evaluate map default value" do
-      assert {:ok, "foo"} ==
+      assert {:ok, ["foo"]} ==
                Expression.evaluate("@map", %{
                  "map" => %{
                    "__value__" => "foo",
@@ -309,7 +52,7 @@ defmodule ExpressionTest do
                  }
                })
 
-      assert {:ok, "bar"} ==
+      assert {:ok, ["bar"]} ==
                Expression.evaluate("@map.bar", %{
                  "map" => %{
                    "__value__" => "foo",
@@ -319,44 +62,44 @@ defmodule ExpressionTest do
     end
 
     test "example logical comparison" do
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age > 18)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age >= 20)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, false} ==
+      assert {:ok, [false]} ==
                Expression.evaluate("@(contact.age < 18)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age <= 20)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age <= 30)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, false} ==
+      assert {:ok, [false]} ==
                Expression.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, false} ==
+      assert {:ok, [false]} ==
                Expression.evaluate("@(contact.age = 18)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age != 18)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age <> 18)", %{"contact" => %{"age" => 20}})
 
-      assert {:ok, true} ==
+      assert {:ok, [true]} ==
                Expression.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 18}})
     end
 
     test "escaping @s" do
-      assert {:ok, "user@example.org"} = Expression.evaluate("user@@example.org")
-      assert {:ok, "user@example.org"} = Expression.evaluate("@('user' & '@example.org')")
+      assert "user@example.org" = Expression.to_string!("user@@example.org")
+      assert "user@example.org" = Expression.to_string!("@('user' & '@example.org')")
     end
 
     test "substitution" do
-      assert {:ok, "hello name"} =
+      assert {:ok, ["hello ", "name"]} =
                Expression.evaluate("hello @(contact.name)", %{
                  "contact" => %{
                    "name" => "name"
@@ -365,7 +108,7 @@ defmodule ExpressionTest do
     end
 
     test "addition" do
-      assert {:ok, "next year you are 41 years old"} =
+      assert {:ok, ["next year you are ", 41, " years old"]} =
                Expression.evaluate("next year you are @(contact.age + 1) years old", %{
                  "contact" => %{
                    "age" => 40
@@ -374,19 +117,19 @@ defmodule ExpressionTest do
     end
 
     test "function name case insensitivity" do
-      assert {:ok, dt} = Expression.evaluate("@(NOW())")
+      assert {:ok, [dt]} = Expression.evaluate("@(NOW())")
       assert dt.year == DateTime.utc_now().year
-      assert {:ok, dt} = Expression.evaluate("@(noW())")
+      assert {:ok, [dt]} = Expression.evaluate("@(noW())")
       assert dt.year == DateTime.utc_now().year
     end
 
     test "function calls with zero arguments" do
-      assert {:ok, dt} = Expression.evaluate("@(NOW())")
+      assert {:ok, [dt]} = Expression.evaluate("@(NOW())")
       assert dt.year == DateTime.utc_now().year
     end
 
     test "function calls with one or more arguments" do
-      assert {:ok, dt} = Expression.evaluate("@(DATE(2020, 12, 30))")
+      assert {:ok, [dt]} = Expression.evaluate("@(DATE(2020, 12, 30))")
       assert dt.year == 2020
       assert dt.month == 12
       assert dt.day == 30
@@ -394,28 +137,28 @@ defmodule ExpressionTest do
 
     test "function calls default arguments" do
       now = NaiveDateTime.utc_now()
-      assert {:ok, returned} = Expression.evaluate("@(DATEVALUE(NOW()))")
+      assert {:ok, [returned]} = Expression.evaluate("@(DATEVALUE(NOW()))")
       parsed = Timex.parse!(returned, "%Y-%m-%d %H:%M:%S", :strftime)
       assert NaiveDateTime.diff(now, parsed) < :timer.seconds(1)
 
       expected = Timex.format!(DateTime.utc_now(), "%Y-%m-%d", :strftime)
-      assert {:ok, expected} == Expression.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")
+      assert {:ok, [expected]} == Expression.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")
     end
 
     test "checking for nil vars with if" do
-      assert {:ok, 1} =
+      assert {:ok, [1]} =
                Expression.evaluate("@IF(value, value, 0)", %{
                  "value" => 1
                })
 
-      assert {:ok, 0} =
+      assert {:ok, [0]} =
                Expression.evaluate("@IF(value, value, 0)", %{
                  "value" => nil
                })
 
-      assert {:ok, 0} = Expression.evaluate("@IF(value, value, 0)", %{})
+      assert {:ok, [0]} = Expression.evaluate("@IF(value, value, 0)", %{})
 
-      assert {:ok, 1} =
+      assert {:ok, [1]} =
                Expression.evaluate("@IF(value.foo, value.foo, 0)", %{
                  "value" => %{
                    "foo" => 1
@@ -424,53 +167,29 @@ defmodule ExpressionTest do
     end
 
     test "function calls with expressions" do
-      assert {
-               :ok,
-               [
-                 text: "Dear ",
-                 substitution: [
-                   function: [
-                     "if",
-                     {
-                       :arguments,
-                       [
-                         ==: [
-                           variable: [
-                             "contact",
-                             {:attribute, "gender"}
-                           ],
-                           literal: "M"
-                         ],
-                         literal: "Sir",
-                         literal: "lovely client"
-                       ]
-                     }
-                   ]
-                 ]
-               ]
-             } = Expression.parse("Dear @IF(contact.gender = 'M', 'Sir', 'lovely client')")
-
-      assert {:ok, "Dear lovely client"} =
+      assert {:ok, ["Dear ", "lovely client"]} =
                Expression.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'lovely client')", %{
                  "contact" => %{"gender" => "O"}
                })
     end
 
     test "evaluate_block" do
-      assert {:ok, true} ==
-               Expression.evaluate_block("contact.age > 10", %{contact: %{age: 21}})
+      assert {:ok, [true]} ==
+               Expression.evaluate_block("contact.age > 10", %{"contact" => %{"age" => 21}})
 
-      assert {:ok, 2} == Expression.evaluate_block("1 + 1")
+      assert {:ok, [2]} == Expression.evaluate_block("1 + 1")
     end
 
     test "return an error tuple" do
       assert {:error, "expression is not a number: `\"not a number\"`"} =
-               Expression.evaluate_block("block.value > 0", %{block: %{value: "not a number"}})
+               Expression.evaluate_block("block.value > 0", %{
+                 "block" => %{"value" => "not a number"}
+               })
     end
 
     test "return an error tuple when variables are not defined" do
       assert {:error, "expression is not a number: `nil`"} =
-               Expression.evaluate_block("block.value > 0", %{block: %{}})
+               Expression.evaluate_block("block.value > 0", %{"block" => %{}})
 
       assert {:error, "expression is not a number: `nil`"} =
                Expression.evaluate_block("block.value > 0", %{})
@@ -478,13 +197,13 @@ defmodule ExpressionTest do
 
     test "throw an error when variables are not defined" do
       assert_raise RuntimeError, "expression is not a number: `nil`", fn ->
-        Expression.evaluate_block!("block.value > 0", %{block: %{}})
+        Expression.evaluate_block!("block.value > 0", %{"block" => %{}})
       end
     end
 
     test "throw an error" do
       assert_raise RuntimeError, "expression is not a number: `\"not a number\"`", fn ->
-        Expression.evaluate_block!("block.value > 0", %{block: %{value: "not a number"}})
+        Expression.evaluate_block!("block.value > 0", %{"block" => %{"value" => "not a number"}})
       end
     end
   end

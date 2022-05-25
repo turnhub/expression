@@ -65,9 +65,9 @@ defmodule Expression.Context do
   defp evaluate!(value) when not is_binary(value), do: value
 
   defp evaluate!(binary) when is_binary(binary) do
-    with {:ok, ast, "", _, _, _} <- Expression.Parser.literal(binary),
-         [{:literal, _literal}] <- ast do
-      Expression.Eval2.eval!(ast, %{})
+    case Expression.Parser.literal(binary) do
+      {:ok, [{:literal, literal}], "", _, _, _} -> literal
+      {:error, _reason, _, _, _, _} -> binary
     end
   end
 end

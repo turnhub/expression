@@ -108,6 +108,104 @@ defmodule Expression.ParserTest do
     end
   end
 
+  describe "logic" do
+    test "lte" do
+      assert_ast(
+        [
+          expression: [
+            <=: [
+              attribute: [atom: "block", atom: "value"],
+              literal: 30
+            ]
+          ]
+        ],
+        "@(block.value <= 30)"
+      )
+    end
+
+    test "add" do
+      assert_ast(
+        [expression: [+: [literal: 1, atom: "a"]]],
+        "@(1 + a)"
+      )
+
+      assert_ast(
+        [
+          expression: [
+            +: [
+              attribute: [atom: "contact", atom: "age"],
+              literal: 1
+            ]
+          ]
+        ],
+        "@(contact.age+1)"
+      )
+    end
+
+    test "join" do
+      assert_ast(
+        [
+          expression: [
+            &: [
+              {
+                :&,
+                [
+                  attribute: [
+                    atom: "contact",
+                    atom: "first_name"
+                  ],
+                  literal: " "
+                ]
+              },
+              attribute: [atom: "contact", atom: "last_name"]
+            ]
+          ]
+        ],
+        "@(contact.first_name & \" \" & contact.last_name)"
+      )
+    end
+  end
+
+  describe "lists" do
+    test "with integers" do
+      assert_ast(
+        [expression: [list: [atom: "foo", literal: 0]]],
+        "@foo[0]"
+      )
+    end
+
+    test "with variables" do
+      assert_ast(
+        [expression: [list: [atom: "foo", atom: "bar"]]],
+        "@foo[bar]"
+      )
+    end
+
+    test "with function call" do
+      assert_ast(
+        [expression: [list: [atom: "foo", function: [name: "date"]]]],
+        "@foo[date()]"
+      )
+    end
+
+    test "with function call and attribute" do
+      assert_ast(
+        [
+          expression: [
+            list: [
+              atom: "foo",
+              attribute: [
+                function: [name: "date"],
+                atom: "month"
+              ]
+            ]
+          ]
+        ],
+        "@foo[date().month]"
+      )
+    end
+  end
+
   describe "functions" do
     test "without arguments" do
       assert_ast(
@@ -239,6 +337,56 @@ defmodule Expression.ParserTest do
           ]
         ],
         "@regex(haystack, needle).match.deep"
+      )
+    end
+  end
+
+  describe "types" do
+    test "decimal" do
+      assert_ast([expression: [literal: Decimal.new("1.23")]], "@(1.23)")
+    end
+
+    test "datetime" do
+      assert_ast(
+        [expression: [literal: ~U[2020-11-21 20:13:51.921042Z]]],
+        "@(2020-11-21T20:13:51.921042Z)"
+      )
+
+      assert_ast(
+        [expression: [literal: ~U[2020-02-01T23:23:23Z]]],
+        "@(01-02-2020 23:23:23)"
+      )
+
+      assert_ast([expression: [literal: ~U[2020-02-01T23:23:00Z]]], "@(01-02-2020 23:23)")
+    end
+
+    test "booleans" do
+      assert_ast([expression: [literal: true]], "@(true)")
+      assert_ast([expression: [literal: true]], "@(True)")
+      assert_ast([expression: [literal: false]], "@(false)")
+      assert_ast([expression: [literal: false]], "@(False)")
+    end
+  end
+
+  describe "case insensitive" do
+    test "variables" do
+      assert_ast(
+        [expression: [attribute: [atom: "contact", atom: "name"]]],
+        "@CONTACT.Name"
+      )
+    end
+
+    test "functions" do
+      assert_ast(
+        [
+          expression: [
+            function: [
+              name: "hour",
+              args: [function: [name: "now"]]
+            ]
+          ]
+        ],
+        "@hour(Now())"
       )
     end
   end

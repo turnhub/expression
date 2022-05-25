@@ -68,21 +68,27 @@ defmodule Expression do
     try do
       {:ok, evaluate_block!(expression, context, mod)}
     rescue
-      e -> {:error, e}
+      e in RuntimeError -> {:error, e.message}
     end
   end
 
-  def evaluate!(expression_block, context \\ %{}, mod \\ Expression.Callbacks) do
-    expression_block
+  def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    expression
     |> parse!
     |> Eval2.eval!(context, mod)
+  end
+
+  def to_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    expression
+    |> parse!
+    |> Eval2.to_string!(context, mod)
   end
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     try do
       {:ok, evaluate!(expression, context, mod)}
     rescue
-      e -> {:error, e}
+      e in RuntimeError -> {:error, e.message}
     end
   end
 end

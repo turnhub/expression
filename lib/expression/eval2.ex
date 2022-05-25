@@ -1,8 +1,8 @@
 defmodule Expression.Eval2 do
   def eval!(ast, context, mod \\ Expression.Callbacks)
 
-  def eval!({:expression, ast}, context, mod) do
-    Enum.reduce(ast, [], fn ast, acc -> [eval!(ast, context, mod) || acc] end)
+  def eval!({:expression, [ast]}, context, mod) do
+    eval!(ast, context, mod)
   end
 
   def eval!({:atom, atom}, context, _mod) do
@@ -13,12 +13,34 @@ defmodule Expression.Eval2 do
     get_in(eval!(ast, context, mod), [key])
   end
 
-  def eval!({:function, [name: name, args: arguments]}, context, mod) do
-    evaluated_arguments = Enum.reduce(arguments, [], &[eval!(&1, context, mod) | &2])
+  def eval!({:function, opts}, context, mod) do
+    name = opts[:name] || raise "Functions need a name"
+    arguments = opts[:args] || []
+
+    evaluated_arguments =
+      arguments
+      |> Enum.reduce([], &[eval!(&1, context, mod) | &2])
+      |> Enum.reverse()
 
     case mod.handle(name, evaluated_arguments, context) do
       {:ok, value} -> value
       {:error, reason} -> "ERROR: #{inspect(reason)}"
+    end
+  end
+
+  def eval!({:range, [first, last]}, _context, _mod),
+    do: Range.new(first, last)
+
+  def eval!({:range, [first, last, step]}, _context, _mod),
+    do: Range.new(first, last, step)
+
+  def eval!({:list, [subject_ast, key_ast]}, context, mod) do
+    subject = eval!(subject_ast, context, mod)
+    key = eval!(key_ast, context, mod)
+
+    case key do
+      index when is_number(index) -> get_in(subject, [Access.at(index)])
+      range when is_struct(range, Range) -> Enum.slice(subject, range)
     end
   end
 
@@ -38,22 +60,16 @@ defmodule Expression.Eval2 do
   def eval!({:&, [a, b]}, ctx, mod), do: [a, b] |> Enum.map_join("", &eval!(&1, ctx, mod))
 
   def eval!(ast, context, mod) do
-    output =
-      ast
-      |> Enum.reduce([], fn ast, acc -> [eval!(ast, context, mod) | acc] end)
-      |> List.flatten()
+    ast
+    |> Enum.reduce([], fn ast, acc -> [eval!(ast, context, mod) | acc] end)
+    |> Enum.reverse()
+    |> Enum.map(&default_value/1)
+  end
 
-    case output do
-      [value] ->
-        default_value(value)
-
-      list ->
-        list
-        |> Enum.map(&default_value/1)
-        |> Enum.map(&to_string/1)
-        |> Enum.reverse()
-        |> Enum.join()
-    end
+  def to_string!(ast, context, mod \\ Expression.Callbacks) do
+    eval!(ast, context, mod)
+    |> Enum.map(&Kernel.to_string/1)
+    |> Enum.join()
   end
 
   defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
