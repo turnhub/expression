@@ -123,14 +123,6 @@ defmodule Expression.Parser do
     |> reduce(:fold_infixl)
   )
 
-  # defparsec(
-  #   :attribute,
-  #   parsec(:aexpr)
-  #   |> repeat(string(".") |> replace(:attribute) |> label("."))
-  #   |> concat(atom)
-  #   |> reduce(:fold_infixl)
-  # )
-
   def fold_infixl(acc) do
     acc
     |> Enum.reverse()
