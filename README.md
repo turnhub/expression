@@ -69,6 +69,33 @@ iex(11)> Expression.to_string!("Your next appointment is @(DATEVALUE(EDATE(conta
 
 See `Engaged.Callbacks` for all the functions implemented.
 
+Often, when one has an email address in an expression, one would want to leave it as is.
+Expressions accommodates this by having expressions that evaluate to nil left as is.
+
+```elixir
+iex(3)> Expression.to_string!("info@support.com")
+"info@support.com"
+```
+
+A thing to note though is that if `@support.com` does resolve to something with the given context,
+it will still be applied:
+
+```elixir
+iex(6)> Expression.to_string!("info@support.com", %{
+...(6)>   "support" => %{
+...(6)>     "com" => "example placeholder value"
+...(6)>   }
+...(6)> })
+"infoexample placeholder value"
+```
+
+To properly escape the `@`, prefix it with another `@` as the example below:
+
+```elixir
+iex(4)> Expression.to_string!("info@@support.com")
+"info@support.com"
+```
+
 # Types
 
 Expression knows the following types:
