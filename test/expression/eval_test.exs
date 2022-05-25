@@ -1,6 +1,6 @@
-defmodule Expression.Eval2Test do
+defmodule Expression.EvalTest do
   use ExUnit.Case, async: true
-  alias Expression.Eval2, as: Eval
+  alias Expression.Eval
   alias Expression.Parser
 
   test "substitution" do

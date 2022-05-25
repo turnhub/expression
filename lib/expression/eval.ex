@@ -1,4 +1,4 @@
-defmodule Expression.Eval2 do
+defmodule Expression.Eval do
   def eval!(ast, context, mod \\ Expression.Callbacks)
 
   def eval!({:expression, [ast]}, context, mod) do
