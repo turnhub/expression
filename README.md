@@ -3,53 +3,68 @@
 An Elixir library implementing the [FLOIP Expressions](https://floip.gitbook.io/flow-specification/expressions) language.
 
 ```elixir
-iex> Expression.evaluate("Hello @name", %{
-  "name" => "World"
-})
-"Hello World"
+iex(1)> Expression.evaluate!("Hello @name", %{
+...(1)>   "name" => "World"
+...(1)> })
+["Hello ", "World"]
 
-iex> Expression.evaluate("Hello @contact.name", %{
-  "contact" => %{
-    "name" => "peter"
-  }
-})
-"Hello peter"
+iex(2)> Expression.evaluate("Hello @contact.name", %{
+...(2)>   "contact" => %{
+...(2)>     "name" => "peter"
+...(2)>   }
+...(2)> })
+{:ok, ["Hello ", "peter"]}
 
-iex> Expression.evaluate("Hello @contact.name, you were born in @(YEAR(contact.birthday))", %{
-  "contact" => %{
-    "name" => "mary",
-    "birthday" => "1920-02-02T00:00:00"
-  }
-})
-{:ok, "Hello mary, you were born in 1920"}
+iex(6)> Expression.evaluate("Hello @contact.name, you were born in @(YEAR(contact.birthday))", %{
+...(6)>   "contact" => %{
+...(6)>     "name" => "mary",
+...(6)>     "birthday" => "1920-02-02T00:00:00"
+...(6)>   }
+...(6)> })
+{:ok, ["Hello ", "mary", ", you were born in ", 1920]}
 
-iex> Expression.evaluate("Hello @PROPER(contact.name)", %{
-  "contact" => %{
-    "name" => "peter rabbit"
-  }
-})
-"Hello Peter Rabbit"
+iex(7)> Expression.evaluate("Hello @PROPER(contact.name)", %{
+...(7)>   "contact" => %{
+...(7)>     "name" => "peter rabbit"
+...(7)>   }
+...(7)> })
+{:ok, ["Hello ", "Peter Rabbit"]}
 
-iex> Expression.evaluate("Your next appointment is @(EDATE(contact.appointment, 1))", %{
-  "contact" => %{
-    "appointment" => DateTime.utc_now()
-  }
-})
-{:ok, "Your next appointment is 2021-01-02 12:38:14.426663Z"}
+ex(8)> Expression.evaluate("Your next appointment is @(EDATE(contact.appointment, 1))", %{
+...(8)>   "contact" => %{
+...(8)>     "appointment" => DateTime.utc_now()
+...(8)>   }
+...(8)> })
+{:ok, ["Your next appointment is ", ~U[2022-06-25 08:39:51.730780Z]]}
 
-iex> Expression.evaluate("Your next appointment is @(DATEVALUE(EDATE(contact.appointment, 1), \"%Y-%m-%d\"))", %{
-  "contact" => %{
-    "appointment" => "2020-12-13T23:35:55"
-  }
-})
-{:ok, "Your next appointment is 2021-01-13"}
+iex(9)> Expression.evaluate("Your next appointment is @(DATEVALUE(EDATE(contact.appointment, 1), \"%Y-%m-%d\"))", %{
+...(9)>   "contact" => %{
+...(9)>     "appointment" => "2020-12-13T23:35:55"
+...(9)>   }
+...(9)> })
+{:ok, ["Your next appointment is ", "2021-01-13"]}
 
-iex> Expression.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'Client')", %{
-  "contact" => %{
-    "gender" => "O"
-  }
-})
-{:ok, "Dear Client"}
+
+iex(10)> Expression.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'Client')", %{
+...(10)>   "contact" => %{
+...(10)>     "gender" => "O"
+...(10)>   }
+...(10)> })
+{:ok, ["Dear ", "Client"]}
+```
+
+The values of each chunk (either text or expression) is in the list returned by evaluate.
+The return values of Expressions are typed. The types are documented below under _Types_.
+
+If you're looking for a shorthand to convert these to a single string output use `Expression.to_string!/3`.
+
+```elixir
+iex(11)> Expression.to_string!("Your next appointment is @(DATEVALUE(EDATE(contact.appointment, 1), \"%Y-%m-%d\"))", %{
+...(11)>   "contact" => %{
+...(11)>     "appointment" => "2020-12-13T23:35:55"
+...(11)>   }
+...(11)> })
+"Your next appointment is 2021-01-13"
 ```
 
 See `Engaged.Callbacks` for all the functions implemented.
@@ -61,24 +76,24 @@ Expression knows the following types:
 ```elixir
 iex> # Decimals
 iex> Expression.evaluate("@(1.23)")
-{:ok, #Decimal<1.23>}
+{:ok, [#Decimal<1.23>]}
 iex> # Integers
 iex> Expression.evaluate("@(1)")
-{:ok, 1}
+{:ok, [1]}
 iex> # DateTime in ISO and a sloppy US formats
 iex> Expression.evaluate("@(2020-12-13T23:35:55)")
-{:ok, ~U[2020-12-13 23:35:55.0Z]}
+{:ok, [~U[2020-12-13 23:35:55.0Z]]}
 iex> Expression.evaluate("@(13-12-2020 23:35:55)")
-{:ok, ~U[2020-12-13 23:35:55Z]}
+{:ok, [~U[2020-12-13 23:35:55Z]]}
 iex> # case insensitive booleans
 iex> Expression.evaluate("@(true)")
-{:ok, true}
+{:ok, [true]}
 iex> Expression.evaluate("@(TrUe)")
-{:ok, true}
+{:ok, [true]}
 iex> Expression.evaluate("@(false)")
-{:ok, false}
+{:ok, [false]}
 iex> Expression.evaluate("@(FaLsE)")
-{:ok, false}
+{:ok, [false]}
 ```
 
 # Future extensions

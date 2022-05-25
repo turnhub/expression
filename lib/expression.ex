@@ -36,6 +36,7 @@ defmodule Expression do
   ```
 
   """
+  alias Expression.Context
   alias Expression.Eval
   alias Expression.Parser
 
@@ -61,7 +62,7 @@ defmodule Expression do
 
   def evaluate_block!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     ast = parse_expression!(expression)
-    Eval.eval!([expression: ast], context, mod)
+    Eval.eval!([expression: ast], Context.new(context), mod)
   end
 
   def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks) do
@@ -73,13 +74,13 @@ defmodule Expression do
   def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
-    |> Eval.eval!(context, mod)
+    |> Eval.eval!(Context.new(context), mod)
   end
 
   def to_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
-    |> Eval.to_string!(context, mod)
+    |> Eval.to_string!(Context.new(context), mod)
   end
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
