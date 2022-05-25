@@ -14,14 +14,14 @@ defmodule Expression.EvalTest do
   end
 
   test "functions" do
-    {:ok, ast, "", _, _, _} = Parser.parse("@has_any_word(\"The Quick Brown Fox\", \"red fox\")")
+    {:ok, ast, "", _, _, _} = Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox")])
 
     assert [true] == Eval.eval!(ast, %{})
   end
 
   test "attributes on functions" do
     {:ok, ast, "", _, _, _} =
-      Parser.parse("@has_any_word(\"The Quick Brown Fox\", \"red fox\").match")
+      Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox").match])
 
     assert "Fox" == Eval.to_string!(ast, %{})
   end

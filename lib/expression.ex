@@ -65,11 +65,9 @@ defmodule Expression do
   end
 
   def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks) do
-    try do
-      {:ok, evaluate_block!(expression, context, mod)}
-    rescue
-      e in RuntimeError -> {:error, e.message}
-    end
+    {:ok, evaluate_block!(expression, context, mod)}
+  rescue
+    e in RuntimeError -> {:error, e.message}
   end
 
   def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
@@ -85,10 +83,8 @@ defmodule Expression do
   end
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
-    try do
-      {:ok, evaluate!(expression, context, mod)}
-    rescue
-      e in RuntimeError -> {:error, e.message}
-    end
+    {:ok, evaluate!(expression, context, mod)}
+  rescue
+    e in RuntimeError -> {:error, e.message}
   end
 end
