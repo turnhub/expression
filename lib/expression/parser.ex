@@ -61,6 +61,11 @@ defmodule Expression.Parser do
     string(",")
     |> ignore_surrounding_whitespace.()
 
+  lambda_capture =
+    ignore(string("&"))
+    |> concat(int())
+    |> unwrap_and_tag(:capture)
+
   # arguments = expression "," expression
   defparsec(
     :arguments,
@@ -71,9 +76,12 @@ defmodule Expression.Parser do
   defparsec(
     :aexpr_factor,
     choice([
+      lambda_capture,
       range,
+      parsec(:lambda),
       parsec(:literal),
       parsec(:function),
+      parsec(:list),
       parsec(:variable),
       ignore(string("(")) |> parsec(:aexpr) |> ignore(string(")"))
     ])
@@ -135,11 +143,19 @@ defmodule Expression.Parser do
 
   defparsec(
     :list,
+    ignore(string("["))
+    |> optional(parsec(:arguments) |> tag(:args))
+    |> ignore(string("]"))
+    |> tag(:list)
+  )
+
+  defparsec(
+    :access,
     parsec(:aexpr)
     |> ignore(string("["))
     |> parsec(:aexpr)
     |> ignore(string("]"))
-    |> tag(:list)
+    |> tag(:access)
   )
 
   # function  = "(" arguments ")"
@@ -151,6 +167,15 @@ defmodule Expression.Parser do
     |> optional(parsec(:arguments) |> tag(:args))
     |> ignore(string(")"))
     |> tag(:function)
+  )
+
+  defparsec(
+    :lambda,
+    ignore(string("&"))
+    |> ignore(string("("))
+    |> optional(parsec(:arguments) |> tag(:args))
+    |> ignore(string(")"))
+    |> tag(:lambda)
   )
 
   # variable = atom
@@ -175,6 +200,7 @@ defmodule Expression.Parser do
       choice([
         attribute,
         parsec(:list),
+        parsec(:access),
         parsec(:function),
         parsec(:variable)
       ])

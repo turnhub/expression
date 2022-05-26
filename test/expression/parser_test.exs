@@ -19,6 +19,28 @@ defmodule Expression.ParserTest do
     assert ast == produced_ast
   end
 
+  test "map" do
+    assert_ast(
+      [
+        {:expression,
+         [
+           function: [
+             name: "map",
+             args: [
+               atom: "foo",
+               lambda: [
+                 args: [
+                   list: [args: [capture: 1, atom: "button"]]
+                 ]
+               ]
+             ]
+           ]
+         ]}
+      ],
+      "@map(foo, &([&1,Button]))"
+    )
+  end
+
   describe "expression blocks" do
     test "variables" do
       assert_ast([expression: [atom: "foo"]], "@(foo)")
