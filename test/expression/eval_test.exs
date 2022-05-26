@@ -28,6 +28,17 @@ defmodule Expression.EvalTest do
       assert result == [[1, "Button"], [2, "Button"], [3, "Button"]]
     end
 
+    test "with functions" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@map(1..3, &date(2022, 5, &1))")
+      assert [result] = Eval.eval!(ast, %{})
+
+      assert result == [
+               ~U[2022-05-01 00:00:00Z],
+               ~U[2022-05-02 00:00:00Z],
+               ~U[2022-05-03 00:00:00Z]
+             ]
+    end
+
     test "with arithmatic" do
       {:ok, ast, "", _, _, _} = Parser.parse("@(map(foo, &([&1, 'Button'])))")
 

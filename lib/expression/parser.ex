@@ -172,9 +172,7 @@ defmodule Expression.Parser do
   defparsec(
     :lambda,
     ignore(string("&"))
-    |> ignore(string("("))
     |> optional(parsec(:arguments) |> tag(:args))
-    |> ignore(string(")"))
     |> tag(:lambda)
   )
 
