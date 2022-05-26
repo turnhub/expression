@@ -62,12 +62,12 @@ defmodule Expression.Context do
     |> Enum.map(&evaluate!(&1))
   end
 
-  defp evaluate!(value) when not is_binary(value), do: value
-
   defp evaluate!(binary) when is_binary(binary) do
     case Expression.Parser.literal(binary) do
       {:ok, [{:literal, literal}], "", _, _, _} -> literal
       {:error, _reason, _, _, _, _} -> binary
     end
   end
+
+  defp evaluate!(value), do: value
 end
