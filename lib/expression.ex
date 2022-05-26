@@ -36,66 +36,56 @@ defmodule Expression do
   ```
 
   """
-  alias Expression.{Ast, Eval}
+  alias Expression.Context
+  alias Expression.Eval
+  alias Expression.Parser
 
-  def parse_literal(binary) do
-    case Ast.literal(binary) do
-      {:ok, [{:literal, literal}], "", _, _, _} ->
-        {:literal, literal}
-
-      {:ok, _ast, _remainder, _, _, _} ->
-        {:error, binary}
-
-      {:error, _reason, _remainder, _, _, _} ->
-        {:error, binary}
-    end
-  end
-
-  def parse_expression(expression) do
-    case Ast.aexpr(expression) do
+  def parse_expression!(expression_block) do
+    case Parser.aexpr(expression_block) do
       {:ok, ast, "", _, _, _} ->
-        {:ok, ast}
+        ast
 
       {:ok, _ast, remainder, _, _, _} ->
-        {:error, "Unable to parse: #{inspect(remainder)}"}
+        raise "Unable to parse: #{inspect(remainder)}"
     end
   end
 
-  def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks)
-
-  def evaluate_block(expression, context, mod) do
-    with {:ok, ast} <- parse_expression(expression) do
-      Eval.evaluate([substitution: ast], context, mod)
-    end
-  end
-
-  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.Callbacks)
-
-  def evaluate_block!(expression, context, mod) do
-    with {:ok, ast} <- parse_expression(expression),
-         result <- Eval.evaluate!([substitution: ast], context, mod) do
-      result
-    else
-      {:error, ast_error} ->
-        raise ast_error
-    end
-  end
-
-  def parse(text) do
-    case Ast.parse(text) do
+  def parse!(expression) do
+    case Parser.parse(expression) do
       {:ok, ast, "", _, _, _} ->
-        {:ok, ast}
+        ast
 
       {:ok, _ast, remainder, _, _, _} ->
-        {:error, "Unable to parse: #{inspect(remainder)}"}
+        raise "Unable to parse: #{inspect(remainder)}"
     end
   end
 
-  def evaluate(text, context \\ %{}, mod \\ Expression.Callbacks)
+  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    ast = parse_expression!(expression)
+    Eval.eval!([expression: ast], Context.new(context), mod)
+  end
 
-  def evaluate(text, context, mod) do
-    with {:ok, ast} <- parse(text) do
-      Eval.evaluate(ast, context, mod)
-    end
+  def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    {:ok, evaluate_block!(expression, context, mod)}
+  rescue
+    e in RuntimeError -> {:error, e.message}
+  end
+
+  def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    expression
+    |> parse!
+    |> Eval.eval!(Context.new(context), mod)
+  end
+
+  def to_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    expression
+    |> parse!
+    |> Eval.to_string!(Context.new(context), mod)
+  end
+
+  def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    {:ok, evaluate!(expression, context, mod)}
+  rescue
+    e in RuntimeError -> {:error, e.message}
   end
 end

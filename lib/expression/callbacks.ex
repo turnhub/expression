@@ -1169,16 +1169,30 @@ defmodule Expression.Callbacks do
   # Example
 
     iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "fox quick")
-    true
+    %{"__value__" => true, "match" => "Quick Fox"}
     iex> Expression.Callbacks.has_any_word(%{}, "The Quick Brown Fox", "yellow")
-    false
+    %{"__value__" => false, "match" => ""}
 
   """
   def has_any_word(_ctx, haystack, words) do
-    {_patterns, results} = search_words(haystack, words)
+    haystack_words = String.split(haystack)
+    haystacks_lowercase = Enum.map(haystack_words, &String.downcase/1)
+    words_lowercase = String.split(words) |> Enum.map(&String.downcase/1)
 
-    # future match result Enum.join(results, " ")
-    Enum.any?(results)
+    matched_indices =
+      haystacks_lowercase
+      |> Enum.with_index()
+      |> Enum.filter(fn {haystack_word, _index} ->
+        Enum.member?(words_lowercase, haystack_word)
+      end)
+      |> Enum.map(fn {_haystack_word, index} -> index end)
+
+    matched_haystack_words = Enum.map(matched_indices, &Enum.at(haystack_words, &1))
+
+    %{
+      "__value__" => Enum.any?(matched_haystack_words),
+      "match" => Enum.join(matched_haystack_words, " ")
+    }
   end
 
   @doc """
