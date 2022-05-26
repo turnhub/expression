@@ -20,8 +20,6 @@ defmodule Expression.EvalTest do
   end
 
   describe "lambdas" do
-    @describetag :current
-
     test "with map" do
       {:ok, ast, "", _, _, _} = Parser.parse("@map(foo, &([&1,'Button']))")
       assert [result] = Eval.eval!(ast, %{"foo" => [1, 2, 3]})
