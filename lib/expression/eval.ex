@@ -61,13 +61,32 @@ defmodule Expression.Eval do
     end
   end
 
+  def eval!({:lambda, [{:args, ast}]}, context, mod) do
+    fn arguments ->
+      lambda_context = Map.put(context, "__captures", arguments)
+
+      [result] = eval!(ast, lambda_context, mod)
+      result
+    end
+  end
+
+  def eval!({:capture, index}, context, _mod) do
+    Enum.at(Map.get(context, "__captures"), index - 1)
+  end
+
   def eval!({:range, [first, last]}, _context, _mod),
     do: Range.new(first, last)
 
   def eval!({:range, [first, last, step]}, _context, _mod),
     do: Range.new(first, last, step)
 
-  def eval!({:list, [subject_ast, key_ast]}, context, mod) do
+  def eval!({:list, [{:args, ast}]}, context, mod) do
+    ast
+    |> Enum.reduce([], &[eval!(&1, context, mod) | &2])
+    |> Enum.reverse()
+  end
+
+  def eval!({:access, [subject_ast, key_ast]}, context, mod) do
     subject = eval!(subject_ast, context, mod)
     key = eval!(key_ast, context, mod)
 

@@ -1948,4 +1948,12 @@ defmodule Expression.Callbacks do
       _ -> false
     end
   end
+
+  def map(_ctx, enumerable, mapper) do
+    enumerable
+    # wrap in a list to be passed as a list of arguments
+    |> Enum.map(&[&1])
+    # call the mapper with each list of arguments as a single argument
+    |> Enum.map(mapper)
+  end
 end

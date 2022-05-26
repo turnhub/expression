@@ -19,6 +19,32 @@ defmodule Expression.EvalTest do
     assert [true] == Eval.eval!(ast, %{})
   end
 
+  describe "lambdas" do
+    test "with map" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@map(foo, &([&1,'Button']))")
+      assert [result] = Eval.eval!(ast, %{"foo" => [1, 2, 3]})
+      assert result == [[1, "Button"], [2, "Button"], [3, "Button"]]
+    end
+
+    test "with functions" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@map(1..3, &date(2022, 5, &1))")
+      assert [result] = Eval.eval!(ast, %{})
+
+      assert result == [
+               ~U[2022-05-01 00:00:00Z],
+               ~U[2022-05-02 00:00:00Z],
+               ~U[2022-05-03 00:00:00Z]
+             ]
+    end
+
+    test "with arithmatic" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(map(foo, &([&1, 'Button'])))")
+
+      assert [result] = Eval.eval!(ast, %{"foo" => [1, 2, 3]})
+      assert result == [[1, "Button"], [2, "Button"], [3, "Button"]]
+    end
+  end
+
   test "email addresses" do
     {:ok, ast, "", _, _, _} = Parser.parse("email info@example.com for more information")
     assert ["email info", "@example.com", " for more information"] == Eval.eval!(ast, %{})
