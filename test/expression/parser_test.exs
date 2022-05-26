@@ -19,7 +19,7 @@ defmodule Expression.ParserTest do
     assert ast == produced_ast
   end
 
-  test "map" do
+  test "lambda" do
     assert_ast(
       [
         {:expression,
@@ -57,6 +57,19 @@ defmodule Expression.ParserTest do
       assert_ast(
         [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],
         "@(2022-05-24T00:00:00)"
+      )
+    end
+
+    test "lists" do
+      assert_ast(
+        [
+          expression: [
+            list: [
+              args: [literal: 1, atom: "foo", function: [name: "now"]]
+            ]
+          ]
+        ],
+        "@([1, foo, now()])"
       )
     end
 
@@ -188,24 +201,24 @@ defmodule Expression.ParserTest do
     end
   end
 
-  describe "lists" do
+  describe "access" do
     test "with integers" do
       assert_ast(
-        [expression: [list: [atom: "foo", literal: 0]]],
+        [expression: [access: [atom: "foo", literal: 0]]],
         "@foo[0]"
       )
     end
 
     test "with variables" do
       assert_ast(
-        [expression: [list: [atom: "foo", atom: "bar"]]],
+        [expression: [access: [atom: "foo", atom: "bar"]]],
         "@foo[bar]"
       )
     end
 
     test "with function call" do
       assert_ast(
-        [expression: [list: [atom: "foo", function: [name: "date"]]]],
+        [expression: [access: [atom: "foo", function: [name: "date"]]]],
         "@foo[date()]"
       )
     end
@@ -214,7 +227,7 @@ defmodule Expression.ParserTest do
       assert_ast(
         [
           expression: [
-            list: [
+            access: [
               atom: "foo",
               attribute: [
                 function: [name: "date"],
