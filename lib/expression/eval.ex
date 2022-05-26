@@ -62,8 +62,6 @@ defmodule Expression.Eval do
   end
 
   def eval!({:lambda, [{:args, ast}]}, context, mod) do
-    # IO.inspect(mapper.(1), label: "result?")
-    # IO.inspect(mapper, label: "mapper")
     fn arguments ->
       lambda_context = Map.put(context, "__captures", arguments)
 
