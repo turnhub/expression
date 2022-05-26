@@ -1177,8 +1177,7 @@ defmodule Expression.Callbacks do
   def has_any_word(_ctx, haystack, words) do
     haystack_words = String.split(haystack)
     haystacks_lowercase = Enum.map(haystack_words, &String.downcase/1)
-    words = String.split(words)
-    words_lowercase = Enum.map(words, &String.downcase/1)
+    words_lowercase = String.split(words) |> Enum.map(&String.downcase/1)
 
     matched_indices =
       haystacks_lowercase
