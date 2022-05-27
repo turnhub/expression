@@ -83,6 +83,13 @@ defmodule Expression do
     |> Eval.to_string!(Context.new(context), mod)
   end
 
+  def as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+    case evaluate!(expression, context, mod) do
+      [boolean] when is_boolean(boolean) -> boolean
+      other -> raise "Expression did not return a boolean!, got #{inspect(other)} instead"
+    end
+  end
+
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}
   rescue
