@@ -85,8 +85,11 @@ defmodule Expression do
 
   def as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     case evaluate!(expression, context, mod) do
-      [boolean] when is_boolean(boolean) -> boolean
-      other -> raise "Expression did not return a boolean!, got #{inspect(other)} instead"
+      [boolean] when is_boolean(boolean) ->
+        boolean
+
+      other ->
+        raise "Expression #{inspect(expression)}did not return a boolean!, got #{inspect(other)} instead"
     end
   end
 

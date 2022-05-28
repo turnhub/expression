@@ -2,6 +2,16 @@ defmodule ExpressionTest do
   use ExUnit.Case, async: true
   doctest Expression
 
+  describe "as_boolean!" do
+    assert true == Expression.as_boolean!("@(tRuE)")
+    assert false == Expression.as_boolean!("@(fAlSe)")
+    assert true == Expression.as_boolean!("@(1 > 0)")
+    assert true == Expression.as_boolean!("@has_all_words('foo', 'foo')")
+    assert true == Expression.as_boolean!("@or(has_all_words('foo', 'bar'), true)")
+    assert false == Expression.as_boolean!("@and(has_all_words('foo', 'bar'), true)")
+    assert true == Expression.as_boolean!("@and(has_all_words('foo', 'foo'), true)")
+  end
+
   describe "evaluate" do
     test "list with indices" do
       assert "bar" == Expression.to_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
