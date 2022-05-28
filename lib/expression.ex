@@ -89,7 +89,7 @@ defmodule Expression do
         boolean
 
       other ->
-        raise "Expression #{inspect(expression)}did not return a boolean!, got #{inspect(other)} instead"
+        raise "Expression #{inspect(expression)} did not return a boolean!, got #{inspect(other)} instead"
     end
   end
 
