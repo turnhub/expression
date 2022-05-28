@@ -77,10 +77,10 @@ defmodule Expression do
     |> Eval.eval!(Context.new(context), mod)
   end
 
-  def to_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
-    |> Eval.to_string!(Context.new(context), mod)
+    |> Eval.as_string!(Context.new(context), mod)
   end
 
   def as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do

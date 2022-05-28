@@ -14,16 +14,16 @@ defmodule ExpressionTest do
 
   describe "evaluate" do
     test "list with indices" do
-      assert "bar" == Expression.to_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
+      assert "bar" == Expression.as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end
 
     test "list with variable" do
       assert "bar" =
-               Expression.to_string!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
+               Expression.as_string!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
     end
 
     test "list with attribute" do
-      assert "bar" = Expression.to_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
+      assert "bar" = Expression.as_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
     end
 
     test "list with out of bound indicess" do
@@ -104,8 +104,8 @@ defmodule ExpressionTest do
     end
 
     test "escaping @s" do
-      assert "user@example.org" = Expression.to_string!("user@@example.org")
-      assert "user@example.org" = Expression.to_string!("@('user' & '@example.org')")
+      assert "user@example.org" = Expression.as_string!("user@@example.org")
+      assert "user@example.org" = Expression.as_string!("@('user' & '@example.org')")
     end
 
     test "substitution" do

@@ -118,7 +118,7 @@ defmodule Expression.Eval do
     |> Enum.map(&default_value/1)
   end
 
-  def to_string!(ast, context, mod \\ Expression.Callbacks) do
+  def as_string!(ast, context, mod \\ Expression.Callbacks) do
     eval!(ast, context, mod)
     |> Enum.map_join(&Kernel.to_string/1)
   end
