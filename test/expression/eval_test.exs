@@ -5,12 +5,12 @@ defmodule Expression.EvalTest do
 
   test "substitution" do
     {:ok, ast, "", _, _, _} = Parser.parse("@foo")
-    assert "bar" == Eval.to_string!(ast, %{"foo" => "bar"})
+    assert "bar" == Eval.as_string!(ast, %{"foo" => "bar"})
   end
 
   test "attributes on substitutions" do
     {:ok, ast, "", _, _, _} = Parser.parse("@foo.bar")
-    assert "baz" == Eval.to_string!(ast, %{"foo" => %{"bar" => "baz"}})
+    assert "baz" == Eval.as_string!(ast, %{"foo" => %{"bar" => "baz"}})
   end
 
   test "functions" do
@@ -54,7 +54,7 @@ defmodule Expression.EvalTest do
     {:ok, ast, "", _, _, _} =
       Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox").match])
 
-    assert "Fox" == Eval.to_string!(ast, %{})
+    assert "Fox" == Eval.as_string!(ast, %{})
   end
 
   describe "lists" do
@@ -91,6 +91,6 @@ defmodule Expression.EvalTest do
 
   test "text" do
     {:ok, ast, "", _, _, _} = Parser.parse("hello @contact.name")
-    assert "hello Bob" == Eval.to_string!(ast, %{"contact" => %{"name" => "Bob"}})
+    assert "hello Bob" == Eval.as_string!(ast, %{"contact" => %{"name" => "Bob"}})
   end
 end

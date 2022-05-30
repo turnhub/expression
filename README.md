@@ -56,10 +56,10 @@ iex(10)> Expression.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'Client')", 
 The values of each chunk (either text or expression) is in the list returned by evaluate.
 The return values of Expressions are typed. The types are documented below under _Types_.
 
-If you're looking for a shorthand to convert these to a single string output use `Expression.to_string!/3`.
+If you're looking for a shorthand to convert these to a single string output use `Expression.evaluate_as_string!/3`.
 
 ```elixir
-iex(11)> Expression.to_string!("Your next appointment is @(DATEVALUE(EDATE(contact.appointment, 1), \"%Y-%m-%d\"))", %{
+iex(11)> Expression.evaluate_as_string!("Your next appointment is @(DATEVALUE(EDATE(contact.appointment, 1), \"%Y-%m-%d\"))", %{
 ...(11)>   "contact" => %{
 ...(11)>     "appointment" => "2020-12-13T23:35:55"
 ...(11)>   }
@@ -73,7 +73,7 @@ Often, when one has an email address in an expression, one would want to leave i
 Expressions accommodates this by having expressions that evaluate to nil left as is.
 
 ```elixir
-iex(3)> Expression.to_string!("info@support.com")
+iex(3)> Expression.evaluate_as_string!("info@support.com")
 "info@support.com"
 ```
 
@@ -81,7 +81,7 @@ A thing to note though is that if `@support.com` does resolve to something with 
 it will still be applied:
 
 ```elixir
-iex(6)> Expression.to_string!("info@support.com", %{
+iex(6)> Expression.evaluate_as_string!("info@support.com", %{
 ...(6)>   "support" => %{
 ...(6)>     "com" => "example placeholder value"
 ...(6)>   }
@@ -92,7 +92,7 @@ iex(6)> Expression.to_string!("info@support.com", %{
 To properly escape the `@`, prefix it with another `@` as the example below:
 
 ```elixir
-iex(4)> Expression.to_string!("info@@support.com")
+iex(4)> Expression.evaluate_as_string!("info@@support.com")
 "info@support.com"
 ```
 

@@ -2,18 +2,32 @@ defmodule ExpressionTest do
   use ExUnit.Case, async: true
   doctest Expression
 
+  describe "evaluate_as_boolean!" do
+    assert true == Expression.evaluate_as_boolean!("@(tRuE)")
+    assert false == Expression.evaluate_as_boolean!("@(fAlSe)")
+    assert true == Expression.evaluate_as_boolean!("@(1 > 0)")
+    assert true == Expression.evaluate_as_boolean!("@has_all_words('foo', 'foo')")
+    assert true == Expression.evaluate_as_boolean!("@or(has_all_words('foo', 'bar'), true)")
+    assert false == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'bar'), true)")
+    assert true == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'foo'), true)")
+  end
+
   describe "evaluate" do
     test "list with indices" do
-      assert "bar" == Expression.to_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
+      assert "bar" == Expression.evaluate_as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end
 
     test "list with variable" do
       assert "bar" =
-               Expression.to_string!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 1})
+               Expression.evaluate_as_string!("@foo[cursor]", %{
+                 "foo" => ["baz", "bar"],
+                 "cursor" => 1
+               })
     end
 
     test "list with attribute" do
-      assert "bar" = Expression.to_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
+      assert "bar" =
+               Expression.evaluate_as_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
     end
 
     test "list with out of bound indicess" do
@@ -94,8 +108,8 @@ defmodule ExpressionTest do
     end
 
     test "escaping @s" do
-      assert "user@example.org" = Expression.to_string!("user@@example.org")
-      assert "user@example.org" = Expression.to_string!("@('user' & '@example.org')")
+      assert "user@example.org" = Expression.evaluate_as_string!("user@@example.org")
+      assert "user@example.org" = Expression.evaluate_as_string!("@('user' & '@example.org')")
     end
 
     test "substitution" do
