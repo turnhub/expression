@@ -27,7 +27,7 @@ defmodule Expression.Callbacks do
     end
   end
 
-  @reserved_words ~w[and if or]
+  @reserved_words ~w[and if or not]
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
 
@@ -399,6 +399,27 @@ defmodule Expression.Callbacks do
       true -> true
       _other -> false
     end)
+  end
+
+  @doc """
+  Returns FALSE if the argument supplied evaluates to truth-y
+
+  ```
+  @and(not(false), true)
+  ```
+
+  # Example
+
+    iex> Expression.Callbacks.handle("not", [false], %{})
+    {:ok, true}
+    iex> Expression.Callbacks.handle("not", [nil], %{})
+    {:ok, true}
+    iex> Expression.Callbacks.handle("not", [true], %{})
+    {:ok, false}
+
+  """
+  def not_(_ctx, argument) do
+    !argument
   end
 
   @doc """
