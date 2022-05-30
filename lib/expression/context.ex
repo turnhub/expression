@@ -65,6 +65,9 @@ defmodule Expression.Context do
   defp evaluate!(binary) when is_binary(binary) do
     case Expression.Parser.literal(binary) do
       {:ok, [{:literal, literal}], "", _, _, _} -> literal
+      # when we're not parsing the full literal
+      {:ok, [{:literal, _literal}], _, _, _, _} -> binary
+      # when we're getting something entirely unexpected
       {:error, _reason, _, _, _, _} -> binary
     end
   end
