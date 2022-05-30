@@ -91,6 +91,7 @@ defmodule Expression.Parser do
   attribute =
     empty()
     |> ascii_char([?.])
+    |> lookahead(atom)
     |> replace(:attribute)
     |> label(".")
 

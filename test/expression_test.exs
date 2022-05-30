@@ -112,6 +112,11 @@ defmodule ExpressionTest do
       assert "user@example.org" = Expression.evaluate_as_string!("@('user' & '@example.org')")
     end
 
+    test "trailing full stops" do
+      assert "bar." = Expression.evaluate_as_string!("@foo.", %{"foo" => "bar"})
+      assert "baz." = Expression.evaluate_as_string!("@foo.bar.", %{"foo" => %{"bar" => "baz"}})
+    end
+
     test "substitution" do
       assert {:ok, ["hello ", "name"]} =
                Expression.evaluate("hello @(contact.name)", %{
