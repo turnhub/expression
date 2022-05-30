@@ -77,13 +77,13 @@ defmodule Expression do
     |> Eval.eval!(Context.new(context), mod)
   end
 
-  def as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
     |> Eval.as_string!(Context.new(context), mod)
   end
 
-  def as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     case evaluate!(expression, context, mod) do
       [boolean] when is_boolean(boolean) ->
         boolean
