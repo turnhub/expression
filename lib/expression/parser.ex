@@ -98,13 +98,13 @@ defmodule Expression.Parser do
 
   defparsec(
     :key,
-    ascii_char([91])
-    |> debug()
-    |> replace(:access)
-    |> parsec(:aexpr)
-    |> ignore(ascii_char([93]))
-    |> label("[..]")
-    |> tag(:key)
+    repeat(
+      ignore(ascii_char([91]))
+      |> replace(:"[")
+      |> parsec(:aexpr)
+      |> ignore(ascii_char([93]))
+      |> label("[..]")
+    )
   )
 
   defparsec(
@@ -128,44 +128,54 @@ defmodule Expression.Parser do
     |> label(".")
   )
 
-  defparsec(
-    :aexpr_attribute_or_access,
-    repeat(
-      choice([
-        optional(parsec(:aexpr_factor))
-        |> parsec(:key_open)
-        |> parsec(:aexpr_attribute_or_access)
-        |> parsec(:key_close)
-        |> debug(),
-        # |> ignore(parsec(:key_close))
-        # |> reduce(:fold_infixl),
-        parsec(:aexpr_factor)
-        |> parsec(:attribute)
-        |> parsec(:aexpr_attribute_or_access)
-        |> debug()
-        |> reduce(:fold_infixl),
-        parsec(:aexpr_factor)
-      ])
-    )
-    # parsec(:aexpr_factor)
-    # |> repeat(
-    #   choice([
-    #     parsec(:key),
-    #     parsec(:attribute)
-    #   ])
-    #   |> parsec(:aexpr_factor)
-    # )
-    # |> reduce(:fold_infixl)
-  )
+  # defparsec(
+  #   :aexpr_attribute_or_access,
+  #   repeat(
+  #     choice([
+  #       parsec(:aexpr_factor)
+  #       |> parsec(:key_open)
+  #       |> parsec(:aexpr_attribute_or_access)
+  #       |> ignore(parsec(:key_close))
+  #       |> debug()
+  #       # |> ignore(parsec(:key_close))
+  #       |> reduce(:fold_key_open_close),
+  #       parsec(:aexpr_factor)
+  #       |> parsec(:attribute)
+  #       |> parsec(:aexpr_attribute_or_access)
+  #       |> debug()
+  #       |> reduce(:fold_infixl),
+  #       parsec(:aexpr_factor)
+  #     ])
+  #   )
+  # parsec(:aexpr_factor)
+  # |> repeat(
+  #   choice([
+  #     parsec(:key),
+  #     parsec(:attribute)
+  #   ])
+  #   |> parsec(:aexpr_factor)
+  # )
+  # |> reduce(:fold_infixl)
+  # )
 
   defparsec(
     :aexpr_exponent,
-    parsec(:aexpr_attribute_or_access)
+    parsec(:aexpr_factor)
+    |> optional(repeat(parsec(:attribute) |> parsec(:aexpr_factor)))
     |> repeat(
       exponent()
-      |> parsec(:aexpr_attribute_or_access)
+      |> parsec(:aexpr_factor)
+      |> optional(
+        repeat(
+          parsec(:attribute)
+          |> parsec(:aexpr_factor)
+        )
+      )
     )
+    |> optional(parsec(:key))
     |> reduce(:fold_infixl)
+
+    # |> reduce(:fold_infixl)
   )
 
   defparsec(
@@ -195,13 +205,18 @@ defmodule Expression.Parser do
     |> reduce(:fold_infixl)
   )
 
+  def fold_key_open_close(acc) do
+    fold_infixl(acc)
+  end
+
   def fold_infixl(acc) do
     acc
+    |> IO.inspect(label: "folding")
     |> Enum.reverse()
     |> Enum.chunk_every(2)
     |> List.foldr([], fn
-      [l], [] -> l
-      [r, op], l -> {op, [l, r]}
+      [l], [] -> IO.inspect(l, label: "first")
+      [r, op], l -> IO.inspect({op, [l, r]}, label: "second")
     end)
   end
 
