@@ -86,7 +86,7 @@ defmodule Expression.Eval do
     |> Enum.reverse()
   end
 
-  def eval!({:access, [subject_ast, key_ast]}, context, mod) do
+  def eval!({:key, [subject_ast, key_ast]}, context, mod) do
     subject = eval!(subject_ast, context, mod)
     key = eval!(key_ast, context, mod)
 

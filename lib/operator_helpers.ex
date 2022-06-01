@@ -2,15 +2,6 @@ defmodule Expression.OperatorHelpers do
   @moduledoc false
   import NimbleParsec
 
-  def key(combinator \\ empty()) do
-    combinator
-    |> ascii_char([91])
-    |> parsec(:aexpr)
-    |> ascii_char([93])
-    |> reduce(:fold_infixl)
-    |> tag(:key)
-  end
-
   def plus(combinator \\ empty()), do: combinator |> ascii_char([?+]) |> replace(:+) |> label("+")
 
   def minus(combinator \\ empty()),
@@ -28,13 +19,6 @@ defmodule Expression.OperatorHelpers do
   def exponent(combinator \\ empty()),
     do: combinator |> ascii_char([?^]) |> replace(:^) |> label("^")
 
-  [
-    "#": [atom: "foo", atom: "a"],
-    "#": [[], {:atom, "b"}],
-    "#": [[], {:atom, "c"}]
-  ]
-
-  [.: [atom: "foo", .: [atom: "a", .: [atom: "b", atom: "c"]]]]
   def gte(combinator \\ empty()), do: combinator |> string(">=") |> replace(:>=) |> label(">=")
   def lte(combinator \\ empty()), do: combinator |> string("<=") |> replace(:<=) |> label("<=")
 

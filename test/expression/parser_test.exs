@@ -209,8 +209,8 @@ defmodule Expression.ParserTest do
             function: [
               name: "if",
               args: [
-                access: [atom: "record", atom: "a"],
-                access: [atom: "record", atom: "a"],
+                key: [atom: "record", atom: "a"],
+                key: [atom: "record", atom: "a"],
                 literal: ""
               ]
             ]
@@ -222,21 +222,21 @@ defmodule Expression.ParserTest do
 
     test "with integers" do
       assert_ast(
-        [expression: [access: [atom: "foo", literal: 0]]],
+        [expression: [key: [atom: "foo", literal: 0]]],
         "@foo[0]"
       )
     end
 
     test "with variables" do
       assert_ast(
-        [expression: [access: [atom: "foo", atom: "bar"]]],
+        [expression: [key: [atom: "foo", atom: "bar"]]],
         "@foo[bar]"
       )
     end
 
     test "with function call" do
       assert_ast(
-        [expression: [access: [atom: "foo", function: [name: "date"]]]],
+        [expression: [key: [atom: "foo", function: [name: "date"]]]],
         "@foo[date()]"
       )
     end
@@ -245,7 +245,7 @@ defmodule Expression.ParserTest do
       assert_ast(
         [
           expression: [
-            access: [
+            key: [
               atom: "foo",
               attribute: [
                 function: [name: "date"],

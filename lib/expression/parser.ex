@@ -73,8 +73,7 @@ defmodule Expression.Parser do
     |> optional(ignore(argument_separator) |> parsec(:arguments))
   )
 
-  defparsec(
-    :aexpr_factor,
+  primitives =
     choice([
       lambda_capture,
       range,
@@ -82,108 +81,60 @@ defmodule Expression.Parser do
       parsec(:literal),
       parsec(:function),
       parsec(:variable),
+      parsec(:list)
+    ])
+
+  defparsec(
+    :aexpr_factor,
+    choice([
+      primitives,
       ignore(string("(")) |> parsec(:aexpr) |> ignore(string(")"))
-      # parsec(:list)
     ])
     |> ignore_surrounding_whitespace.()
   )
 
-  # defparsec(
-  #   :attribute,
-  #   empty()
-  #   |> ascii_char([?.])
-  #   |> replace(:.)
-  #   |> label(".")
-  # )
-
   defparsec(
     :key,
-    # repeat(
     ignore(ascii_char([91]))
-    |> replace(:"[")
+    |> replace(:key)
     |> parsec(:aexpr_exponent)
     |> ignore(ascii_char([93]))
     |> label("[..]")
-    # )
-  )
-
-  defparsec(
-    :key_open,
-    ascii_char([91])
-    |> replace(:"#")
-    |> label("[")
-  )
-
-  defparsec(
-    :key_close,
-    ascii_char([93])
-    |> replace(:"]")
-    |> label("]")
   )
 
   defparsec(
     :attribute,
     ascii_char([?.])
-    |> replace(:.)
+    |> replace(:attribute)
     |> label(".")
   )
 
-  # defparsec(
-  #   :aexpr_attribute_or_access,
-  #   repeat(
-  #     choice([
-  #       parsec(:aexpr_factor)
-  #       |> parsec(:key_open)
-  #       |> parsec(:aexpr_attribute_or_access)
-  #       |> ignore(parsec(:key_close))
-  #       |> debug()
-  #       # |> ignore(parsec(:key_close))
-  #       |> reduce(:fold_key_open_close),
-  #       parsec(:aexpr_factor)
-  #       |> parsec(:attribute)
-  #       |> parsec(:aexpr_attribute_or_access)
-  #       |> debug()
-  #       |> reduce(:fold_infixl),
-  #       parsec(:aexpr_factor)
-  #     ])
-  #   )
-  # parsec(:aexpr_factor)
-  # |> repeat(
-  #   choice([
-  #     parsec(:key),
-  #     parsec(:attribute)
-  #   ])
-  #   |> parsec(:aexpr_factor)
-  # )
-  # |> reduce(:fold_infixl)
-  # )
+  attribute_or_key =
+    repeat(
+      choice([
+        parsec(:attribute) |> parsec(:aexpr_factor),
+        parsec(:key)
+      ])
+    )
+
+  attribute_or_key_with_primitives_only =
+    repeat(
+      choice([
+        parsec(:attribute) |> concat(primitives),
+        parsec(:key)
+      ])
+    )
 
   defparsec(
     :aexpr_exponent,
     parsec(:aexpr_factor)
-    |> optional(
-      repeat(
-        choice([
-          parsec(:attribute) |> parsec(:aexpr_factor),
-          parsec(:key)
-        ])
-      )
-    )
+    |> optional(attribute_or_key)
     |> repeat(
       exponent()
       |> parsec(:aexpr_factor)
-      |> optional(
-        repeat(
-          choice([
-            parsec(:attribute) |> parsec(:aexpr_factor),
-            parsec(:key)
-          ])
-        )
-      )
+      |> optional(attribute_or_key)
     )
     |> reduce(:fold_infixl)
-
-    # |> reduce(:fold_infixl)
   )
 
   defparsec(
@@ -213,28 +164,23 @@ defmodule Expression.Parser do
     |> reduce(:fold_infixl)
   )
 
-  def fold_key_open_close(acc) do
-    fold_infixl(acc)
-  end
-
   def fold_infixl(acc) do
     acc
-    |> IO.inspect(label: "folding")
     |> Enum.reverse()
     |> Enum.chunk_every(2)
     |> List.foldr([], fn
-      [l], [] -> IO.inspect(l, label: "first")
-      [r, op], l -> IO.inspect({op, [l, r]}, label: "second")
+      [l], [] -> l
+      [r, op], l -> {op, [l, r]}
     end)
   end
 
-  # defparsec(
-  #   :list,
-  #   ignore(string("["))
-  #   |> optional(parsec(:arguments) |> tag(:args))
-  #   |> ignore(string("]"))
-  #   |> tag(:list)
-  # )
+  defparsec(
+    :list,
+    ignore(string("["))
+    |> optional(parsec(:arguments) |> tag(:args))
+    |> ignore(string("]"))
+    |> tag(:list)
+  )
 
   # function  = "(" arguments ")"
   defparsec(
@@ -274,10 +220,11 @@ defmodule Expression.Parser do
     |> lookahead_not(string("@"))
     |> repeat(
       choice([
-        # parsec(:list),
+        parsec(:list),
         parsec(:function),
         parsec(:variable)
       ])
+      |> optional(attribute_or_key_with_primitives_only)
     )
     |> reduce(:fold_infixl)
     |> tag(:expression)
