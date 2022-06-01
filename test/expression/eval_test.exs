@@ -45,7 +45,6 @@ defmodule Expression.EvalTest do
     end
   end
 
-  # @tag :skip
   test "email addresses" do
     {:ok, ast, "", _, _, _} = Parser.parse("email info@example.com for more information")
     assert ["email info", "@example.com", " for more information"] == Eval.eval!(ast, %{})
