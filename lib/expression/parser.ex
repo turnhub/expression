@@ -81,34 +81,97 @@ defmodule Expression.Parser do
       parsec(:lambda),
       parsec(:literal),
       parsec(:function),
-      parsec(:list),
       parsec(:variable),
       ignore(string("(")) |> parsec(:aexpr) |> ignore(string(")"))
+      # parsec(:list)
     ])
     |> ignore_surrounding_whitespace.()
   )
 
-  attribute =
-    empty()
-    |> ascii_char([?.])
-    |> lookahead(atom)
-    |> replace(:attribute)
-    |> label(".")
+  # defparsec(
+  #   :attribute,
+  #   empty()
+  #   |> ascii_char([?.])
+  #   |> replace(:.)
+  #   |> label(".")
+  # )
 
   defparsec(
-    :aexpr_exponent_or_attribute,
-    parsec(:aexpr_factor)
+    :key,
+    ascii_char([91])
+    |> debug()
+    |> replace(:access)
+    |> parsec(:aexpr)
+    |> ignore(ascii_char([93]))
+    |> label("[..]")
+    |> tag(:key)
+  )
+
+  defparsec(
+    :key_open,
+    ascii_char([91])
+    |> replace(:"#")
+    |> label("[")
+  )
+
+  defparsec(
+    :key_close,
+    ascii_char([93])
+    |> replace(:"]")
+    |> label("]")
+  )
+
+  defparsec(
+    :attribute,
+    ascii_char([?.])
+    |> replace(:.)
+    |> label(".")
+  )
+
+  defparsec(
+    :aexpr_attribute_or_access,
+    repeat(
+      choice([
+        optional(parsec(:aexpr_factor))
+        |> parsec(:key_open)
+        |> parsec(:aexpr_attribute_or_access)
+        |> parsec(:key_close)
+        |> debug(),
+        # |> ignore(parsec(:key_close))
+        # |> reduce(:fold_infixl),
+        parsec(:aexpr_factor)
+        |> parsec(:attribute)
+        |> parsec(:aexpr_attribute_or_access)
+        |> debug()
+        |> reduce(:fold_infixl),
+        parsec(:aexpr_factor)
+      ])
+    )
+    # parsec(:aexpr_factor)
+    # |> repeat(
+    #   choice([
+    #     parsec(:key),
+    #     parsec(:attribute)
+    #   ])
+    #   |> parsec(:aexpr_factor)
+    # )
+    # |> reduce(:fold_infixl)
+  )
+
+  defparsec(
+    :aexpr_exponent,
+    parsec(:aexpr_attribute_or_access)
     |> repeat(
-      choice([exponent(), attribute])
-      |> parsec(:aexpr_factor)
+      exponent()
+      |> parsec(:aexpr_attribute_or_access)
     )
     |> reduce(:fold_infixl)
   )
 
   defparsec(
     :aexpr_term,
-    parsec(:aexpr_exponent_or_attribute)
-    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent_or_attribute))
+    parsec(:aexpr_exponent)
+    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent))
     |> reduce(:fold_infixl)
   )
 
@@ -142,22 +205,13 @@ defmodule Expression.Parser do
     end)
   end
 
-  defparsec(
-    :list,
-    ignore(string("["))
-    |> optional(parsec(:arguments) |> tag(:args))
-    |> ignore(string("]"))
-    |> tag(:list)
-  )
-
-  defparsec(
-    :access,
-    parsec(:aexpr)
-    |> ignore(string("["))
-    |> parsec(:aexpr)
-    |> ignore(string("]"))
-    |> tag(:access)
-  )
+  # defparsec(
+  #   :list,
+  #   ignore(string("["))
+  #   |> optional(parsec(:arguments) |> tag(:args))
+  #   |> ignore(string("]"))
+  #   |> tag(:list)
+  # )
 
   # function  = "(" arguments ")"
   defparsec(
@@ -197,9 +251,7 @@ defmodule Expression.Parser do
     |> lookahead_not(string("@"))
     |> repeat(
       choice([
-        attribute,
-        parsec(:list),
-        parsec(:access),
+        # parsec(:list),
         parsec(:function),
         parsec(:variable)
       ])

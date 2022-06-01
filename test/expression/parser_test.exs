@@ -202,6 +202,24 @@ defmodule Expression.ParserTest do
   end
 
   describe "access" do
+    test "as function arguments" do
+      assert_ast(
+        [
+          expression: [
+            function: [
+              name: "if",
+              args: [
+                access: [atom: "record", atom: "a"],
+                access: [atom: "record", atom: "a"],
+                literal: ""
+              ]
+            ]
+          ]
+        ],
+        "@if(record[a], record[a], \"\")"
+      )
+    end
+
     test "with integers" do
       assert_ast(
         [expression: [access: [atom: "foo", literal: 0]]],
