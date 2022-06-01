@@ -207,15 +207,15 @@ defmodule ExpressionTest do
     end
 
     test "return an error tuple when variables are not defined" do
-      assert {:error, "expression is not a number: `\"@block.value\"`"} =
+      assert {:error, "attribute is not found: `value`"} =
                Expression.evaluate_block("block.value > 0", %{"block" => %{}})
 
-      assert {:error, "expression is not a number: `\"@block.value\"`"} =
+      assert {:error, "attribute is not found: `block.value`"} =
                Expression.evaluate_block("block.value > 0", %{})
     end
 
     test "throw an error when variables are not defined" do
-      assert_raise RuntimeError, "expression is not a number: `\"@block.value\"`", fn ->
+      assert_raise RuntimeError, "attribute is not found: `value`", fn ->
         Expression.evaluate_block!("block.value > 0", %{"block" => %{}})
       end
     end

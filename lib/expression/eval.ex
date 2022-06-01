@@ -33,17 +33,17 @@ defmodule Expression.Eval do
     eval!(ast, context, mod)
   end
 
+  def eval!({:atom, atom}, {:not_found, history}, _mod),
+    do: {:not_found, history ++ [atom]}
+
   def eval!({:atom, atom}, context, _mod) do
-    get_in(context, [atom])
+    # get_in(context, [atom])
+    Map.get(context, atom, {:not_found, [atom]})
   end
 
-  def eval!({:attribute, [{:atom, subject}, {:atom, key}]}, context, _mod) do
-    get_in(context, [subject, key]) || "@#{subject}.#{key}"
-  end
-
-  def eval!({:attribute, [subject_ast, {:atom, key}]}, context, mod) do
-    subject = eval!(subject_ast, context, mod)
-    get_in(subject, [key])
+  def eval!({:attribute, ast}, context, mod) do
+    Enum.reduce(ast, context, &eval!(&1, &2, mod))
+    # eval!({:attribute, ast}, context, mod)
   end
 
   def eval!({:function, opts}, context, mod) do
@@ -54,6 +54,7 @@ defmodule Expression.Eval do
       arguments
       |> Enum.reduce([], &[eval!(&1, context, mod) | &2])
       |> Enum.reverse()
+      |> Enum.map(&not_founds_as_nil/1)
 
     case mod.handle(name, evaluated_arguments, context) do
       {:ok, value} -> value
@@ -84,6 +85,7 @@ defmodule Expression.Eval do
     ast
     |> Enum.reduce([], &[eval!(&1, context, mod) | &2])
     |> Enum.reverse()
+    |> Enum.map(&not_founds_as_nil/1)
   end
 
   def eval!({:key, [subject_ast, key_ast]}, context, mod) do
@@ -115,19 +117,17 @@ defmodule Expression.Eval do
     ast
     |> Enum.reduce([], fn ast, acc -> [eval!(ast, context, mod) | acc] end)
     |> Enum.reverse()
-    |> Enum.map(&default_value/1)
   end
 
-  def as_string!(ast, context, mod \\ Expression.Callbacks) do
-    eval!(ast, context, mod)
-    |> Enum.map_join(&Kernel.to_string/1)
-  end
+  def not_founds_as_nil({:not_found, _}), do: nil
+  def not_founds_as_nil(other), do: other
 
   defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
 
   defp guard_type!(v, :num) when is_number(v) or is_struct(v, Decimal), do: v
-  defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
 
-  defp default_value(%{"__value__" => default_value}), do: default_value
-  defp default_value(value), do: value
+  defp guard_type!({:not_found, attributes}, :num),
+    do: raise("attribute is not found: `#{Enum.join(attributes, ".")}`")
+
+  defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
 end

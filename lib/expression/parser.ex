@@ -117,6 +117,14 @@ defmodule Expression.Parser do
       ])
     )
 
+  # The difference between this one and the one above
+  # is that this one does not allow for spaces or arithmatic
+  # which makes it suitable for use in `@foo` type expressions
+  # because otherwise `info@support.com for` (note the space)
+  # is parsed as being part of the expression.
+  #
+  # That would be wrong since spaces are only allowed in
+  # expressions starting with brackets like `@( ... )`
   attribute_or_key_with_primitives_only =
     repeat(
       choice([
