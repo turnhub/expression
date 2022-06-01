@@ -98,13 +98,13 @@ defmodule Expression.Parser do
 
   defparsec(
     :key,
-    repeat(
-      ignore(ascii_char([91]))
-      |> replace(:"[")
-      |> parsec(:aexpr)
-      |> ignore(ascii_char([93]))
-      |> label("[..]")
-    )
+    # repeat(
+    ignore(ascii_char([91]))
+    |> replace(:"[")
+    |> parsec(:aexpr_exponent)
+    |> ignore(ascii_char([93]))
+    |> label("[..]")
+    # )
   )
 
   defparsec(
@@ -161,18 +161,26 @@ defmodule Expression.Parser do
   defparsec(
     :aexpr_exponent,
     parsec(:aexpr_factor)
-    |> optional(repeat(parsec(:attribute) |> parsec(:aexpr_factor)))
+    |> optional(
+      repeat(
+        choice([
+          parsec(:attribute) |> parsec(:aexpr_factor),
+          parsec(:key)
+        ])
+      )
+    )
     |> repeat(
       exponent()
       |> parsec(:aexpr_factor)
       |> optional(
         repeat(
-          parsec(:attribute)
-          |> parsec(:aexpr_factor)
+          choice([
+            parsec(:attribute) |> parsec(:aexpr_factor),
+            parsec(:key)
+          ])
         )
       )
     )
-    |> optional(parsec(:key))
     |> reduce(:fold_infixl)
 
     # |> reduce(:fold_infixl)
