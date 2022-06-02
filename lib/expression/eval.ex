@@ -40,6 +40,20 @@ defmodule Expression.Eval do
     Map.get(context, atom, {:not_found, [atom]})
   end
 
+  def eval!({:attribute, [{:attribute, ast}, literal: literal]}, context, mod) do
+    # When we receive a key for an attribute, at times this could be a literal.
+    # The assumption is that all attributes are going to be string based so if we receive
+    # "@foo.123.bar", `123` will be parsed as a literal but the assumption is that the
+    # context will look like:
+    #
+    # %{"foo" => %{
+    #   "123" => %{   <--- notice the string key here
+    #     "bar" => "the value"
+    #   }
+    # }}
+    eval!({:attribute, [{:attribute, ast}, atom: to_string(literal)]}, context, mod)
+  end
+
   def eval!({:attribute, ast}, context, mod) do
     Enum.reduce(ast, context, &eval!(&1, &2, mod))
   end

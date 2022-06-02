@@ -11,6 +11,19 @@ defmodule Expression.EvalTest do
     assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
   end
 
+  test "attributes with literals" do
+    assert "value" ==
+             Expression.evaluate_as_string!("@foo.bar.123.baz", %{
+               "foo" => %{
+                 "bar" => %{
+                   "123" => %{
+                     "baz" => "value"
+                   }
+                 }
+               }
+             })
+  end
+
   test "functions" do
     {:ok, ast, "", _, _, _} = Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox")])
 
