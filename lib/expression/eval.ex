@@ -37,13 +37,11 @@ defmodule Expression.Eval do
     do: {:not_found, history ++ [atom]}
 
   def eval!({:atom, atom}, context, _mod) do
-    # get_in(context, [atom])
     Map.get(context, atom, {:not_found, [atom]})
   end
 
   def eval!({:attribute, ast}, context, mod) do
     Enum.reduce(ast, context, &eval!(&1, &2, mod))
-    # eval!({:attribute, ast}, context, mod)
   end
 
   def eval!({:function, opts}, context, mod) do

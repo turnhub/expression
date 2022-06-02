@@ -99,8 +99,8 @@ defmodule Expression.Callbacks do
 
   # Example
 
-      iex> to_string(Expression.Callbacks.date(%{}, 2012, 12, 25))
-      "2012-12-25 00:00:00Z"
+      iex> Expression.evaluate!("@date(2012, 12, 15)")
+      [~U[2012-12-15 00:00:00Z]]
 
   """
   def date(_ctx, year, month, day) do
@@ -133,11 +133,11 @@ defmodule Expression.Callbacks do
 
   # Example
 
-      iex> date = Expression.Callbacks.date(%{}, 2020, 12, 20)
-      iex> Expression.Callbacks.datevalue(%{}, date)
-      "2020-12-20 00:00:00"
-      iex> Expression.Callbacks.datevalue(%{}, date, "%Y-%m-%d")
-      "2020-12-20"
+      iex> Expression.evaluate!("@datevalue(date(2020, 12, 20))")
+      ["2020-12-20 00:00:00"]
+      iex> Expression.evaluate!("@datevalue(date(2020, 12, 20), '%Y-%m-%d')")
+      ["2020-12-20"]
+
   """
   def datevalue(ctx, date, format \\ "%Y-%m-%d %H:%M:%S")
 
