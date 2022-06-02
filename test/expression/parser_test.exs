@@ -85,10 +85,11 @@ defmodule Expression.ParserTest do
         [
           expression: [
             attribute: [
-              function: [
-                {:name, "now"},
-                {:args, [literal: 1]}
-              ],
+              {:function,
+               [
+                 {:name, "now"},
+                 {:args, [literal: 1]}
+               ]},
               atom: "year"
             ]
           ]
@@ -238,6 +239,20 @@ defmodule Expression.ParserTest do
       assert_ast(
         [expression: [key: [atom: "foo", function: [name: "date"]]]],
         "@foo[date()]"
+      )
+    end
+
+    test "with literals as keys" do
+      assert_ast(
+        [
+          expression: [
+            attribute: [
+              attribute: [attribute: [atom: "foo", atom: "bar"], literal: 123],
+              atom: "baz"
+            ]
+          ]
+        ],
+        "@foo.bar.123.baz"
       )
     end
 

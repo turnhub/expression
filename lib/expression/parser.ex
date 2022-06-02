@@ -78,8 +78,8 @@ defmodule Expression.Parser do
       lambda_capture,
       range,
       parsec(:lambda),
-      parsec(:literal),
       parsec(:function),
+      parsec(:literal),
       parsec(:variable),
       parsec(:list)
     ])
