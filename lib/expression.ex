@@ -75,12 +75,15 @@ defmodule Expression do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
+    |> Enum.map(&default_value/1)
   end
 
   def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
-    |> Eval.as_string!(Context.new(context), mod)
+    |> Eval.eval!(Context.new(context), mod)
+    |> Enum.map(&default_value/1)
+    |> Enum.map_join(&Kernel.to_string/1)
   end
 
   def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
@@ -92,6 +95,10 @@ defmodule Expression do
         raise "Expression #{inspect(expression)} did not return a boolean!, got #{inspect(other)} instead"
     end
   end
+
+  defp default_value(%{"__value__" => default_value}), do: default_value
+  defp default_value({:not_found, attributes}), do: "@#{Enum.join(attributes, ".")}"
+  defp default_value(value), do: value
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}

@@ -73,42 +73,82 @@ defmodule Expression.Parser do
     |> optional(ignore(argument_separator) |> parsec(:arguments))
   )
 
-  defparsec(
-    :aexpr_factor,
+  primitives =
     choice([
       lambda_capture,
       range,
       parsec(:lambda),
       parsec(:literal),
       parsec(:function),
-      parsec(:list),
       parsec(:variable),
+      parsec(:list)
+    ])
+
+  defparsec(
+    :aexpr_factor,
+    choice([
+      primitives,
       ignore(string("(")) |> parsec(:aexpr) |> ignore(string(")"))
     ])
     |> ignore_surrounding_whitespace.()
   )
 
-  attribute =
-    empty()
-    |> ascii_char([?.])
-    |> lookahead(atom)
-    |> replace(:attribute)
-    |> label(".")
+  defparsec(
+    :key,
+    ignore(ascii_char([91]))
+    |> replace(:key)
+    |> parsec(:aexpr_exponent)
+    |> ignore(ascii_char([93]))
+    |> label("[..]")
+  )
 
   defparsec(
-    :aexpr_exponent_or_attribute,
+    :attribute,
+    ascii_char([?.])
+    |> replace(:attribute)
+    |> label(".")
+  )
+
+  attribute_or_key =
+    repeat(
+      choice([
+        parsec(:attribute) |> parsec(:aexpr_factor),
+        parsec(:key)
+      ])
+    )
+
+  # The difference between this one and the one above
+  # is that this one does not allow for spaces or arithmatic
+  # which makes it suitable for use in `@foo` type expressions
+  # because otherwise `info@support.com for` (note the space)
+  # is parsed as being part of the expression.
+  #
+  # That would be wrong since spaces are only allowed in
+  # expressions starting with brackets like `@( ... )`
+  attribute_or_key_with_primitives_only =
+    repeat(
+      choice([
+        parsec(:attribute) |> concat(primitives),
+        parsec(:key)
+      ])
+    )
+
+  defparsec(
+    :aexpr_exponent,
     parsec(:aexpr_factor)
+    |> optional(attribute_or_key)
     |> repeat(
-      choice([exponent(), attribute])
+      exponent()
       |> parsec(:aexpr_factor)
+      |> optional(attribute_or_key)
     )
     |> reduce(:fold_infixl)
   )
 
   defparsec(
     :aexpr_term,
-    parsec(:aexpr_exponent_or_attribute)
-    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent_or_attribute))
+    parsec(:aexpr_exponent)
+    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent))
     |> reduce(:fold_infixl)
   )
 
@@ -150,15 +190,6 @@ defmodule Expression.Parser do
     |> tag(:list)
   )
 
-  defparsec(
-    :access,
-    parsec(:aexpr)
-    |> ignore(string("["))
-    |> parsec(:aexpr)
-    |> ignore(string("]"))
-    |> tag(:access)
-  )
-
   # function  = "(" arguments ")"
   defparsec(
     :function,
@@ -197,12 +228,11 @@ defmodule Expression.Parser do
     |> lookahead_not(string("@"))
     |> repeat(
       choice([
-        attribute,
         parsec(:list),
-        parsec(:access),
         parsec(:function),
         parsec(:variable)
       ])
+      |> optional(attribute_or_key_with_primitives_only)
     )
     |> reduce(:fold_infixl)
     |> tag(:expression)

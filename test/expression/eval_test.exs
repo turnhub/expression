@@ -4,19 +4,17 @@ defmodule Expression.EvalTest do
   alias Expression.Parser
 
   test "substitution" do
-    {:ok, ast, "", _, _, _} = Parser.parse("@foo")
-    assert "bar" == Eval.as_string!(ast, %{"foo" => "bar"})
+    assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
   test "attributes on substitutions" do
-    {:ok, ast, "", _, _, _} = Parser.parse("@foo.bar")
-    assert "baz" == Eval.as_string!(ast, %{"foo" => %{"bar" => "baz"}})
+    assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
   end
 
   test "functions" do
     {:ok, ast, "", _, _, _} = Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox")])
 
-    assert [true] == Eval.eval!(ast, %{})
+    assert [%{"__value__" => true, "match" => "Fox"}] == Eval.eval!(ast, %{})
   end
 
   describe "lambdas" do
@@ -46,15 +44,19 @@ defmodule Expression.EvalTest do
   end
 
   test "email addresses" do
-    {:ok, ast, "", _, _, _} = Parser.parse("email info@example.com for more information")
-    assert ["email info", "@example.com", " for more information"] == Eval.eval!(ast, %{})
+    assert "email info@one.two.three.four.five.six for more information" ==
+             Expression.evaluate_as_string!(
+               "email info@one.two.three.four.five.six for more information",
+               %{}
+             )
   end
 
   test "attributes on functions" do
-    {:ok, ast, "", _, _, _} =
-      Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox").match])
-
-    assert "Fox" == Eval.as_string!(ast, %{})
+    assert "Fox" ==
+             Expression.evaluate_as_string!(
+               ~s[@has_any_word("The Quick Brown Fox", "red fox").match],
+               %{}
+             )
   end
 
   describe "lists" do
@@ -90,7 +92,9 @@ defmodule Expression.EvalTest do
   end
 
   test "text" do
-    {:ok, ast, "", _, _, _} = Parser.parse("hello @contact.name")
-    assert "hello Bob" == Eval.as_string!(ast, %{"contact" => %{"name" => "Bob"}})
+    assert "hello Bob" ==
+             Expression.evaluate_as_string!("hello @contact.name", %{
+               "contact" => %{"name" => "Bob"}
+             })
   end
 end
