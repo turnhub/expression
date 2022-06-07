@@ -54,6 +54,15 @@ defmodule Expression.EvalTest do
       assert [result] = Eval.eval!(ast, %{"foo" => [1, 2, 3]})
       assert result == [[1, "Button"], [2, "Button"], [3, "Button"]]
     end
+
+    test "lambda with joins" do
+      assert [result] =
+               Expression.evaluate!("@map(choices, &([&1, 'Button ' & &1]))", %{
+                 "choices" => ["one", "two", "three"]
+               })
+
+      assert result == [["one", "Button one"], ["two", "Button two"], ["three", "Button three"]]
+    end
   end
 
   test "email addresses" do

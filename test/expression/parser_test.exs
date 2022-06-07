@@ -41,6 +41,33 @@ defmodule Expression.ParserTest do
     )
   end
 
+  test "lambda with joins" do
+    assert_ast(
+      [
+        {:expression,
+         [
+           function: [
+             name: "map",
+             args: [
+               atom: "choices",
+               lambda: [
+                 args: [
+                   list: [
+                     args: [
+                       capture: 1,
+                       &: [literal: "Button", capture: 1]
+                     ]
+                   ]
+                 ]
+               ]
+             ]
+           ]
+         ]}
+      ],
+      "@map(choices, &([&1, 'Button' & &1]))"
+    )
+  end
+
   describe "expression blocks" do
     test "variables" do
       assert_ast([expression: [atom: "foo"]], "@(foo)")
