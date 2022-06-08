@@ -107,6 +107,13 @@ defmodule Expression.ParserTest do
       )
     end
 
+    test "functions with white space" do
+      assert_ast(
+        [expression: [function: [name: "now", args: [literal: 1, literal: 2, literal: 3]]]],
+        "@(now(1,\n   2,\n3))"
+      )
+    end
+
     test "attributes" do
       assert_ast(
         [
