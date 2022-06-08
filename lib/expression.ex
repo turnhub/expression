@@ -47,6 +47,9 @@ defmodule Expression do
 
       {:ok, _ast, remainder, _, _, _} ->
         raise "Unable to parse: #{inspect(remainder)}"
+
+      {:error, reason, problematic, _, _, _} ->
+        raise "#{reason} in #{inspect(problematic)}"
     end
   end
 

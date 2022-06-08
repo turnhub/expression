@@ -50,10 +50,12 @@ defmodule Expression.Parser do
     )
     |> tag(:range)
 
+  whitespace = choice([string(" "), string("\n"), string("\r")])
+
   ignore_surrounding_whitespace = fn p ->
-    ignore(optional(string(" ")))
+    ignore(repeat(whitespace))
     |> concat(p)
-    |> ignore(optional(string(" ")))
+    |> ignore(repeat(whitespace))
   end
 
   # argument separator = ", "
