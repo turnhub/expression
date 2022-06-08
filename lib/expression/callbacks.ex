@@ -392,13 +392,12 @@ defmodule Expression.Callbacks do
       false
       iex> Expression.Callbacks.and_vargs(%{}, [false, false])
       false
+      iex> Expression.Callbacks.and_vargs(%{}, ["foo", "bar"])
+      true
 
   """
   def and_vargs(_ctx, arguments) do
-    Enum.all?(arguments, fn
-      true -> true
-      _other -> false
-    end)
+    Enum.all?(arguments, & &1)
   end
 
   @doc """
@@ -455,12 +454,11 @@ defmodule Expression.Callbacks do
       {:ok, true}
       iex> Expression.Callbacks.handle("or", [false, false], %{})
       {:ok, false}
+      iex> Expression.Callbacks.handle("or", [false, "foo"], %{})
+      {:ok, "foo"}
   """
   def or_vargs(_ctx, arguments) do
-    Enum.any?(arguments, fn
-      true -> true
-      _anything_else -> false
-    end)
+    Enum.reduce(arguments, fn a, b -> a || b end)
   end
 
   @doc """
