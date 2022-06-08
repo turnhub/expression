@@ -58,7 +58,7 @@ defmodule Expression.Parser do
 
   # argument separator = ", "
   argument_separator =
-    string(",")
+    repeat(choice([string("\n"), string("\r"), string(",")]))
     |> ignore_surrounding_whitespace.()
 
   lambda_capture =
