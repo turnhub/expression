@@ -73,7 +73,6 @@ defmodule Expression.EvalTest do
     end
   end
 
-  @tag :skip
   test "email addresses" do
     assert "email info@one.two.three.four.five.six for more information" ==
              Expression.evaluate_as_string!(

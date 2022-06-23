@@ -85,7 +85,7 @@ defmodule Expression do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
-    |> default_value()
+    |> default_value(handle_not_found: true)
     |> stringify()
   end
 
@@ -101,10 +101,17 @@ defmodule Expression do
 
   defp stringify(binary) when is_binary(binary), do: binary
   defp stringify(items) when is_list(items), do: Enum.map(items, &to_string/1) |> Enum.join()
-  defp default_value(%{"__value__" => default_value}), do: default_value
-  defp default_value({:not_found, attributes}), do: "@#{Enum.join(attributes, ".")}"
-  defp default_value(items) when is_list(items), do: Enum.map(items, &default_value/1)
-  defp default_value(value), do: value
+  defp default_value(val, opts \\ [])
+  defp default_value(%{"__value__" => default_value}, _opts), do: default_value
+
+  defp default_value({:not_found, attributes}, opts) do
+    if(opts[:handle_not_found], do: "@#{Enum.join(attributes, ".")}", else: nil)
+  end
+
+  defp default_value(items, opts) when is_list(items),
+    do: Enum.map(items, &default_value(&1, opts))
+
+  defp default_value(value, _opts), do: value
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}

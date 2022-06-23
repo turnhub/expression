@@ -164,22 +164,21 @@ defmodule ExpressionTest do
       assert {:ok, expected} == Expression.evaluate("@(DATEVALUE(NOW(), \"%Y-%m-%d\"))")
     end
 
-    @tag :skip
     test "checking for nil vars with if" do
-      assert {:ok, 1} =
-               Expression.evaluate("@IF(value, value, 0)", %{
+      assert 1 ==
+               Expression.evaluate!("@IF(value, value, 0)", %{
                  "value" => 1
                })
 
-      assert {:ok, 0} =
-               Expression.evaluate("@IF(value, value, 0)", %{
+      assert 0 ==
+               Expression.evaluate!("@IF(value, value, 0)", %{
                  "value" => nil
                })
 
-      assert {:ok, 0} = Expression.evaluate("@IF(value, value, 0)", %{})
+      assert 0 == Expression.evaluate!("@IF(value, value, 0)", %{})
 
-      assert {:ok, 1} =
-               Expression.evaluate("@IF(value.foo, value.foo, 0)", %{
+      assert 1 ==
+               Expression.evaluate!("@IF(value.foo, value.foo, 0)", %{
                  "value" => %{
                    "foo" => 1
                  }

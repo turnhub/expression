@@ -22,7 +22,9 @@ defmodule Expression.Callbacks do
   """
 
   def eval!(ast, ctx) do
-    Expression.Eval.eval!(ast, ctx, __MODULE__)
+    ast
+    |> Expression.Eval.eval!(ctx, __MODULE__)
+    |> Expression.Eval.not_founds_as_nil()
   end
 
   def eval_args!(args, ctx), do: Enum.map(args, &eval!(&1, ctx))
