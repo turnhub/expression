@@ -18,17 +18,17 @@ defmodule ExpressionCustomCallbacksTest do
       end
     end
 
-    def echo(_ctx, value) do
+    def echo(ctx, value) do
+      value = Expression.Eval.eval!(value, ctx, __MODULE__)
       {:ok, "You said #{inspect(value)}"}
     end
   end
 
   test "custom callback" do
-    assert {:ok, ["You said \"foo\""]} =
-             Expression.evaluate("@echo(\"foo\")", %{}, CustomCallback)
+    assert {:ok, "You said \"foo\""} == Expression.evaluate("@echo(\"foo\")", %{}, CustomCallback)
   end
 
   test "fallback to default callback" do
-    assert {:ok, ["FOO"]} = Expression.evaluate("@upper(\"foo\")", %{}, CustomCallback)
+    assert {:ok, "FOO"} = Expression.evaluate("@upper(\"foo\")", %{}, CustomCallback)
   end
 end

@@ -62,13 +62,7 @@ defmodule Expression.Eval do
     name = opts[:name] || raise "Functions need a name"
     arguments = opts[:args] || []
 
-    evaluated_arguments =
-      arguments
-      |> Enum.reduce([], &[eval!(&1, context, mod) | &2])
-      |> Enum.reverse()
-      |> Enum.map(&not_founds_as_nil/1)
-
-    case mod.handle(name, evaluated_arguments, context) do
+    case mod.handle(name, arguments, context) do
       {:ok, value} -> value
       {:error, reason} -> "ERROR: #{inspect(reason)}"
     end
@@ -78,8 +72,7 @@ defmodule Expression.Eval do
     fn arguments ->
       lambda_context = Map.put(context, "__captures", arguments)
 
-      [result] = eval!(ast, lambda_context, mod)
-      result
+      eval!(ast, lambda_context, mod)
     end
   end
 
@@ -126,9 +119,15 @@ defmodule Expression.Eval do
   def eval!({:&, [a, b]}, ctx, mod), do: [a, b] |> Enum.map_join("", &eval!(&1, ctx, mod))
 
   def eval!(ast, context, mod) do
-    ast
-    |> Enum.reduce([], fn ast, acc -> [eval!(ast, context, mod) | acc] end)
-    |> Enum.reverse()
+    result =
+      ast
+      |> Enum.reduce([], fn ast, acc -> [eval!(ast, context, mod) | acc] end)
+      |> Enum.reverse()
+
+    case result do
+      [result] -> result
+      chunks -> chunks
+    end
   end
 
   def not_founds_as_nil({:not_found, _}), do: nil

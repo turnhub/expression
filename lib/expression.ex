@@ -78,20 +78,20 @@ defmodule Expression do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
-    |> Enum.map(&default_value/1)
+    |> default_value()
   end
 
   def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
-    |> Enum.map(&default_value/1)
-    |> Enum.map_join(&Kernel.to_string/1)
+    |> default_value()
+    |> stringify()
   end
 
   def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     case evaluate!(expression, context, mod) do
-      [boolean] when is_boolean(boolean) ->
+      boolean when is_boolean(boolean) ->
         boolean
 
       other ->
@@ -99,8 +99,11 @@ defmodule Expression do
     end
   end
 
+  defp stringify(binary) when is_binary(binary), do: binary
+  defp stringify(items) when is_list(items), do: Enum.map(items, &to_string/1) |> Enum.join()
   defp default_value(%{"__value__" => default_value}), do: default_value
   defp default_value({:not_found, attributes}), do: "@#{Enum.join(attributes, ".")}"
+  defp default_value(items) when is_list(items), do: Enum.map(items, &default_value/1)
   defp default_value(value), do: value
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
