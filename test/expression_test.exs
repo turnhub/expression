@@ -25,6 +25,16 @@ defmodule ExpressionTest do
                })
     end
 
+    test "stringify primitives" do
+      assert iso_dt = Expression.evaluate_as_string!("@NOW()")
+      assert {:ok, %DateTime{}, 0} = DateTime.from_iso8601(iso_dt)
+      assert "true" == Expression.evaluate_as_string!("@(tRuE)")
+      assert "false" == Expression.evaluate_as_string!("@(FaLsE)")
+      assert "1.23" == Expression.evaluate_as_string!("@(1.23)")
+      assert "2022-06-28T00:00:00Z" == Expression.evaluate_as_string!("@date(2022, 6, 28)")
+      assert "1, 2, 3" == Expression.evaluate_as_string!("@([1,2,3])")
+    end
+
     test "list with attribute" do
       assert "bar" =
                Expression.evaluate_as_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})

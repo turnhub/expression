@@ -99,8 +99,13 @@ defmodule Expression do
     end
   end
 
+  defp stringify(items) when is_list(items), do: Enum.map_join(items, ", ", &to_string/1)
   defp stringify(binary) when is_binary(binary), do: binary
-  defp stringify(items) when is_list(items), do: Enum.map_join(items, "", &to_string/1)
+  defp stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
+  defp stringify(%Date{} = date), do: Date.to_iso8601(date)
+  defp stringify(%Decimal{} = decimal), do: Decimal.to_string(decimal, :normal)
+  defp stringify(other), do: to_string(other)
+
   defp default_value(val, opts \\ [])
   defp default_value(%{"__value__" => default_value}, _opts), do: default_value
 
