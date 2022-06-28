@@ -21,12 +21,22 @@ defmodule Expression.Callbacks do
   underscore.
   """
 
+  @doc """
+  Evaluate the given AST against the context and return the value
+  after evaluation.
+  """
+  @spec eval!(term, map) :: term
   def eval!(ast, ctx) do
     ast
     |> Expression.Eval.eval!(ctx, __MODULE__)
     |> Expression.Eval.not_founds_as_nil()
   end
 
+  @doc """
+  Evaluate the given AST values against the context and return the
+  values after evaluation.
+  """
+  @spec eval_args!([term], map) :: [term]
   def eval_args!(args, ctx), do: Enum.map(args, &eval!(&1, ctx))
 
   defmacro __using__(_opts) do
@@ -979,14 +989,14 @@ defmodule Expression.Callbacks do
     [binary, start, stop, by_spaces] = eval_args!([binary, start, stop, by_spaces], ctx)
     splitter = if(by_spaces, do: " ", else: @punctuation_pattern)
 
-    cond do
-      stop > 0 ->
+    case stop do
+      stop when stop > 0 ->
         binary
         |> String.split(splitter)
         |> Enum.slice((start - 1)..(stop - 2))
         |> Enum.join(" ")
 
-      stop < 0 ->
+      stop when stop < 0 ->
         binary
         |> String.split(splitter)
         |> Enum.slice((start - 1)..(stop - 1))
@@ -1014,18 +1024,18 @@ defmodule Expression.Callbacks do
   def isnumber(ctx, var) do
     var = eval!(var, ctx)
 
-    cond do
-      is_float(var) or is_integer(var) ->
+    case var do
+      var when is_float(var) or is_integer(var) ->
         true
 
-      is_struct(var, Decimal) ->
+      var when is_struct(var, Decimal) ->
         true
 
-      is_binary(var) ->
+      var when is_binary(var) ->
         Decimal.new(var)
         true
 
-      true ->
+      _var ->
         false
     end
   rescue
