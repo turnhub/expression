@@ -99,7 +99,7 @@ defmodule Expression do
     end
   end
 
-  defp stringify(items) when is_list(items), do: Enum.map_join(items, "", &to_string/1)
+  defp stringify(items) when is_list(items), do: Enum.map_join(items, "", &stringify/1)
   defp stringify(binary) when is_binary(binary), do: binary
   defp stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
   defp stringify(%Date{} = date), do: Date.to_iso8601(date)
