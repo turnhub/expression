@@ -701,17 +701,14 @@ defmodule Expression.Callbacks do
   @doc """
   Substitutes new_text for old_text in a text string. If instance_num is given, then only that instance will be substituted
 
-  ```
-  @SUBSTITUTE(step.value, "can't", "can")
-  ```
-
   # Example
 
-    iex> Expression.Callbacks.substitute(%{}, "I can't", "can't", "can do")
+    iex> Expression.evaluate!("@substitute(\\"I can't\\", \\"can't\\", \\"can do\\")")
     "I can do"
 
   """
-  def substitute(%{}, subject, pattern, replacement) do
+  def substitute(ctx, subject, pattern, replacement) do
+    [subject, pattern, replacement] = eval_args!([subject, pattern, replacement], ctx)
     String.replace(subject, pattern, replacement)
   end
 
@@ -1196,27 +1193,16 @@ defmodule Expression.Callbacks do
 
   Supported:
 
-  ```
-  @(has_date("the date is 15/01/2017")) → true
-  @(has_date("there is no date here, just a year 2017")) → false
-  ```
-
-  Unsupported:
-
-  ```
-  @(has_date("the date is 15/01/2017").match) → 2017-01-15T13:24:30.123456-05:00
-  ```
-
   # Example
 
-    iex> Expression.Callbacks.has_date(%{}, "the date is 15/01/2017")
+    iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\")")
     true
-    iex> Expression.Callbacks.has_date(%{}, "there is no date here, just a year 2017")
+    iex> Expression.evaluate!("@has_date(\\"there is no date here, just a year 2017\\")")
     false
 
   """
-  def has_date(_, expression) do
-    !!extract_dateish(expression)
+  def has_date(ctx, expression) do
+    !!extract_dateish(eval!(expression, ctx))
   end
 
   @doc """
@@ -1587,32 +1573,31 @@ defmodule Expression.Callbacks do
   Tests whether `expresssion` contains a phone number.
   The optional country_code argument specifies the country to use for parsing.
 
-  ```
-  @(has_phone("my number is +12067799294 thanks")) → true
-  @(has_phone("my number is none of your business", "US")) → false
-  ```
-
-  Not supported:
-
-  ```
-  @(has_phone("my number is +12067799294").match) → +12067799294
-  @(has_phone("my number is 2067799294", "US").match) → +12067799294
-  @(has_phone("my number is 206 779 9294", "US").match) → +12067799294
-  ```
-
   # Example
 
-    iex> Expression.Callbacks.has_phone(%{}, "my number is +12067799294 thanks")
+    iex> Expression.evaluate!("@has_phone(\\"my number is +12067799294 thanks\\")")
     true
-    iex> Expression.Callbacks.has_phone(%{}, "my number is 2067799294 thanks", "US")
+    iex> Expression.evaluate!("@has_phone(\\"my number is 2067799294 thanks\\", \\"US\\")")
     true
-    iex> Expression.Callbacks.has_phone(%{}, "my number is 206 779 9294 thanks", "US")
+    iex> Expression.evaluate!("@has_phone(\\"my number is 206 779 9294 thanks\\", \\"US\\")")
     true
-    iex> Expression.Callbacks.has_phone(%{}, "my number is none of your business", "US")
+    iex> Expression.evaluate!("@has_phone(\\"my number is none of your business\\", \\"US\\")")
     false
 
   """
-  def has_phone(%{}, expression, country_code \\ "") do
+  def has_phone(ctx, expression) do
+    [expression] = eval_args!([expression], ctx)
+    letters_removed = Regex.replace(~r/[a-z]/i, expression, "")
+
+    case ExPhoneNumber.parse(letters_removed, "") do
+      # Future match result: ExPhoneNumber.format(pn, :es164)
+      {:ok, _pn} -> true
+      _ -> false
+    end
+  end
+
+  def has_phone(ctx, expression, country_code) do
+    [expression, country_code] = eval_args!([expression, country_code], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, expression, "")
 
     case ExPhoneNumber.parse(letters_removed, country_code) do
