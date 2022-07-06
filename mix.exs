@@ -52,7 +52,7 @@ defmodule Expression.MixProject do
       {:number, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},
-      {:ex_phone_number, "~> 0.2.1"},
+      {:ex_phone_number, "~> 0.3.0"},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:version_tasks, "~> 0.12.0", only: [:dev], runtime: false}
