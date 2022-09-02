@@ -100,6 +100,7 @@ defmodule Expression.Eval do
     case key do
       index when is_number(index) -> get_in(subject, [Access.at(index)])
       range when is_struct(range, Range) -> Enum.slice(subject, range)
+      binary when is_binary(binary) -> Map.get(subject, binary)
     end
   end
 
