@@ -108,6 +108,12 @@ defmodule Expression.EvalTest do
       assert 1 == Eval.eval!(ast, %{"foo" => %{"a" => 1}, "bar" => "a"})
     end
 
+    test "with binary keys as variables and strings" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@foo[bar]['baz']")
+
+      assert 1 == Eval.eval!(ast, %{"foo" => %{"a" => %{"baz" => 1}}, "bar" => "a"})
+    end
+
     test "with function" do
       {:ok, ast, "", _, _, _} = Parser.parse("@foo[day(now())]")
       today = DateTime.utc_now().day
