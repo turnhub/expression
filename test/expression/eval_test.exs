@@ -90,10 +90,28 @@ defmodule Expression.EvalTest do
   end
 
   describe "lists" do
-    test "with literal indices" do
+    test "with integer indices" do
       {:ok, ast, "", _, _, _} = Parser.parse("@foo[1]")
 
       assert 1 == Eval.eval!(ast, %{"foo" => [0, 1, 2]})
+    end
+
+    test "with binary keys" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@foo['a']")
+
+      assert 1 == Eval.eval!(ast, %{"foo" => %{"a" => 1}})
+    end
+
+    test "with binary keys as variables" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@foo[bar]")
+
+      assert 1 == Eval.eval!(ast, %{"foo" => %{"a" => 1}, "bar" => "a"})
+    end
+
+    test "with binary keys as variables and strings" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@foo[bar]['baz']")
+
+      assert 1 == Eval.eval!(ast, %{"foo" => %{"a" => %{"baz" => 1}}, "bar" => "a"})
     end
 
     test "with function" do
