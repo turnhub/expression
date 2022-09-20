@@ -106,16 +106,16 @@ defmodule Expression.Eval do
 
   def eval!({:literal, literal}, _context, _mod), do: literal
   def eval!({:text, text}, _context, _mod), do: text
-  def eval!({:+, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) + eval!(b, ctx, mod, :num)
-  def eval!({:-, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) - eval!(b, ctx, mod, :num)
-  def eval!({:*, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) * eval!(b, ctx, mod, :num)
-  def eval!({:/, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) / eval!(b, ctx, mod, :num)
-  def eval!({:>, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) > eval!(b, ctx, mod, :num)
-  def eval!({:>=, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) >= eval!(b, ctx, mod, :num)
-  def eval!({:<, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) < eval!(b, ctx, mod, :num)
-  def eval!({:<=, [a, b]}, ctx, mod), do: eval!(a, ctx, mod, :num) <= eval!(b, ctx, mod, :num)
-  def eval!({:==, [a, b]}, ctx, mod), do: eval!(a, ctx, mod) == eval!(b, ctx, mod)
-  def eval!({:!=, [a, b]}, ctx, mod), do: eval!(a, ctx, mod) != eval!(b, ctx, mod)
+
+  @numeric_kernel_operators [:+, :-, :*, :/, :>, :>=, :<, :<=]
+  @kernel_operators @numeric_kernel_operators ++ [:==, :!=]
+  def eval!({operator, [a, b]}, ctx, mod)
+      when operator in @kernel_operators do
+    a = eval!(a, ctx, mod)
+    b = eval!(b, ctx, mod)
+    op(operator, a, b)
+  end
+
   def eval!({:^, [a, b]}, ctx, mod), do: :math.pow(eval!(a, ctx, mod), eval!(b, ctx, mod))
   def eval!({:&, [a, b]}, ctx, mod), do: [a, b] |> Enum.map_join("", &eval!(&1, ctx, mod))
 
@@ -131,10 +131,50 @@ defmodule Expression.Eval do
     end
   end
 
+  # when acting on integer or Elixir literal numeric types
+  def op(operator, a, b)
+      when operator in @numeric_kernel_operators and
+             (is_number(a) or is_float(a)) and
+             (is_number(b) or is_float(b)) do
+    [a, b] = Enum.map([a, b], &guard_type!(&1, :num))
+    apply(Kernel, operator, [a, b])
+  end
+
+  # when acting on Decimal types
+  def op(operator, a, b)
+      when operator in @kernel_operators and
+             is_struct(a, Decimal) and
+             is_struct(b, Decimal) do
+    [a, b] = Enum.map([a, b], &guard_type!(&1, :num))
+    decimal_op(operator, a, b)
+  end
+
+  # when acting on any other supported type but still expected to be numeric
+  def op(operator, a, b) when operator in @numeric_kernel_operators do
+    apply(Kernel, operator, [guard_type!(a, :num), guard_type!(b, :num)])
+  end
+
+  # just leave it to the Kernel to figure out at this stage
+  def op(operator, a, b) when operator in @kernel_operators do
+    apply(Kernel, operator, [a, b])
+  end
+
+  def decimal_op(:+, a, b), do: Decimal.add(a, b)
+  def decimal_op(:*, a, b), do: Decimal.mult(a, b)
+  def decimal_op(:/, a, b), do: Decimal.div(a, b)
+  def decimal_op(:-, a, b), do: Decimal.sub(a, b)
+  def decimal_op(:>, a, b), do: Decimal.lt?(a, b)
+  def decimal_op(:>=, a, b), do: Decimal.compare(a, b) in [:lt, :eq]
+  def decimal_op(:<, a, b), do: Decimal.gt?(a, b)
+  def decimal_op(:<=, a, b), do: Decimal.compare(a, b) in [:gt, :eq]
+  def decimal_op(:==, a, b), do: Decimal.eq?(a, b)
+  def decimal_op(:!=, a, b), do: not Decimal.eq?(a, b)
+
+  def decimal_op(operator, _a, _b),
+    do: raise("Invalid operator #{inspect(operator)} for decimal values.")
+
   def not_founds_as_nil({:not_found, _}), do: nil
   def not_founds_as_nil(other), do: other
-
-  defp eval!(ast, ctx, mod, type), do: ast |> eval!(ctx, mod) |> guard_type!(type)
 
   defp guard_type!(v, :num) when is_number(v) or is_struct(v, Decimal), do: v
 
