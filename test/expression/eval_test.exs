@@ -58,7 +58,7 @@ defmodule Expression.EvalTest do
              ] == Eval.eval!(ast, %{})
     end
 
-    test "with arithmatic" do
+    test "with arithmetic" do
       {:ok, ast, "", _, _, _} = Parser.parse("@(map(foo, &([&1, 'Button'])))")
 
       assert [[1, "Button"], [2, "Button"], [3, "Button"]] ==
@@ -126,7 +126,7 @@ defmodule Expression.EvalTest do
     end
   end
 
-  test "arithmatic" do
+  test "arithmetic" do
     {:ok, ast, "", _, _, _} = Parser.parse("@(1 + 1)")
     assert 2 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@(1 + 2 * 3)")
@@ -137,6 +137,19 @@ defmodule Expression.EvalTest do
     assert 1.0 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@(6 / 2 + 1)")
     assert 4.0 == Eval.eval!(ast, %{})
+  end
+
+  test "arithmetic with decimals" do
+    {:ok, ast, "", _, _, _} = Parser.parse("@(1.5 + 1.5)")
+    assert Decimal.new("3.0") == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(1.5 + 2.5 * 3.5)")
+    assert Decimal.new("10.25") == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@((1.5 + 2.5) * 3.5)")
+    assert Decimal.new("14.00") == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@((1.5 + 2.5) / 3.5)")
+    assert Decimal.new("1.14286") == Decimal.round(Eval.eval!(ast, %{}), 5)
+    {:ok, ast, "", _, _, _} = Parser.parse("@(6.8 / 2.0 + 1.5)")
+    assert Decimal.new("4.9") == Eval.eval!(ast, %{})
   end
 
   test "text" do
