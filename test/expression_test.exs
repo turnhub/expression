@@ -117,6 +117,20 @@ defmodule ExpressionTest do
                Expression.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 18}})
     end
 
+    test "logical comparison with lists" do
+      assert {:ok, false} ==
+               Expression.evaluate("@(18 == answers[cursor])", %{
+                 "answers" => ["yes"],
+                 "cursor" => 0
+               })
+
+      assert {:ok, false} ==
+               Expression.evaluate("@(answers[cursor] == 18)", %{
+                 "answers" => ["yes"],
+                 "cursor" => 0
+               })
+    end
+
     test "escaping @s" do
       assert "user@example.org" = Expression.evaluate_as_string!("user@@example.org")
       assert "user@example.org" = Expression.evaluate_as_string!("@('user' & '@example.org')")
