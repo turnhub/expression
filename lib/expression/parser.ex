@@ -99,7 +99,7 @@ defmodule Expression.Parser do
     :key,
     ignore(ascii_char([91]))
     |> replace(:key)
-    |> parsec(:aexpr_exponent)
+    |> parsec(:aexpr)
     |> ignore(ascii_char([93]))
     |> label("[..]")
   )
@@ -150,7 +150,11 @@ defmodule Expression.Parser do
   defparsec(
     :aexpr_term,
     parsec(:aexpr_exponent)
-    |> repeat(choice([times(), divide()]) |> parsec(:aexpr_exponent))
+    |> repeat(
+      choice([times(), divide()])
+      |> ignore_surrounding_whitespace.()
+      |> parsec(:aexpr_exponent)
+    )
     |> reduce(:fold_infixl)
   )
 
@@ -170,6 +174,7 @@ defmodule Expression.Parser do
         eq()
       ])
       |> parsec(:aexpr_term)
+      |> ignore_surrounding_whitespace.()
     )
     |> reduce(:fold_infixl)
   )
