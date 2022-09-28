@@ -14,17 +14,17 @@ defmodule Expression.Eval do
 
   # Example
 
-    iex(1)> Expression.Eval.eval!([text: "hello"], %{})
-    ["hello"]
-    iex(2)> Expression.Eval.eval!([text: "hello", expression: [literal: 1]], %{})
-    ["hello", 1]
-    iex(3)> Expression.Eval.eval!([
-    ...(3)>   text: "hello",
-    ...(3)>   expression: [literal: 1],
-    ...(3)>   text: "ok",
-    ...(3)>   expression: [literal: true]
-    ...(3)> ], %{})
-    ["hello", 1, "ok", true]
+      iex(1)> Expression.Eval.eval!([text: "hello"], %{})
+      ["hello"]
+      iex(2)> Expression.Eval.eval!([text: "hello", expression: [literal: 1]], %{})
+      ["hello", 1]
+      iex(3)> Expression.Eval.eval!([
+      ...(3)>   text: "hello",
+      ...(3)>   expression: [literal: 1],
+      ...(3)>   text: "ok",
+      ...(3)>   expression: [literal: true]
+      ...(3)> ], %{})
+      ["hello", 1, "ok", true]
 
   """
   def eval!(ast, context, mod \\ Expression.Callbacks)

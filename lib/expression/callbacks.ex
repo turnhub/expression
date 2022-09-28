@@ -245,7 +245,7 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> DateTime.utc_now() == Expression.Callbacks.now(%{})
+      iex> DateTime.utc_now() == Expression.Callbacks.now(%{})
   """
   def now(_ctx) do
     DateTime.utc_now()
@@ -390,8 +390,8 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@and(not(false), true)")
-    true
+      iex> Expression.evaluate!("@and(not(false), true)")
+      true
 
   """
   def not_(ctx, argument) do
@@ -703,8 +703,8 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@substitute(\\"I can't\\", \\"can't\\", \\"can do\\")")
-    "I can do"
+      iex> Expression.evaluate!("@substitute(\\"I can't\\", \\"can't\\", \\"can do\\")")
+      "I can do"
 
   """
   def substitute(ctx, subject, pattern, replacement) do
@@ -717,10 +717,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@unichar(65)")
-    "A"
-    iex> Expression.evaluate!("@unichar(233)")
-    "é"
+      iex> Expression.evaluate!("@unichar(65)")
+      "A"
+      iex> Expression.evaluate!("@unichar(233)")
+      "é"
 
   """
   def unichar(ctx, code) do
@@ -1103,10 +1103,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_all_words(\\"the quick brown FOX\\", \\"the fox\\")")
-    true
-    iex> Expression.evaluate!("@has_all_words(\\"the quick brown FOX\\", \\"red fox\\")")
-    false
+      iex> Expression.evaluate!("@has_all_words(\\"the quick brown FOX\\", \\"the fox\\")")
+      true
+      iex> Expression.evaluate!("@has_all_words(\\"the quick brown FOX\\", \\"red fox\\")")
+      false
 
   """
   def has_all_words(ctx, haystack, words) do
@@ -1123,10 +1123,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_any_word(\\"The Quick Brown Fox\\", \\"fox quick\\")")
-    true
-    iex> Expression.evaluate!("@has_any_word(\\"The Quick Brown Fox\\", \\"yellow\\")")
-    false
+      iex> Expression.evaluate!("@has_any_word(\\"The Quick Brown Fox\\", \\"fox quick\\")")
+      true
+      iex> Expression.evaluate!("@has_any_word(\\"The Quick Brown Fox\\", \\"yellow\\")")
+      false
 
   """
   def has_any_word(ctx, haystack, words) do
@@ -1159,12 +1159,12 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"the quick\\")")
-    true
-    iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"the    quick\\")")
-    false
-    iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"quick brown\\")")
-    false
+      iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"the quick\\")")
+      true
+      iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"the    quick\\")")
+      false
+      iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"quick brown\\")")
+      false
 
   """
   def has_beginning(ctx, text, beginning) do
@@ -1195,10 +1195,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\")")
-    true
-    iex> Expression.evaluate!("@has_date(\\"there is no date here, just a year 2017\\")")
-    false
+      iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\")")
+      true
+      iex> Expression.evaluate!("@has_date(\\"there is no date here, just a year 2017\\")")
+      false
 
   """
   def has_date(ctx, expression) do
@@ -1210,10 +1210,10 @@ defmodule Expression.Callbacks do
 
   # Examples
 
-    iex> Expression.evaluate!("@has_date_eq(\\"the date is 15/01/2017\\", \\"2017-01-15\\")")
-    true
-    iex> Expression.evaluate!("@has_date_eq(\\"there is no date here, just a year 2017\\", \\"2017-01-15\\")")
-    false
+      iex> Expression.evaluate!("@has_date_eq(\\"the date is 15/01/2017\\", \\"2017-01-15\\")")
+      true
+      iex> Expression.evaluate!("@has_date_eq(\\"there is no date here, just a year 2017\\", \\"2017-01-15\\")")
+      false
   """
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
@@ -1228,10 +1228,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-01-01\\")")
-    true
-    iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-03-15\\")")
-    false
+      iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-01-01\\")")
+      true
+      iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-03-15\\")")
+      false
 
   """
   def has_date_gt(ctx, expression, date_string) do
@@ -1247,10 +1247,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2017\\", \\"2017-06-01\\")")
-    true
-    iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2021\\", \\"2017-03-15\\")")
-    false
+      iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2017\\", \\"2017-06-01\\")")
+      true
+      iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2021\\", \\"2017-03-15\\")")
+      false
 
   """
   def has_date_lt(ctx, expression, date_string) do
@@ -1266,10 +1266,10 @@ defmodule Expression.Callbacks do
 
   # Example:
 
-    iex> Expression.evaluate!("@has_email(\\"my email is foo1@bar.com, please respond\\")")
-    true
-    iex> Expression.evaluate!("@has_email(\\"i'm not sharing my email\\")")
-    false
+      iex> Expression.evaluate!("@has_email(\\"my email is foo1@bar.com, please respond\\")")
+      true
+      iex> Expression.evaluate!("@has_email(\\"i'm not sharing my email\\")")
+      false
 
   """
   def has_email(ctx, expression) do
@@ -1287,15 +1287,15 @@ defmodule Expression.Callbacks do
 
   # Example:
 
-    iex> contact = %{
-    ...>   "groups" => [%{
-    ...>     "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
-    ...>   }]
-    ...> }
-    iex> Expression.evaluate!("@has_group(contact.groups, \\"b7cf0d83-f1c9-411c-96fd-c511a4cfa86d\\")", %{"contact" => contact})
-    true
-    iex> Expression.evaluate!("@has_group(contact.groups, \\"00000000-0000-0000-0000-000000000000\\")", %{"contact" => contact})
-    false
+      iex> contact = %{
+      ...>   "groups" => [%{
+      ...>     "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
+      ...>   }]
+      ...> }
+      iex> Expression.evaluate!("@has_group(contact.groups, \\"b7cf0d83-f1c9-411c-96fd-c511a4cfa86d\\")", %{"contact" => contact})
+      true
+      iex> Expression.evaluate!("@has_group(contact.groups, \\"00000000-0000-0000-0000-000000000000\\")", %{"contact" => contact})
+      false
 
   """
   def has_group(ctx, groups, uuid) do
@@ -1357,10 +1357,10 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> true = Expression.evaluate!("@has_number(\\"the number is 42 and 5\\")")
-    iex> true = Expression.evaluate!("@has_number(\\"العدد ٤٢\\")")
-    iex> true = Expression.evaluate!("@has_number(\\"٠.٥\\")")
-    iex> true = Expression.evaluate!("@has_number(\\"0.6\\")")
+      iex> true = Expression.evaluate!("@has_number(\\"the number is 42 and 5\\")")
+      iex> true = Expression.evaluate!("@has_number(\\"العدد ٤٢\\")")
+      iex> true = Expression.evaluate!("@has_number(\\"٠.٥\\")")
+      iex> true = Expression.evaluate!("@has_number(\\"0.6\\")")
 
   """
   def has_number(ctx, expression) do
@@ -1375,13 +1375,13 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", 42)")
-    iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", 42.0)")
-    iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", \\"42\\")")
-    iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42.0\\", \\"42\\")")
-    iex> false = Expression.evaluate!("@has_number_eq(\\"the number is 40\\", \\"42\\")")
-    iex> false = Expression.evaluate!("@has_number_eq(\\"the number is 40\\", \\"foo\\")")
-    iex> false = Expression.evaluate!("@has_number_eq(\\"four hundred\\", \\"foo\\")")
+      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", 42)")
+      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", 42.0)")
+      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", \\"42\\")")
+      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42.0\\", \\"42\\")")
+      iex> false = Expression.evaluate!("@has_number_eq(\\"the number is 40\\", \\"42\\")")
+      iex> false = Expression.evaluate!("@has_number_eq(\\"the number is 40\\", \\"foo\\")")
+      iex> false = Expression.evaluate!("@has_number_eq(\\"four hundred\\", \\"foo\\")")
 
   """
   def has_number_eq(ctx, expression, decimal) do
@@ -1402,13 +1402,13 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", 40)")
-    iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", 40.0)")
-    iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", \\"40\\")")
-    iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42.0\\", \\"40\\")")
-    iex> false = Expression.evaluate!("@has_number_gt(\\"the number is 40\\", \\"40\\")")
-    iex> false = Expression.evaluate!("@has_number_gt(\\"the number is 40\\", \\"foo\\")")
-    iex> false = Expression.evaluate!("@has_number_gt(\\"four hundred\\", \\"foo\\")")
+      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", 40)")
+      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", 40.0)")
+      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", \\"40\\")")
+      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42.0\\", \\"40\\")")
+      iex> false = Expression.evaluate!("@has_number_gt(\\"the number is 40\\", \\"40\\")")
+      iex> false = Expression.evaluate!("@has_number_gt(\\"the number is 40\\", \\"foo\\")")
+      iex> false = Expression.evaluate!("@has_number_gt(\\"four hundred\\", \\"foo\\")")
   """
   def has_number_gt(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
@@ -1428,13 +1428,13 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", 42)")
-    iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", 42.0)")
-    iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", \\"42\\")")
-    iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 42.0\\", \\"45\\")")
-    iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 40\\", \\"45\\")")
-    iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 40\\", \\"foo\\")")
-    iex> false = Expression.evaluate!("@has_number_gte(\\"four hundred\\", \\"foo\\")")
+      iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", 42)")
+      iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", 42.0)")
+      iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", \\"42\\")")
+      iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 42.0\\", \\"45\\")")
+      iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 40\\", \\"45\\")")
+      iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 40\\", \\"foo\\")")
+      iex> false = Expression.evaluate!("@has_number_gte(\\"four hundred\\", \\"foo\\")")
   """
   def has_number_gte(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
@@ -1454,13 +1454,13 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> true = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", 44)")
-    iex> true = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", 44.0)")
-    iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", \\"40\\")")
-    iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 42.0\\", \\"40\\")")
-    iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 40\\", \\"40\\")")
-    iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 40\\", \\"foo\\")")
-    iex> false = Expression.evaluate!("@has_number_lt(\\"four hundred\\", \\"foo\\")")
+      iex> true = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", 44)")
+      iex> true = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", 44.0)")
+      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", \\"40\\")")
+      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 42.0\\", \\"40\\")")
+      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 40\\", \\"40\\")")
+      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 40\\", \\"foo\\")")
+      iex> false = Expression.evaluate!("@has_number_lt(\\"four hundred\\", \\"foo\\")")
   """
   def has_number_lt(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
@@ -1480,12 +1480,12 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", 42)")
-    iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", 42.0)")
-    iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", \\"42\\")")
-    iex> false = Expression.evaluate!("@has_number_lte(\\"the number is 42.0\\", \\"40\\")")
-    iex> false = Expression.evaluate!("@has_number_lte(\\"the number is 40\\", \\"foo\\")")
-    iex> false = Expression.evaluate!("@has_number_lte(\\"four hundred\\", \\"foo\\")")
+      iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", 42)")
+      iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", 42.0)")
+      iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", \\"42\\")")
+      iex> false = Expression.evaluate!("@has_number_lte(\\"the number is 42.0\\", \\"40\\")")
+      iex> false = Expression.evaluate!("@has_number_lte(\\"the number is 40\\", \\"foo\\")")
+      iex> false = Expression.evaluate!("@has_number_lte(\\"four hundred\\", \\"foo\\")")
 
   """
   def has_number_lte(ctx, expression, decimal) do
@@ -1508,12 +1508,12 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_only_phrase(\\"Quick Brown\\", \\"quick brown\\")")
-    true
-    iex> Expression.evaluate!("@has_only_phrase(\\"\\", \\"\\")")
-    true
-    iex> Expression.evaluate!("@has_only_phrase(\\"The Quick Brown Fox\\", \\"quick brown\\")")
-    false
+      iex> Expression.evaluate!("@has_only_phrase(\\"Quick Brown\\", \\"quick brown\\")")
+      true
+      iex> Expression.evaluate!("@has_only_phrase(\\"\\", \\"\\")")
+      true
+      iex> Expression.evaluate!("@has_only_phrase(\\"The Quick Brown Fox\\", \\"quick brown\\")")
+      false
 
   """
   def has_only_phrase(ctx, expression, phrase) do
@@ -1531,12 +1531,12 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_only_text(\\"foo\\", \\"foo\\")")
-    true
-    iex> Expression.evaluate!("@has_only_text(\\"\\", \\"\\")")
-    true
-    iex> Expression.evaluate!("@has_only_text(\\"foo\\", \\"FOO\\")")
-    false
+      iex> Expression.evaluate!("@has_only_text(\\"foo\\", \\"foo\\")")
+      true
+      iex> Expression.evaluate!("@has_only_text(\\"\\", \\"\\")")
+      true
+      iex> Expression.evaluate!("@has_only_text(\\"foo\\", \\"FOO\\")")
+      false
 
   """
   def has_only_text(ctx, expression_one, expression_two) do
@@ -1551,10 +1551,10 @@ defmodule Expression.Callbacks do
 
   # Examples
 
-    iex> Expression.evaluate!("@has_pattern(\\"Buy cheese please\\", \\"buy (\\\\w+)\\")")
-    true
-    iex> Expression.evaluate!("@has_pattern(\\"Sell cheese please\\", \\"buy (\\\\w+)\\")")
-    false
+      iex> Expression.evaluate!("@has_pattern(\\"Buy cheese please\\", \\"buy (\\\\w+)\\")")
+      true
+      iex> Expression.evaluate!("@has_pattern(\\"Sell cheese please\\", \\"buy (\\\\w+)\\")")
+      false
 
   """
   def has_pattern(ctx, expression, pattern) do
@@ -1575,14 +1575,14 @@ defmodule Expression.Callbacks do
 
   # Example
 
-    iex> Expression.evaluate!("@has_phone(\\"my number is +12067799294 thanks\\")")
-    true
-    iex> Expression.evaluate!("@has_phone(\\"my number is 2067799294 thanks\\", \\"US\\")")
-    true
-    iex> Expression.evaluate!("@has_phone(\\"my number is 206 779 9294 thanks\\", \\"US\\")")
-    true
-    iex> Expression.evaluate!("@has_phone(\\"my number is none of your business\\", \\"US\\")")
-    false
+      iex> Expression.evaluate!("@has_phone(\\"my number is +12067799294 thanks\\")")
+      true
+      iex> Expression.evaluate!("@has_phone(\\"my number is 2067799294 thanks\\", \\"US\\")")
+      true
+      iex> Expression.evaluate!("@has_phone(\\"my number is 206 779 9294 thanks\\", \\"US\\")")
+      true
+      iex> Expression.evaluate!("@has_phone(\\"my number is none of your business\\", \\"US\\")")
+      false
 
   """
   def has_phone(ctx, expression) do
@@ -1614,12 +1614,12 @@ defmodule Expression.Callbacks do
 
   # Examples
 
-    iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"brown fox\\")")
-    true
-    iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"quick fox\\")")
-    false
-    iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"\\")")
-    true
+      iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"brown fox\\")")
+      true
+      iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"quick fox\\")")
+      false
+      iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"\\")")
+      true
 
   """
   def has_phrase(ctx, expression, phrase) do
@@ -1636,14 +1636,14 @@ defmodule Expression.Callbacks do
 
   # Examples
 
-    iex> Expression.evaluate!("@has_text(\\"quick brown\\")")
-    true
-    iex> Expression.evaluate!("@has_text(\\"\\")")
-    false
-    iex> Expression.evaluate!("@has_text(\\" \\n\\")")
-    false
-    iex> Expression.evaluate!("@has_text(123)")
-    true
+      iex> Expression.evaluate!("@has_text(\\"quick brown\\")")
+      true
+      iex> Expression.evaluate!("@has_text(\\"\\")")
+      false
+      iex> Expression.evaluate!("@has_text(\\" \\n\\")")
+      false
+      iex> Expression.evaluate!("@has_text(123)")
+      true
   """
   def has_text(ctx, expression) do
     expression = eval!(expression, ctx) |> to_string()
@@ -1655,14 +1655,14 @@ defmodule Expression.Callbacks do
 
   # Examples
 
-    iex> Expression.evaluate!("@has_time(\\"the time is 10:30\\")")
-    true
-    iex> Expression.evaluate!("@has_time(\\"the time is 10:00 pm\\")")
-    true
-    iex> Expression.evaluate!("@has_time(\\"the time is 10:30:45\\")")
-    true
-    iex> Expression.evaluate!("@has_time(\\"there is no time here, just the number 25\\")")
-    false
+      iex> Expression.evaluate!("@has_time(\\"the time is 10:30\\")")
+      true
+      iex> Expression.evaluate!("@has_time(\\"the time is 10:00 pm\\")")
+      true
+      iex> Expression.evaluate!("@has_time(\\"the time is 10:30:45\\")")
+      true
+      iex> Expression.evaluate!("@has_time(\\"there is no time here, just the number 25\\")")
+      false
 
   """
   def has_time(ctx, expression) do
