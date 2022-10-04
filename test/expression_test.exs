@@ -85,7 +85,7 @@ defmodule ExpressionTest do
                })
     end
 
-    test "example logical comparison" do
+    test "example logical comparison between integers" do
       assert {:ok, true} ==
                Expression.evaluate("@(contact.age > 18)", %{"contact" => %{"age" => 20}})
 
@@ -115,6 +115,38 @@ defmodule ExpressionTest do
 
       assert {:ok, true} ==
                Expression.evaluate("@(contact.age == 18)", %{"contact" => %{"age" => 18}})
+    end
+
+    test "example logical comparison between decimals" do
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age > 18.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age >= 20.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, false} ==
+               Expression.evaluate("@(contact.age < 18.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age <= 20.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age <= 30.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, false} ==
+               Expression.evaluate("@(contact.age == 18.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, false} ==
+               Expression.evaluate("@(contact.age = 18.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age != 18.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age <> 18.0)", %{"contact" => %{"age" => "20.0"}})
+
+      assert {:ok, true} ==
+               Expression.evaluate("@(contact.age == 18.0)", %{"contact" => %{"age" => "18.0"}})
     end
 
     test "logical comparison with lists" do
