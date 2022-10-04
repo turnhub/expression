@@ -146,6 +146,7 @@ defmodule Expression.Eval do
              is_struct(a, Decimal) and
              is_struct(b, Decimal) do
     [a, b] = Enum.map([a, b], &guard_type!(&1, :num))
+
     decimal_op(operator, a, b)
   end
 
@@ -163,10 +164,10 @@ defmodule Expression.Eval do
   def decimal_op(:*, a, b), do: Decimal.mult(a, b)
   def decimal_op(:/, a, b), do: Decimal.div(a, b)
   def decimal_op(:-, a, b), do: Decimal.sub(a, b)
-  def decimal_op(:>, a, b), do: Decimal.lt?(a, b)
-  def decimal_op(:>=, a, b), do: Decimal.compare(a, b) in [:lt, :eq]
-  def decimal_op(:<, a, b), do: Decimal.gt?(a, b)
-  def decimal_op(:<=, a, b), do: Decimal.compare(a, b) in [:gt, :eq]
+  def decimal_op(:>, a, b), do: Decimal.gt?(a, b)
+  def decimal_op(:>=, a, b), do: Decimal.compare(a, b) in [:gt, :eq]
+  def decimal_op(:<, a, b), do: Decimal.lt?(a, b)
+  def decimal_op(:<=, a, b), do: Decimal.compare(a, b) in [:lt, :eq]
   def decimal_op(:==, a, b), do: Decimal.eq?(a, b)
   def decimal_op(:!=, a, b), do: not Decimal.eq?(a, b)
 
