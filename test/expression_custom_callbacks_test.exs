@@ -28,6 +28,11 @@ defmodule ExpressionCustomCallbacksTest do
     assert {:ok, "You said \"foo\""} == Expression.evaluate("@echo(\"foo\")", %{}, CustomCallback)
   end
 
+  test "custom callback inside a common callback" do
+    assert {:ok, "You said \"Foo\""} ==
+             Expression.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
+  end
+
   test "fallback to default callback" do
     assert {:ok, "FOO"} = Expression.evaluate("@upper(\"foo\")", %{}, CustomCallback)
   end
