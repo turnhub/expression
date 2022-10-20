@@ -61,6 +61,7 @@ defmodule Expression.Eval do
   def eval!({:function, opts}, context, mod) do
     name = opts[:name] || raise "Functions need a name"
     arguments = opts[:args] || []
+    IO.inspect(mod, label: "mod")
 
     case mod.handle(name, arguments, context) do
       {:ok, value} -> value

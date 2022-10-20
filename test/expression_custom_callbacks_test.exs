@@ -2,25 +2,24 @@ defmodule ExpressionCustomCallbacksTest do
   use ExUnit.Case
 
   defmodule CustomCallback do
-    @behaviour Expression.Callbacks
-
-    @impl true
-    def handle(function_name, arguments, context) do
-      case Expression.Callbacks.implements(__MODULE__, function_name, arguments) do
-        {:exact, function_name, _arity} ->
-          apply(__MODULE__, function_name, [context] ++ arguments)
-
-        {:vars, function_name, _arity} ->
-          apply(__MODULE__, function_name, [context, arguments])
-
-        {:error, _not_implemented} ->
-          Expression.Callbacks.handle(function_name, arguments, context)
-      end
-    end
+    use Expression.Callbacks
 
     def echo(ctx, value) do
-      value = Expression.Eval.eval!(value, ctx, __MODULE__)
+      value = eval!(value, ctx)
       {:ok, "You said #{inspect(value)}"}
+    end
+
+    def count(ctx, value) do
+      value = eval!(value, ctx)
+
+      count =
+        case value do
+          string when is_binary(string) -> String.length(string)
+          list when is_list(list) -> length(list)
+          other -> Enum.count(other)
+        end
+
+      {:ok, count}
     end
   end
 
@@ -31,6 +30,11 @@ defmodule ExpressionCustomCallbacksTest do
   test "custom callback inside a common callback" do
     assert {:ok, "You said \"Foo\""} ==
              Expression.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
+  end
+
+  test "custom callback inside a block" do
+    assert {:ok, 4} ==
+             Expression.evaluate("@(count(\"foo\") + 1)", %{}, CustomCallback)
   end
 
   test "fallback to default callback" do
