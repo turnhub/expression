@@ -60,8 +60,17 @@ defmodule Expression.Eval do
 
   def eval!({:function, opts}, context, mod) do
     name = opts[:name] || raise "Functions need a name"
-    arguments = opts[:args] || []
-    IO.inspect(mod, label: "mod")
+    args = opts[:args] || []
+
+    arguments =
+      Enum.map(args, fn
+        {:function, _args} = function ->
+          value = eval!(function, context, mod)
+          [literal: value]
+
+        argument ->
+          argument
+      end)
 
     case mod.handle(name, arguments, context) do
       {:ok, value} -> value

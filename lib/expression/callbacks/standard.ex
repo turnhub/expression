@@ -30,7 +30,7 @@ defmodule Expression.Callbacks.Standard do
       ~U[2012-12-15 00:00:00Z]
 
   """
-  use Expression.Callbacks.EvalHelpers
+  import Expression.Callbacks.EvalHelpers
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
 
