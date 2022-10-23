@@ -1,9 +1,10 @@
 defmodule Expression.Callbacks.EvalHelpers do
+  @moduledoc false
+
   @doc """
   Evaluate the given AST against the context and return the value
   after evaluation.
   """
-
   @spec eval!(term, map, module) :: term
   def eval!(ast, ctx, module \\ __MODULE__) do
     ast
