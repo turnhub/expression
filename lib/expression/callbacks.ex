@@ -1200,12 +1200,15 @@ defmodule Expression.Callbacks do
 
       iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\")")
       true
+      iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\").match")
+      ~D[2017-01-15]
       iex> Expression.evaluate!("@has_date(\\"there is no date here, just a year 2017\\")")
       false
 
   """
   def has_date(ctx, expression) do
-    !!extract_dateish(eval!(expression, ctx))
+    dateish = extract_dateish(eval!(expression, ctx))
+    %{"__value__" => !!dateish, "match" => dateish}
   end
 
   @doc """
@@ -1219,23 +1222,28 @@ defmodule Expression.Callbacks do
       false
       iex> Expression.evaluate!("@has_date_eq(date(2022, 12, 12), date(2022, 12, 12))")
       true
+      iex> Expression.evaluate!("@has_date_eq(\\"the date is 15/01/2017\\", \\"2017-01-15\\").match")
+      ~D[2017-01-15]
 
   """
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
-    # Future match result: found_date
-    case found_date do
-      found_date when is_struct(found_date, DateTime) ->
-        DateTime.compare(found_date, test_date) == :eq
 
-      found_date when is_struct(found_date, Date) ->
-        Date.compare(found_date, test_date) == :eq
+    result =
+      case found_date do
+        found_date when is_struct(found_date, DateTime) ->
+          DateTime.compare(found_date, test_date) == :eq
 
-      found_date ->
-        found_date == test_date
-    end
+        found_date when is_struct(found_date, Date) ->
+          Date.compare(found_date, test_date) == :eq
+
+        found_date ->
+          found_date == test_date
+      end
+
+    %{"__value__" => result, "match" => found_date}
   end
 
   @doc """
@@ -1249,14 +1257,16 @@ defmodule Expression.Callbacks do
       false
       iex> Expression.evaluate!("@has_date_gt(\\"2000-01-01\\", now())")
       false
+      iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-01-01\\").match")
+      ~D[2017-01-15]
 
   """
   def has_date_gt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
-    # future match result: found_date
-    Date.compare(found_date, test_date) == :gt
+    result = Date.compare(found_date, test_date) == :gt
+    %{"__value__" => result, "match" => found_date}
   end
 
   @doc """
@@ -1270,14 +1280,16 @@ defmodule Expression.Callbacks do
       false
       iex> Expression.evaluate!("@has_date_lt(now(), \\"2000-01-01\\")")
       false
+      iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2017\\", \\"2017-06-01\\").match")
+      ~D[2017-01-15]
 
   """
   def has_date_lt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
-    # future match result: found_date
-    Date.compare(found_date, test_date) == :lt
+    result = Date.compare(found_date, test_date) == :lt
+    %{"__value__" => result, "match" => found_date}
   end
 
   @doc """
