@@ -1177,7 +1177,10 @@ defmodule Expression.Callbacks do
     end
   end
 
-  defp extract_dateish(expression) do
+  defp extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
+  defp extract_dateish(date) when is_struct(date, Date), do: date
+
+  defp extract_dateish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
     case DateTimeParser.parse_date(expression) do
@@ -1214,13 +1217,25 @@ defmodule Expression.Callbacks do
       true
       iex> Expression.evaluate!("@has_date_eq(\\"there is no date here, just a year 2017\\", \\"2017-01-15\\")")
       false
+      iex> Expression.evaluate!("@has_date_eq(date(2022, 12, 12), date(2022, 12, 12))")
+      true
+
   """
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
     # Future match result: found_date
-    found_date == test_date
+    case found_date do
+      found_date when is_struct(found_date, DateTime) ->
+        DateTime.compare(found_date, test_date) == :eq
+
+      found_date when is_struct(found_date, Date) ->
+        Date.compare(found_date, test_date) == :eq
+
+      found_date ->
+        found_date == test_date
+    end
   end
 
   @doc """
@@ -1231,6 +1246,8 @@ defmodule Expression.Callbacks do
       iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-01-01\\")")
       true
       iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-03-15\\")")
+      false
+      iex> Expression.evaluate!("@has_date_gt(\\"2000-01-01\\", now())")
       false
 
   """
@@ -1250,6 +1267,8 @@ defmodule Expression.Callbacks do
       iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2017\\", \\"2017-06-01\\")")
       true
       iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2021\\", \\"2017-03-15\\")")
+      false
+      iex> Expression.evaluate!("@has_date_lt(now(), \\"2000-01-01\\")")
       false
 
   """
