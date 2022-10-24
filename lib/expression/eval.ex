@@ -64,12 +64,8 @@ defmodule Expression.Eval do
 
     arguments =
       Enum.map(args, fn
-        {:function, _args} = function ->
+        {type, _args} = function when type in [:function, :lambda] ->
           value = eval!(function, context, mod)
-          [literal: value]
-
-        {:lambda, _args} = lambda ->
-          value = eval!(lambda, context, mod)
           [literal: value]
 
         argument ->

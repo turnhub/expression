@@ -48,9 +48,9 @@ defmodule Expression.Callbacks do
   2. The function name with an underscore suffix if the function name is a reserved word
   3. The function name suffixed with `_vargs` if the takes a variable set of arguments
   """
-  @spec handle(function_name :: binary, arguments :: [any], context :: map) ::
+  @spec handle(module :: module, function_name :: binary, arguments :: [any], context :: map) ::
           {:ok, any} | {:error, :not_implemented}
-  def handle(module \\ __MODULE__, function_name, arguments, context) do
+  def handle(module \\ Standard, function_name, arguments, context) do
     case implements(module, function_name, arguments) do
       {:exact, module, function_name, _arity} ->
         {:ok, apply(module, function_name, [context] ++ arguments)}
@@ -63,11 +63,11 @@ defmodule Expression.Callbacks do
     end
   end
 
-  def implements(module \\ __MODULE__, function_name, arguments) do
+  def implements(module \\ Standard, function_name, arguments) do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 
-    Code.ensure_loaded(Standard)
+    Code.ensure_loaded!(Standard)
 
     cond do
       # Check if the exact function signature has been implemented

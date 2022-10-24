@@ -28,6 +28,11 @@ defmodule ExpressionCustomCallbacksTest do
              Expression.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
   end
 
+  test "common callback inside a custom callback" do
+    assert {:ok, "You said \"Foo\""} ==
+             Expression.evaluate("@echo(proper(\"foo\"))", %{}, CustomCallback)
+  end
+
   test "custom callback inside a block" do
     assert {:ok, 4} == Expression.evaluate("@(count(\"foo\") + 1)", %{}, CustomCallback)
   end
