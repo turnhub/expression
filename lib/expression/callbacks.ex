@@ -138,6 +138,68 @@ defmodule Expression.Callbacks do
   end
 
   @doc """
+  Calculates a new datetime based on the offset and unit provided.
+
+  The unit can be any of the following values:
+
+  * "Y" for years
+  * "M" for months
+  * "W" for weeks
+  * "D" for days
+  * "h" for hours
+  * "m" for minutes
+  * "s" for seconds
+
+  Specifying a negative offset results in date calculations back in time.
+
+  # Example
+
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"Y\\")")
+      ~U[2023-11-01 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"M\\")")
+      ~U[2022-12-01 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"W\\")")
+      ~U[2022-11-08 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"D\\")")
+      ~U[2022-11-02 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"h\\")")
+      ~U[2022-11-01 01:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"m\\")")
+      ~U[2022-11-01 00:01:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"s\\")")
+      ~U[2022-11-01 00:00:01Z]
+
+  # Examples with leap year handling
+
+      iex> Expression.evaluate!("@datetime_add(date(2020, 02, 28), 1, \\"D\\")")
+      ~U[2020-02-29 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2021, 02, 28), 1, \\"D\\")")
+      ~U[2021-03-01 00:00:00Z]
+
+  # Examples with negative offsets
+
+      iex> Expression.evaluate!("@datetime_add(date(2020, 02, 29), -1, \\"D\\")")
+      ~U[2020-02-28 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
+      ~U[2021-02-28 00:00:00Z]
+
+  """
+  def datetime_add(ctx, datetime, offset, unit) do
+    datetime = extract_dateish(eval!(datetime, ctx))
+    [offset, unit] = eval_args!([offset, unit], ctx)
+
+    case unit do
+      "Y" -> Timex.shift(datetime, years: offset)
+      "M" -> Timex.shift(datetime, months: offset)
+      "W" -> Timex.shift(datetime, weeks: offset)
+      "D" -> Timex.shift(datetime, days: offset)
+      "h" -> Timex.shift(datetime, hours: offset)
+      "m" -> Timex.shift(datetime, minutes: offset)
+      "s" -> Timex.shift(datetime, seconds: offset)
+    end
+  end
+
+  @doc """
   Converts date stored in text to an actual date,
   using `strftime` formatting.
 
@@ -1177,7 +1239,10 @@ defmodule Expression.Callbacks do
     end
   end
 
-  defp extract_dateish(expression) do
+  defp extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
+  defp extract_dateish(date) when is_struct(date, Date), do: date
+
+  defp extract_dateish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
     case DateTimeParser.parse_date(expression) do
@@ -1197,12 +1262,15 @@ defmodule Expression.Callbacks do
 
       iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\")")
       true
+      iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\").match")
+      ~D[2017-01-15]
       iex> Expression.evaluate!("@has_date(\\"there is no date here, just a year 2017\\")")
       false
 
   """
   def has_date(ctx, expression) do
-    !!extract_dateish(eval!(expression, ctx))
+    dateish = extract_dateish(eval!(expression, ctx))
+    %{"__value__" => !!dateish, "match" => dateish}
   end
 
   @doc """
@@ -1214,13 +1282,30 @@ defmodule Expression.Callbacks do
       true
       iex> Expression.evaluate!("@has_date_eq(\\"there is no date here, just a year 2017\\", \\"2017-01-15\\")")
       false
+      iex> Expression.evaluate!("@has_date_eq(date(2022, 12, 12), date(2022, 12, 12))")
+      true
+      iex> Expression.evaluate!("@has_date_eq(\\"the date is 15/01/2017\\", \\"2017-01-15\\").match")
+      ~D[2017-01-15]
+
   """
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
-    # Future match result: found_date
-    found_date == test_date
+
+    result =
+      case found_date do
+        found_date when is_struct(found_date, DateTime) ->
+          DateTime.compare(found_date, test_date) == :eq
+
+        found_date when is_struct(found_date, Date) ->
+          Date.compare(found_date, test_date) == :eq
+
+        found_date ->
+          found_date == test_date
+      end
+
+    %{"__value__" => result, "match" => found_date}
   end
 
   @doc """
@@ -1232,14 +1317,18 @@ defmodule Expression.Callbacks do
       true
       iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-03-15\\")")
       false
+      iex> Expression.evaluate!("@has_date_gt(\\"2000-01-01\\", now())")
+      false
+      iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-01-01\\").match")
+      ~D[2017-01-15]
 
   """
   def has_date_gt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
-    # future match result: found_date
-    Date.compare(found_date, test_date) == :gt
+    result = Date.compare(found_date, test_date) == :gt
+    %{"__value__" => result, "match" => found_date}
   end
 
   @doc """
@@ -1251,14 +1340,18 @@ defmodule Expression.Callbacks do
       true
       iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2021\\", \\"2017-03-15\\")")
       false
+      iex> Expression.evaluate!("@has_date_lt(now(), \\"2000-01-01\\")")
+      false
+      iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2017\\", \\"2017-06-01\\").match")
+      ~D[2017-01-15]
 
   """
   def has_date_lt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
     test_date = extract_dateish(date_string)
-    # future match result: found_date
-    Date.compare(found_date, test_date) == :lt
+    result = Date.compare(found_date, test_date) == :lt
+    %{"__value__" => result, "match" => found_date}
   end
 
   @doc """
