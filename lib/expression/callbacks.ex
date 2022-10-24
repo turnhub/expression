@@ -138,6 +138,68 @@ defmodule Expression.Callbacks do
   end
 
   @doc """
+  Calculates a new datetime based on the offset and unit provided.
+
+  The unit can be any of the following values:
+
+  * "Y" for years
+  * "M" for months
+  * "W" for weeks
+  * "D" for days
+  * "h" for hours
+  * "m" for minutes
+  * "s" for seconds
+
+  Specifying a negative offset results in date calculations back in time.
+
+  # Example
+
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"Y\\")")
+      ~U[2023-11-01 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"M\\")")
+      ~U[2022-12-01 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"W\\")")
+      ~U[2022-11-08 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"D\\")")
+      ~U[2022-11-02 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"h\\")")
+      ~U[2022-11-01 01:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"m\\")")
+      ~U[2022-11-01 00:01:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"s\\")")
+      ~U[2022-11-01 00:00:01Z]
+
+  # Examples with leap year handling
+
+      iex> Expression.evaluate!("@datetime_add(date(2020, 02, 28), 1, \\"D\\")")
+      ~U[2020-02-29 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2021, 02, 28), 1, \\"D\\")")
+      ~U[2021-03-01 00:00:00Z]
+
+  # Examples with negative offsets
+
+      iex> Expression.evaluate!("@datetime_add(date(2020, 02, 29), -1, \\"D\\")")
+      ~U[2020-02-28 00:00:00Z]
+      iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
+      ~U[2021-02-28 00:00:00Z]
+
+  """
+  def datetime_add(ctx, datetime, offset, unit) do
+    datetime = extract_dateish(eval!(datetime, ctx))
+    [offset, unit] = eval_args!([offset, unit], ctx)
+
+    case unit do
+      "Y" -> Timex.shift(datetime, years: offset)
+      "M" -> Timex.shift(datetime, months: offset)
+      "W" -> Timex.shift(datetime, weeks: offset)
+      "D" -> Timex.shift(datetime, days: offset)
+      "h" -> Timex.shift(datetime, hours: offset)
+      "m" -> Timex.shift(datetime, minutes: offset)
+      "s" -> Timex.shift(datetime, seconds: offset)
+    end
+  end
+
+  @doc """
   Converts date stored in text to an actual date,
   using `strftime` formatting.
 
