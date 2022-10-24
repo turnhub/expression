@@ -68,6 +68,10 @@ defmodule Expression.Eval do
           value = eval!(function, context, mod)
           [literal: value]
 
+        {:lambda, _args} = lambda ->
+          value = eval!(lambda, context, mod)
+          [literal: value]
+
         argument ->
           argument
       end)
