@@ -6,20 +6,16 @@ defmodule ExpressionCustomCallbacksTest do
 
     def echo(ctx, value) do
       value = eval!(value, ctx)
-      {:ok, "You said #{inspect(value)}"}
+
+      "You said #{inspect(value)}"
     end
 
     def count(ctx, value) do
-      value = eval!(value, ctx)
-
-      count =
-        case value do
-          string when is_binary(string) -> String.length(string)
-          list when is_list(list) -> length(list)
-          other -> Enum.count(other)
-        end
-
-      {:ok, count}
+      case eval!(value, ctx) do
+        string when is_binary(string) -> String.length(string)
+        list when is_list(list) -> length(list)
+        other -> Enum.count(other)
+      end
     end
   end
 
@@ -28,13 +24,17 @@ defmodule ExpressionCustomCallbacksTest do
   end
 
   test "custom callback inside a common callback" do
-    assert {:ok, "You said \"Foo\""} ==
+    assert {:ok, "You Said \"foo\""} ==
              Expression.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
   end
 
+  test "common callback inside a custom callback" do
+    assert {:ok, "You said \"Foo\""} ==
+             Expression.evaluate("@echo(proper(\"foo\"))", %{}, CustomCallback)
+  end
+
   test "custom callback inside a block" do
-    assert {:ok, 4} ==
-             Expression.evaluate("@(count(\"foo\") + 1)", %{}, CustomCallback)
+    assert {:ok, 4} == Expression.evaluate("@(count(\"foo\") + 1)", %{}, CustomCallback)
   end
 
   test "fallback to default callback" do
