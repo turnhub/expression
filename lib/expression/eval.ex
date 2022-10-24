@@ -68,8 +68,8 @@ defmodule Expression.Eval do
           value = eval!(function, context, mod)
           [literal: value]
 
-        argument ->
-          argument
+        arguments ->
+          arguments
       end)
 
     case mod.handle(name, arguments, context) do
