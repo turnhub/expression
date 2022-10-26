@@ -27,6 +27,11 @@ defmodule Expression.Eval do
       ["hello", 1, "ok", true]
 
   """
+
+  @numeric_kernel_operators [:+, :-, :*, :/, :>, :>=, :<, :<=]
+  @kernel_operators @numeric_kernel_operators ++ [:==, :!=]
+  @allowed_nested_function_arguments [:function, :lambda] ++ @kernel_operators
+
   def eval!(ast, context, mod \\ Expression.Callbacks)
 
   def eval!({:expression, [ast]}, context, mod) do
@@ -64,7 +69,7 @@ defmodule Expression.Eval do
 
     arguments =
       Enum.map(args, fn
-        {type, _args} = function when type in [:function, :lambda] ->
+        {type, _args} = function when type in @allowed_nested_function_arguments ->
           value = eval!(function, context, mod)
           [literal: value]
 
@@ -117,10 +122,7 @@ defmodule Expression.Eval do
   def eval!({:literal, literal}, _context, _mod), do: literal
   def eval!({:text, text}, _context, _mod), do: text
 
-  @numeric_kernel_operators [:+, :-, :*, :/, :>, :>=, :<, :<=]
-  @kernel_operators @numeric_kernel_operators ++ [:==, :!=]
-  def eval!({operator, [a, b]}, ctx, mod)
-      when operator in @kernel_operators do
+  def eval!({operator, [a, b]}, ctx, mod) when operator in @kernel_operators do
     a = eval!(a, ctx, mod)
     b = eval!(b, ctx, mod)
     op(operator, a, b)
