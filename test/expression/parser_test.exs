@@ -492,4 +492,69 @@ defmodule Expression.ParserTest do
       )
     end
   end
+
+  describe "prewalking" do
+    test "prewalk with identity function" do
+      ast = Expression.parse!("@hour(now())")
+
+      assert Expression.prewalk(ast, & &1) == [
+               expression: [
+                 function: [
+                   name: "hour",
+                   args: [function: [name: "now"]]
+                 ]
+               ]
+             ]
+    end
+
+    test "prewalk and change all function names" do
+      ast = Expression.parse!("@hour(now())")
+
+      assert Expression.prewalk(ast, fn
+               {:function, opts} -> {:function, Keyword.put(opts, :name, "foo")}
+               other -> other
+             end) == [
+               expression: [
+                 function: [
+                   name: "foo",
+                   args: [function: [name: "foo"]]
+                 ]
+               ]
+             ]
+    end
+  end
+
+  describe "traversal" do
+    test "traversal to fetch all functions" do
+      ast = Expression.parse!("@hour(now())")
+
+      assert {ast, functions} =
+               Expression.traverse(
+                 ast,
+                 [],
+                 fn
+                   {:function, opts}, acc ->
+                     {{:function, opts}, [{:function, opts} | acc]}
+
+                   other, acc ->
+                     {other, acc}
+                 end,
+                 fn other, acc -> {other, acc} end
+               )
+
+      assert ast == [
+               expression: [
+                 function: [
+                   name: "hour",
+                   args: [function: [name: "now"]]
+                 ]
+               ]
+             ]
+
+      assert functions == [
+               {:function, [name: "now"]},
+               {:function, [name: "hour", args: [function: [name: "now"]]]}
+             ]
+    end
+  end
 end

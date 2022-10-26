@@ -123,4 +123,7 @@ defmodule Expression do
   rescue
     e in RuntimeError -> {:error, e.message}
   end
+
+  defdelegate prewalk(ast, fun), to: Macro
+  defdelegate traverse(ast, acc, pre, post), to: Macro
 end
