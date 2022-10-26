@@ -40,8 +40,6 @@ defmodule Expression do
   alias Expression.Eval
   alias Expression.Parser
 
-  @type t :: any
-
   def parse_expression!(expression_block) do
     case Parser.aexpr(expression_block) do
       {:ok, ast, "", _, _, _} ->
