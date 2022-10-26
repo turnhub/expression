@@ -40,6 +40,8 @@ defmodule Expression do
   alias Expression.Eval
   alias Expression.Parser
 
+  @type t :: any
+
   def parse_expression!(expression_block) do
     case Parser.aexpr(expression_block) do
       {:ok, ast, "", _, _, _} ->
@@ -123,4 +125,7 @@ defmodule Expression do
   rescue
     e in RuntimeError -> {:error, e.message}
   end
+
+  defdelegate prewalk(ast, fun), to: Macro
+  defdelegate traverse(ast, acc, pre, post), to: Macro
 end
