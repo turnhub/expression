@@ -1,4 +1,4 @@
 defmodule ExpressionContextTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
   doctest Expression.Context
 end

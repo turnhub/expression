@@ -1,5 +1,5 @@
 defmodule ExpressionCustomCallbacksTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   defmodule CustomCallback do
     use Expression.Callbacks
@@ -26,6 +26,29 @@ defmodule ExpressionCustomCallbacksTest do
   test "custom callback inside a common callback" do
     assert {:ok, "You Said \"foo\""} ==
              Expression.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
+  end
+
+  test "custom callback with kernel operator" do
+    assert {:ok, "You said true"} == Expression.evaluate("@echo(1 == 1)", %{}, CustomCallback)
+  end
+
+  test "custom callback with numeric kernel operator inside a common callback" do
+    assert {:ok, "D"} == Expression.evaluate("@char(count(\"foo\") + 65)", %{}, CustomCallback)
+  end
+
+  test "custom callback with numeric kernel operator inside a custom callback" do
+    assert {:ok, "You said 2"} ==
+             Expression.evaluate("@echo(count(\"foo\") - 1)", %{}, CustomCallback)
+  end
+
+  test "custom callbacks with numeric kernel operator inside a common callback" do
+    assert {:ok, "You Said 4"} ==
+             Expression.evaluate("@proper(echo(count(\"foo\") + 1))", %{}, CustomCallback)
+  end
+
+  test "custom callback with numeric kernel operator with a list" do
+    assert {:ok, 1} ==
+             Expression.evaluate("@([1, 2, 3][count(\"foo\") - 3])", %{}, CustomCallback)
   end
 
   test "common callback inside a custom callback" do
