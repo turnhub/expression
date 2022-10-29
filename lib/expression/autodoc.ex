@@ -36,9 +36,10 @@ defmodule Expression.Autodoc do
     end
   end
 
-  def __on_definition__(env, _kind, name, args, _guards, _body) do
-    annotate_method(env.module, name, args)
-  end
+  def __on_definition__(env, :def, name, args, _guards, _body),
+    do: annotate_method(env.module, name, args)
+
+  def __on_definition__(_env, _kind, _name, _args, _guards, _body), do: nil
 
   def annotate_method(module, function, args) do
     if expression_doc = Module.delete_attribute(module, :expression_doc) do
