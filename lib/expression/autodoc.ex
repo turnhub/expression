@@ -46,49 +46,69 @@ defmodule Expression.Autodoc do
     end
   end
 
-  def update_annotations(_module, _function, _args, []), do: nil
+  def update_annotations(module, function, args, []) do
+    existing_expression_docs = Module.get_attribute(module, :expression_docs)
+
+    {_line_number, doc} = get_existing_docstring(module)
+
+    Module.put_attribute(module, :expression_docs, [
+      {format_function_name(function), format_function_args(args), doc, []}
+      | existing_expression_docs
+    ])
+  end
 
   def update_annotations(module, function, args, expression_docs) do
     existing_expression_docs = Module.get_attribute(module, :expression_docs)
 
-    for expression_doc <- expression_docs do
-      {line_number, doc} =
-        case Module.get_attribute(module, :doc) do
-          {line_number, doc} -> {line_number, doc}
-          nil -> {0, ""}
-        end
+    {line_number, doc} = get_existing_docstring(module)
 
-      Module.put_attribute(
-        module,
-        :doc,
-        {line_number,
-         """
-         #{doc}
+    expression_doc_tests =
+      Enum.map(expression_docs, fn expression_doc ->
+        """
+        ## Example expression:
 
-         ## Example expression:
+        #{expression_doc[:doc]}
 
-         #{expression_doc[:doc]}
+        ```expression
+        #{expression_doc[:expression]}
+        ```
 
-         ```expression
-         #{expression_doc[:expression]}
-         ```
+        ## Example code:
 
-         ## Example code:
+            iex> Expression.evaluate_as_string!(
+            ...>   #{inspect(expression_doc[:expression])},
+            ...>   #{inspect(expression_doc[:context])}
+            ...> )
+            #{inspect(expression_doc[:result])}
 
-             iex> Expression.evaluate_as_string!(
-             ...>   #{inspect(expression_doc[:expression])},
-             ...>   #{inspect(expression_doc[:context])}
-             ...> )
-             #{inspect(expression_doc[:result])}
+        """
+      end)
+      |> Enum.join("\n")
 
-         """}
-      )
-    end
+    updated_docs =
+      case doc do
+        nil -> expression_doc_tests
+        doc -> "#{doc}\n\n#{expression_doc_tests}"
+      end
+
+    Module.put_attribute(
+      module,
+      :doc,
+      {line_number, updated_docs}
+    )
 
     Module.put_attribute(module, :expression_docs, [
-      {format_function_name(function), format_function_args(args), format_docs(expression_docs)}
+      {format_function_name(function), format_function_args(args), doc,
+       format_docs(expression_docs)}
       | existing_expression_docs
     ])
+  end
+
+  def get_existing_docstring(module) do
+    case Module.get_attribute(module, :doc) do
+      {line_number, doc} -> {line_number, doc}
+      nil -> {0, nil}
+    end
   end
 
   def format_function_name(name) do

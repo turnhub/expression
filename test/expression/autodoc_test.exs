@@ -3,7 +3,12 @@ defmodule Expression.AutodocTest do
   alias Expression.Callbacks.Standard
 
   test "docs_for" do
-    assert [{"date", args, expression_docs}] = Standard.expression_docs()
+    all_expression_docs = Standard.expression_docs()
+
+    assert [{"date", args, docstring, expression_docs}] =
+             Enum.filter(all_expression_docs, &(elem(&1, 0) == "date"))
+
+    assert docstring =~ "Defines a new date value"
 
     assert ["year", "month", "day"] = args
 
