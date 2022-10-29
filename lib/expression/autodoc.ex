@@ -71,7 +71,14 @@ defmodule Expression.Autodoc do
         #{expression_doc[:doc]}
 
         ```expression
-        #{expression_doc[:expression]}
+        > #{expression_doc[:expression]}
+        "#{expression_doc[:result]}"
+        ```
+
+        when given the context:
+
+        ```elixir
+        #{inspect(expression_doc[:context])}
         ```
 
         ## Example code:

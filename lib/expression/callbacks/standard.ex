@@ -37,7 +37,11 @@ defmodule Expression.Callbacks.Standard do
 
   @expression_doc doc: "Construct a date from year, month, and day integers",
                   expression: "@date(year, month, day)",
-                  context: %{"year" => 2022, "month" => 1, "day" => 31},
+                  context: %{
+                    "year" => 2022,
+                    "month" => 1,
+                    "day" => 31
+                  },
                   result: "2022-01-31T00:00:00Z"
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
