@@ -63,7 +63,7 @@ defmodule Expression.Autodoc do
     {line_number, doc} = get_existing_docstring(module)
 
     expression_doc_tests =
-      Enum.map(expression_docs, fn expression_doc ->
+      Enum.map_join(expression_docs, "\n", fn expression_doc ->
         """
         ## Example expression:
 
@@ -83,7 +83,6 @@ defmodule Expression.Autodoc do
 
         """
       end)
-      |> Enum.join("\n")
 
     updated_docs =
       case doc do
