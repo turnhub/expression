@@ -31,9 +31,14 @@ defmodule Expression.Callbacks.Standard do
 
   """
   import Expression.Callbacks.EvalHelpers
+  use Expression.Autodoc
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
 
+  @expression_doc doc: "Construct a date from year, month, and day integers",
+                  expression: "@date(year, month, day)",
+                  context: %{"year" => 2022, "month" => 1, "day" => 31},
+                  result: "2022-01-31T00:00:00Z"
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 
@@ -99,6 +104,8 @@ defmodule Expression.Callbacks.Standard do
       ~U[2020-02-28 00:00:00Z]
       iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
       ~U[2021-02-28 00:00:00Z]
+
+      expr> @datetime_add(date, 2020, 02, 29)
 
   """
   def datetime_add(ctx, datetime, offset, unit) do
