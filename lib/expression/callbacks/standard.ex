@@ -105,8 +105,6 @@ defmodule Expression.Callbacks.Standard do
       iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
       ~U[2021-02-28 00:00:00Z]
 
-      expr> @datetime_add(date, 2020, 02, 29)
-
   """
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = extract_dateish(eval!(datetime, ctx))
