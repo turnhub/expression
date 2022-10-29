@@ -1,4 +1,13 @@
 defmodule Expression.Autodoc do
+  @moduledoc """
+
+  Extract `@expression_doc` attributes from modules defining callbacks
+  and automatically write doctests for those.
+
+  Also inserts an `expression_docs()` function which returns a list of
+  all functions and their defined expression docs.
+
+  """
   defmacro __using__(_args) do
     quote do
       @expression_docs []
@@ -89,6 +98,9 @@ defmodule Expression.Autodoc do
 
   defmacro __before_compile__(_env) do
     quote do
+      @doc """
+      Return a list of all functions annotated with @expression_docs
+      """
       def expression_docs do
         @expression_docs
       end
