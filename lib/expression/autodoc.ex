@@ -7,6 +7,22 @@ defmodule Expression.Autodoc do
   Also inserts an `expression_docs()` function which returns a list of
   all functions and their defined expression docs.
 
+  The format is:
+
+  ```elixir
+  @expression_doc doc: "Construct a date from year, month, and day integers",
+                  expression: "@date(year, month, day)",
+                  context: %{"year" => 2022, "month" => 1, "day" => 31},
+                  result: "2022-01-31T00:00:00Z"
+  ```
+
+  Where:
+
+  * `doc` is the explanatory text added to the doctest.
+  * `expression` is the expression we want to test
+  * `context` is the context the expression is tested against
+  * `result` is the result we're expecting to get and are asserting against
+
   """
   defmacro __using__(_args) do
     quote do
