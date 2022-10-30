@@ -70,24 +70,37 @@ defmodule Expression.Autodoc do
 
         #{expression_doc[:doc]}
 
-        ```expression
-        > #{expression_doc[:expression]}
-        "#{expression_doc[:result]}"
-        ```
-
-        when given the context:
+        When used as a Stack expression with context:
 
         ```elixir
         #{inspect(expression_doc[:context])}
         ```
 
+        ```elixir
+        > #{expression_doc[:expression]}
+        #{inspect(expression_doc[:result])}
+        ```
+
+        When used as an expression in text:
+
+        ```expression
+        > "... @#{expression_doc[:expression]} ..."
+        "#{Expression.stringify(expression_doc[:result])}"
+        ```
+
         ## Example code:
 
-            iex> Expression.evaluate_as_string!(
+            iex> Expression.evaluate_block!(
             ...>   #{inspect(expression_doc[:expression])},
             ...>   #{inspect(expression_doc[:context])}
             ...> )
             #{inspect(expression_doc[:result])}
+
+            iex> Expression.evaluate_as_string!(
+            ...>   #{inspect("@" <> expression_doc[:expression])},
+            ...>   #{inspect(expression_doc[:context])}
+            ...> )
+            #{inspect(Expression.stringify(expression_doc[:result]))}
 
         """
       end)
