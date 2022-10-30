@@ -70,18 +70,20 @@ defmodule Expression.Autodoc do
 
         #{expression_doc[:doc]}
 
-        When used as a Stack expression with context:
+        When used as a Stack expression
+
+        ```
+        #{expression_doc[:expression]}
+        ```
+
+        it returns `#{inspect(expression_doc[:result])}` of type `#{type_of(expression_doc[:result])}` when used
+        with the following context:
 
         ```elixir
         #{inspect(expression_doc[:context])}
         ```
 
-        ```elixir
-        > #{expression_doc[:expression]}
-        #{inspect(expression_doc[:result])}
-        ```
-
-        When used as an expression in text:
+        When used as an expression in text, prepend it with an `@`:
 
         ```expression
         > "... @#{expression_doc[:expression]} ..."
@@ -123,6 +125,8 @@ defmodule Expression.Autodoc do
       | existing_expression_docs
     ])
   end
+
+  def type_of(%DateTime{}), do: "DateTime"
 
   def get_existing_docstring(module) do
     case Module.get_attribute(module, :doc) do

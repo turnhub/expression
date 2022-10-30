@@ -21,22 +21,15 @@ defmodule Expression.Callbacks.Standard do
   underscore.
   """
 
-  @doc """
-  Defines a new date value
-
-  # Example
-
-      iex> Expression.evaluate!("@date(2012, 12, 15)")
-      ~U[2012-12-15 00:00:00Z]
-
-  """
   import Expression.Callbacks.EvalHelpers
   use Expression.Autodoc
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
 
-  @expression_doc doc: "Construct a date from year, month, and day integers",
-                  expression: "date(year, month, day)",
+  @doc """
+  Construct a date from year, month, and day integers.
+  """
+  @expression_doc expression: "date(year, month, day)",
                   context: %{
                     "year" => 2022,
                     "month" => 1,
