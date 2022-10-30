@@ -104,6 +104,14 @@ defmodule Expression.Callbacks.Standard do
       ~U[2021-02-28 00:00:00Z]
 
   """
+  @expression_doc doc: "Calculates a new datetime based on the offset and unit provided.",
+                  expression: "datetime_add(datetime, offset, unit)",
+                  context: %{
+                    "datetime" => ~U[2022-07-31 00:00:00Z],
+                    "offset" => "1",
+                    "unit" => "M"
+                  },
+                  result: ~U[2022-08-31 00:00:00Z]
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = extract_dateish(eval!(datetime, ctx))
     [offset, unit] = eval_args!([offset, unit], ctx)
