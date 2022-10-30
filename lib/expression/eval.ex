@@ -6,7 +6,7 @@ defmodule Expression.Eval do
   At a high level, an AST consists of a Keyword list with two top-level
   keys, either `:text` or `:expression`.
 
-  `Expression.eval!/3` will return the output for each entry in the Keyword
+  `Expression.Eval.eval!/3` will return the output for each entry in the Keyword
   list. `:text` entries are returned as regular strings. `:expression` entries
   are returned as typed values.
 

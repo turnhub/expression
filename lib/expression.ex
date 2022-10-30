@@ -36,6 +36,14 @@ defmodule Expression do
   ```
 
   """
+
+  @type expression_type ::
+          String.t()
+          | number
+          | DateTime.t()
+          | Date.t()
+          | Decimal.t()
+
   alias Expression.Context
   alias Expression.Eval
   alias Expression.Parser
@@ -99,6 +107,12 @@ defmodule Expression do
     end
   end
 
+  @doc """
+  Convert an Expression type into a string.
+
+  This function is applied to all values when `Expression.evaluate_as_string!/3` is called.
+  """
+  @spec stringify([expression_type] | expression_type) :: String.t()
   def stringify(items) when is_list(items), do: Enum.map_join(items, "", &stringify/1)
   def stringify(binary) when is_binary(binary), do: binary
   def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
