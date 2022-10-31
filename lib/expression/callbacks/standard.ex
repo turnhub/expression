@@ -21,19 +21,21 @@ defmodule Expression.Callbacks.Standard do
   underscore.
   """
 
-  @doc """
-  Defines a new date value
-
-  # Example
-
-      iex> Expression.evaluate!("@date(2012, 12, 15)")
-      ~U[2012-12-15 00:00:00Z]
-
-  """
   import Expression.Callbacks.EvalHelpers
+  use Expression.Autodoc
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
-
+  @doc """
+  Defines a new date value
+  """
+  @expression_doc doc: "Construct a date from year, month, and day integers",
+                  expression: "date(year, month, day)",
+                  context: %{
+                    "year" => 2022,
+                    "month" => 1,
+                    "day" => 31
+                  },
+                  result: ~D[2022-01-31]
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 
@@ -42,16 +44,11 @@ defmodule Expression.Callbacks.Standard do
       year: year,
       month: month,
       day: day,
-      hour: 0,
-      minute: 0,
-      second: 0,
       time_zone: "Etc/UTC",
-      zone_abbr: "UTC",
-      utc_offset: 0,
-      std_offset: 0
+      zone_abbr: "UTC"
     ]
 
-    struct(DateTime, fields)
+    struct(Date, fields)
   end
 
   @doc """
@@ -72,37 +69,45 @@ defmodule Expression.Callbacks.Standard do
   # Example
 
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"Y\\")")
-      ~U[2023-11-01 00:00:00Z]
+      ~U[2023-11-01 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"M\\")")
-      ~U[2022-12-01 00:00:00Z]
+      ~U[2022-12-01 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"W\\")")
-      ~U[2022-11-08 00:00:00Z]
+      ~U[2022-11-08 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"D\\")")
-      ~U[2022-11-02 00:00:00Z]
+      ~U[2022-11-02 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"h\\")")
-      ~U[2022-11-01 01:00:00Z]
+      ~U[2022-11-01 01:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"m\\")")
-      ~U[2022-11-01 00:01:00Z]
+      ~U[2022-11-01 00:01:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"s\\")")
-      ~U[2022-11-01 00:00:01Z]
+      ~U[2022-11-01 00:00:01.000000Z]
 
   # Examples with leap year handling
 
       iex> Expression.evaluate!("@datetime_add(date(2020, 02, 28), 1, \\"D\\")")
-      ~U[2020-02-29 00:00:00Z]
+      ~U[2020-02-29 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2021, 02, 28), 1, \\"D\\")")
-      ~U[2021-03-01 00:00:00Z]
+      ~U[2021-03-01 00:00:00.000000Z]
 
   # Examples with negative offsets
 
       iex> Expression.evaluate!("@datetime_add(date(2020, 02, 29), -1, \\"D\\")")
-      ~U[2020-02-28 00:00:00Z]
+      ~U[2020-02-28 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
-      ~U[2021-02-28 00:00:00Z]
+      ~U[2021-02-28 00:00:00.000000Z]
 
   """
+  @expression_doc doc: "Calculates a new datetime based on the offset and unit provided.",
+                  expression: "datetime_add(datetime, offset, unit)",
+                  context: %{
+                    "datetime" => ~U[2022-07-31 00:00:00Z],
+                    "offset" => "1",
+                    "unit" => "M"
+                  },
+                  result: ~U[2022-08-31 00:00:00Z]
   def datetime_add(ctx, datetime, offset, unit) do
-    datetime = extract_dateish(eval!(datetime, ctx))
+    datetime = extract_datetimeish(eval!(datetime, ctx))
     [offset, unit] = eval_args!([offset, unit], ctx)
 
     case unit do
@@ -117,38 +122,45 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Converts date stored in text to an actual date,
-  using `strftime` formatting.
+  Converts date stored in text to an actual date object and
+  formats it using `strftime` formatting.
 
   It will fallback to "%Y-%m-%d %H:%M:%S" if no formatting is supplied
 
-  # Example
-
-      iex> Expression.evaluate!("@datevalue(date(2020, 12, 20))")
-      "2020-12-20 00:00:00"
-      iex> Expression.evaluate!("@datevalue(date(2020, 12, 20), '%Y-%m-%d')")
-      "2020-12-20"
-
   """
+  @expression_doc doc: "Convert a date from a piece of text to a formatted date string",
+                  expression: "datevalue(\"2022-01-01\")",
+                  result: %{"__value__" => "2022-01-01 00:00:00", "date" => ~D[2022-01-01]}
+  @expression_doc doc: "Convert a date from a piece of text and read the date field",
+                  expression: "datevalue(\"2022-01-01\").date",
+                  result: ~D[2022-01-01]
+  @expression_doc doc: "Convert a date value and read the date field",
+                  expression: "datevalue(date(2022, 1, 1)).date",
+                  result: ~D[2022-01-01]
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
-    Timex.format!(date, format, :strftime)
+    date = extract_dateish(date)
+    %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
   end
 
   def datevalue(ctx, date) do
-    Timex.format!(eval!(date, ctx), "%Y-%m-%d %H:%M:%S", :strftime)
+    date = extract_dateish(eval!(date, ctx))
+
+    %{
+      "__value__" => Timex.format!(date, "%Y-%m-%d %H:%M:%S", :strftime),
+      "date" => date
+    }
   end
 
   @doc """
   Returns only the day of the month of a date (1 to 31)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> day = Expression.evaluate!("@day(now())")
-      iex> day == now.day
-      true
   """
+  @expression_doc doc: "Getting today's day of the month",
+                  expression: "day(date(2022, 9, 10))",
+                  result: 10
+  @expression_doc doc: "Getting today's day of the month",
+                  expression: "day(now())",
+                  result: DateTime.utc_now().day
   def day(ctx, date) do
     %{day: day} = eval!(date, ctx)
     day
@@ -156,30 +168,28 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Moves a date by the given number of months
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> future = Timex.shift(now, months: 1)
-      iex> date = Expression.evaluate!("@edate(now(), 1)")
-      iex> future.month == date.month
-      true
   """
+  @expression_doc doc: "Move the date in a date object by 1 month",
+                  expression: "edate(right_now, 1)",
+                  context: %{right_now: DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0))},
+                  result:
+                    Timex.shift(DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0)),
+                      months: 1
+                    )
+  @expression_doc doc: "Move the date store in a piece of text by 1 month",
+                  expression: "edate(\"2022-10-10\", 1)",
+                  result: ~D[2022-11-10]
   def edate(ctx, date, months) do
     [date, months] = eval_args!([date, months], ctx)
-    date |> Timex.shift(months: months)
+    extract_dateish(date) |> Timex.shift(months: months)
   end
 
   @doc """
   Returns only the hour of a datetime (0 to 23)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> hour = Expression.evaluate!("@hour(now())")
-      iex> now.hour == hour
-      true
   """
+  @expression_doc doc: "Get the current hour",
+                  expression: "hour(now())",
+                  result: DateTime.utc_now().hour
   def hour(ctx, date) do
     %{hour: hour} = eval!(date, ctx)
     hour
@@ -187,29 +197,21 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns only the minute of a datetime (0 to 59)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> minute = Expression.evaluate!("@minute(now)", %{"now" => now})
-      iex> now.minute == minute
-      true
   """
+  @expression_doc doc: "Get the current minute",
+                  expression: "minute(now())",
+                  result: DateTime.utc_now().minute
   def minute(ctx, date) do
-    %{minute: minute} = eval!(date, ctx)
+    %{minute: minute} = extract_datetimeish(eval!(date, ctx))
     minute
   end
 
   @doc """
   Returns only the month of a date (1 to 12)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> month = Expression.evaluate!("@month(now)", %{"now" => now})
-      iex> now.month == month
-      true
   """
+  @expression_doc doc: "Get the current month",
+                  expression: "month(now())",
+                  result: DateTime.utc_now().month
   def month(ctx, date) do
     %{month: month} = eval!(date, ctx)
     month
@@ -221,14 +223,15 @@ defmodule Expression.Callbacks.Standard do
   ```
   It is currently @NOW()
   ```
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> eval_now = Expression.evaluate!("@now()")
-      iex> DateTime.to_unix(eval_now) - DateTime.to_unix(now) in [0, 1]
-      true
   """
+  @expression_doc doc: "return the current timestamp as a DateTime value",
+                  expression: "now()",
+                  fake_result: DateTime.utc_now()
+  @expression_doc doc: "return the current datetime and format it using `datevalue`",
+                  expression: "datevalue(now(), \"%Y-%m-%d\")",
+                  result: %{
+                    "__value__" => DateTime.utc_now() |> Timex.format!("%Y-%m-%d", :strftime)
+                  }
   def now(_ctx) do
     DateTime.utc_now()
   end
@@ -398,19 +401,23 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns TRUE if any argument is TRUE
+  Returns TRUE if any argument is TRUE.
+  Returns the first truthy value found or otherwise false.
 
-  # Example
-
-      iex> Expression.evaluate!("@or(true, false)")
-      true
-      iex> Expression.evaluate!("@or(true, true)")
-      true
-      iex> Expression.evaluate!("@or(false, false)")
-      false
-      iex> Expression.evaluate!("@or(false, \\"foo\\")")
-      "foo"
+  Accepts any amount of arguments for testing truthiness.
   """
+  @expression_doc doc: "Return true if any of the values are true",
+                  expression: "or(true, false)",
+                  result: true
+  @expression_doc doc: "Return the first value that is truthy",
+                  expression: "or(false, \"foo\")",
+                  result: "foo"
+  @expression_doc expression: "or(true, true)",
+                  result: true
+  @expression_doc expression: "or(false, false)",
+                  result: false
+  @expression_doc expression: "or()",
+                  result: false
   def or_vargs(ctx, arguments) do
     arguments = eval_args!(arguments, ctx)
     Enum.reduce(arguments, fn a, b -> a || b end)
@@ -1166,6 +1173,20 @@ defmodule Expression.Callbacks.Standard do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
     case DateTimeParser.parse_date(expression) do
+      {:ok, date} -> date
+      {:error, _} -> nil
+    end
+  end
+
+  defp extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
+
+  defp extract_datetimeish(date) when is_struct(date, Date),
+    do: DateTime.new!(date, Time.new!(0, 0, 0, 0))
+
+  defp extract_datetimeish(expression) do
+    expression = Regex.replace(~r/[a-z]/u, expression, "")
+
+    case DateTimeParser.parse_datetime(expression) do
       {:ok, date} -> date
       {:error, _} -> nil
     end

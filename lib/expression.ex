@@ -36,6 +36,14 @@ defmodule Expression do
   ```
 
   """
+
+  @type expression_type ::
+          String.t()
+          | number
+          | DateTime.t()
+          | Date.t()
+          | Decimal.t()
+
   alias Expression.Context
   alias Expression.Eval
   alias Expression.Parser
@@ -99,12 +107,18 @@ defmodule Expression do
     end
   end
 
-  defp stringify(items) when is_list(items), do: Enum.map_join(items, "", &stringify/1)
-  defp stringify(binary) when is_binary(binary), do: binary
-  defp stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
-  defp stringify(%Date{} = date), do: Date.to_iso8601(date)
-  defp stringify(%Decimal{} = decimal), do: Decimal.to_string(decimal, :normal)
-  defp stringify(other), do: to_string(other)
+  @doc """
+  Convert an Expression type into a string.
+
+  This function is applied to all values when `Expression.evaluate_as_string!/3` is called.
+  """
+  @spec stringify([expression_type] | expression_type) :: String.t()
+  def stringify(items) when is_list(items), do: Enum.map_join(items, "", &stringify/1)
+  def stringify(binary) when is_binary(binary), do: binary
+  def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
+  def stringify(%Date{} = date), do: Date.to_iso8601(date)
+  def stringify(%Decimal{} = decimal), do: Decimal.to_string(decimal, :normal)
+  def stringify(other), do: to_string(other)
 
   defp default_value(val, opts \\ [])
   defp default_value(%{"__value__" => default_value}, _opts), do: default_value
