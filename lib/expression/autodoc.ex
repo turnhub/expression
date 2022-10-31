@@ -22,6 +22,10 @@ defmodule Expression.Autodoc do
   * `expression` is the expression we want to test
   * `context` is the context the expression is tested against
   * `result` is the result we're expecting to get and are asserting against
+  * `fake_result` can be optionally supplied when the returning result varies
+     depending on factors we do not control, like for `now()` for example.
+     When this is used, the ExDoc tests are faked and won't actually test
+     anything so use sparingly.
 
   """
   defmacro __using__(_args) do
@@ -68,35 +72,47 @@ defmodule Expression.Autodoc do
       |> Enum.reverse()
       |> Enum.with_index(1)
       |> Enum.map_join("\n", fn {expression_doc, index} ->
+        doc = expression_doc[:doc]
+        expression = expression_doc[:expression]
+        context = expression_doc[:context] || %{}
+
+        {real_test, result} =
+          if result = expression_doc[:result] do
+            {true, result}
+          else
+            {false, expression_doc[:fake_result]}
+          end
+
         """
         ## Example #{index}:
 
-          > #{expression_doc[:doc]}
+          > #{doc}
 
-        When used as a Stack expression it returns a #{format_result(expression_doc[:result])}#{format_context(expression_doc[:context])}
+        When used as a Stack expression it returns a #{format_result(result)}#{format_context(context)}
 
         ```
-        #{expression_doc[:expression]} -> #{inspect(expression_doc[:result])}
+        #{expression} -> #{inspect(result)}
         ```
 
         When used as an expression in text, prepend it with an `@`:
 
         ```expression
-        > "... @#{expression_doc[:expression]} ..."
-        "#{stringify(expression_doc[:result])}"
+        > "... @#{expression} ..."
+        "#{stringify(result)}"
         ```
 
-            iex> Expression.evaluate_block!(
-            ...>   #{inspect(expression_doc[:expression])},
-            ...>   #{inspect(expression_doc[:context] || %{})}
+            #{if(real_test, do: "iex", else: "  $")}> result = Expression.evaluate_block!(
+            ...>   #{inspect(expression)},
+            ...>   #{inspect(context)}
             ...> )
-            #{inspect(expression_doc[:result])}
+            #{if(real_test, do: "iex", else: "  $")}> match?(#{inspect(result)}, result)
+            true
 
-            iex> Expression.evaluate_as_string!(
-            ...>   #{inspect("@" <> expression_doc[:expression])},
-            ...>   #{inspect(expression_doc[:context] || %{})}
+            #{if(real_test, do: "iex", else: "  $")}> Expression.evaluate_as_string!(
+            ...>   #{inspect("@" <> expression)},
+            ...>   #{inspect(context)}
             ...> )
-            #{inspect(stringify(expression_doc[:result]))}
+            #{inspect(stringify(result))}
 
         ---
 
@@ -156,9 +172,9 @@ defmodule Expression.Autodoc do
     """
   end
 
-  def format_result(result), do: " *#{type_of(result)}** type: `#{inspect(result)}`."
+  def format_result(result), do: " value of type **#{type_of(result)}**: `#{inspect(result)}`."
 
-  def format_context(nil), do: "."
+  def format_context(%{}), do: "."
 
   def format_context(context) do
     """

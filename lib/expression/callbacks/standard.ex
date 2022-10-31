@@ -169,30 +169,28 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Moves a date by the given number of months
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> future = Timex.shift(now, months: 1)
-      iex> date = Expression.evaluate!("@edate(now(), 1)")
-      iex> future.month == date.month
-      true
   """
+  @expression_doc doc: "Move the date in a date object by 1 month",
+                  expression: "edate(right_now, 1)",
+                  context: %{right_now: DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0))},
+                  result:
+                    Timex.shift(DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0)),
+                      months: 1
+                    )
+  @expression_doc doc: "Move the date store in a piece of text by 1 month",
+                  expression: "edate(\"2022-10-10\", 1)",
+                  result: ~D[2022-11-10]
   def edate(ctx, date, months) do
     [date, months] = eval_args!([date, months], ctx)
-    date |> Timex.shift(months: months)
+    extract_dateish(date) |> Timex.shift(months: months)
   end
 
   @doc """
   Returns only the hour of a datetime (0 to 23)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> hour = Expression.evaluate!("@hour(now())")
-      iex> now.hour == hour
-      true
   """
+  @expression_doc doc: "Get the current hour",
+                  expression: "hour(now())",
+                  result: DateTime.utc_now().hour
   def hour(ctx, date) do
     %{hour: hour} = eval!(date, ctx)
     hour
@@ -200,14 +198,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns only the minute of a datetime (0 to 59)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> minute = Expression.evaluate!("@minute(now)", %{"now" => now})
-      iex> now.minute == minute
-      true
   """
+  @expression_doc doc: "Get the current minute",
+                  expression: "minute(now())",
+                  result: DateTime.utc_now().minute
   def minute(ctx, date) do
     %{minute: minute} = eval!(date, ctx)
     minute
@@ -215,14 +209,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns only the month of a date (1 to 12)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> month = Expression.evaluate!("@month(now)", %{"now" => now})
-      iex> now.month == month
-      true
   """
+  @expression_doc doc: "Get the current month",
+                  expression: "month(now())",
+                  result: DateTime.utc_now().month
   def month(ctx, date) do
     %{month: month} = eval!(date, ctx)
     month
@@ -242,6 +232,14 @@ defmodule Expression.Callbacks.Standard do
       iex> DateTime.to_unix(eval_now) - DateTime.to_unix(now) in [0, 1]
       true
   """
+  @expression_doc doc: "return the current datetime",
+                  expression: "now()",
+                  fake_result: DateTime.utc_now()
+  @expression_doc doc: "return the current datetime and format it using `datevalue`",
+                  expression: "datevalue(now(), \"%Y-%m-%d\")",
+                  result: %{
+                    "__value__" => DateTime.utc_now() |> Timex.format!("%Y-%m-%d", :strftime)
+                  }
   def now(_ctx) do
     DateTime.utc_now()
   end
