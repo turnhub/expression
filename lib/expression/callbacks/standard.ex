@@ -25,7 +25,6 @@ defmodule Expression.Callbacks.Standard do
   use Expression.Autodoc
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
-
   @doc """
   Defines a new date value
   """
@@ -203,7 +202,7 @@ defmodule Expression.Callbacks.Standard do
                   expression: "minute(now())",
                   result: DateTime.utc_now().minute
   def minute(ctx, date) do
-    %{minute: minute} = eval!(date, ctx)
+    %{minute: minute} = extract_datetimeish(eval!(date, ctx))
     minute
   end
 
@@ -224,13 +223,6 @@ defmodule Expression.Callbacks.Standard do
   ```
   It is currently @NOW()
   ```
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> eval_now = Expression.evaluate!("@now()")
-      iex> DateTime.to_unix(eval_now) - DateTime.to_unix(now) in [0, 1]
-      true
   """
   @expression_doc doc: "return the current timestamp as a DateTime value",
                   expression: "now()",
@@ -409,19 +401,23 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns TRUE if any argument is TRUE
+  Returns TRUE if any argument is TRUE.
+  Returns the first truthy value found or otherwise false.
 
-  # Example
-
-      iex> Expression.evaluate!("@or(true, false)")
-      true
-      iex> Expression.evaluate!("@or(true, true)")
-      true
-      iex> Expression.evaluate!("@or(false, false)")
-      false
-      iex> Expression.evaluate!("@or(false, \\"foo\\")")
-      "foo"
+  Accepts any amount of arguments for testing truthiness.
   """
+  @expression_doc doc: "Return true if any of the values are true",
+                  expression: "or(true, false)",
+                  result: true
+  @expression_doc doc: "Return the first value that is truthy",
+                  expression: "or(false, \"foo\")",
+                  result: "foo"
+  @expression_doc expression: "or(true, true)",
+                  result: true
+  @expression_doc expression: "or(false, false)",
+                  result: false
+  @expression_doc expression: "or()",
+                  result: false
   def or_vargs(ctx, arguments) do
     arguments = eval_args!(arguments, ctx)
     Enum.reduce(arguments, fn a, b -> a || b end)

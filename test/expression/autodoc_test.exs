@@ -7,7 +7,7 @@ defmodule Expression.AutodocTest do
   end
 
   test "expression docs" do
-    assert [{"date", args, docstring, expression_docs}] = find_docs(Standard, "date")
+    assert [{"date", :direct, args, docstring, expression_docs}] = find_docs(Standard, "date")
 
     assert docstring =~ "Defines a new date value"
 
@@ -24,7 +24,8 @@ defmodule Expression.AutodocTest do
   end
 
   test "regular docstrings" do
-    assert [{"has_time", args, docstring, expression_docs}] = find_docs(Standard, "has_time")
+    assert [{"has_time", :direct, args, docstring, expression_docs}] =
+             find_docs(Standard, "has_time")
 
     assert docstring =~ "Tests whether `expression` contains a time."
 
@@ -33,8 +34,18 @@ defmodule Expression.AutodocTest do
     assert expression_docs == []
   end
 
+  test "vargs" do
+    assert [{"or", :vargs, args, docstring, expression_docs}] = find_docs(Standard, "or")
+
+    assert docstring =~ "Returns TRUE if any argument is TRUE"
+
+    assert ["arguments"] = args
+
+    assert expression_docs
+  end
+
   test "undocumented" do
-    assert [{"map", args, docstring, expression_docs}] = find_docs(Standard, "map")
+    assert [{"map", :direct, args, docstring, expression_docs}] = find_docs(Standard, "map")
 
     refute docstring
 

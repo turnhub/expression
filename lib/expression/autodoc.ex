@@ -56,8 +56,10 @@ defmodule Expression.Autodoc do
 
     {_line_number, doc} = get_existing_docstring(module)
 
+    {function_name, function_type} = format_function_name(function)
+
     Module.put_attribute(module, :expression_docs, [
-      {format_function_name(function), format_function_args(args), doc, []}
+      {function_name, function_type, format_function_args(args), doc, []}
       | existing_expression_docs
     ])
   end
@@ -131,8 +133,10 @@ defmodule Expression.Autodoc do
       {line_number, updated_docs}
     )
 
+    {function_name, function_type} = format_function_name(function)
+
     Module.put_attribute(module, :expression_docs, [
-      {format_function_name(function), format_function_args(args), doc,
+      {function_name, function_type, format_function_args(args), doc,
        format_docs(expression_docs)}
       | existing_expression_docs
     ])
@@ -141,6 +145,8 @@ defmodule Expression.Autodoc do
   def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
   def type_of(%Decimal{}), do: "Decimal"
+  def type_of(boolean) when is_boolean(boolean), do: "Boolean"
+  def type_of(nil) when is_nil(nil), do: "Null"
   def type_of(integer) when is_integer(integer), do: "Integer"
   def type_of(float) when is_float(float), do: "Float"
   def type_of(binary) when is_binary(binary), do: "String"
@@ -190,9 +196,9 @@ defmodule Expression.Autodoc do
     name = to_string(name)
 
     cond do
-      String.ends_with?(name, "_vargs") -> String.trim_trailing("_vargs")
-      String.ends_with?(name, "_") -> String.trim_trailing("_")
-      true -> name
+      String.ends_with?(name, "_vargs") -> {String.trim_trailing(name, "_vargs"), :vargs}
+      String.ends_with?(name, "_") -> {String.trim_trailing(name, "_"), :reserved}
+      true -> {name, :direct}
     end
   end
 
@@ -213,7 +219,7 @@ defmodule Expression.Autodoc do
       Return a list of all functions annotated with @expression_docs
       """
       def expression_docs do
-        @expression_docs
+        Enum.reverse(@expression_docs)
       end
     end
   end
