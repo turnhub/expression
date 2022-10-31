@@ -416,8 +416,6 @@ defmodule Expression.Callbacks.Standard do
                   result: true
   @expression_doc expression: "or(false, false)",
                   result: false
-  @expression_doc expression: "or()",
-                  result: false
   def or_vargs(ctx, arguments) do
     arguments = eval_args!(arguments, ctx)
     Enum.reduce(arguments, fn a, b -> a || b end)
