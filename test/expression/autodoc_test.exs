@@ -18,7 +18,7 @@ defmodule Expression.AutodocTest do
                doc: "Construct a date from year, month, and day integers",
                expression: "date(year, month, day)",
                context: %{"day" => 31, "month" => 1, "year" => 2022},
-               result: ~U[2022-01-31 00:00:00Z]
+               result: ~D[2022-01-31]
              }
            ]
   end

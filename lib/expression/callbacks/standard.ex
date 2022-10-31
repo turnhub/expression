@@ -36,7 +36,7 @@ defmodule Expression.Callbacks.Standard do
                     "month" => 1,
                     "day" => 31
                   },
-                  result: ~U[2022-01-31 00:00:00Z]
+                  result: ~D[2022-01-31]
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 
@@ -45,16 +45,11 @@ defmodule Expression.Callbacks.Standard do
       year: year,
       month: month,
       day: day,
-      hour: 0,
-      minute: 0,
-      second: 0,
       time_zone: "Etc/UTC",
-      zone_abbr: "UTC",
-      utc_offset: 0,
-      std_offset: 0
+      zone_abbr: "UTC"
     ]
 
-    struct(DateTime, fields)
+    struct(Date, fields)
   end
 
   @doc """
@@ -75,33 +70,33 @@ defmodule Expression.Callbacks.Standard do
   # Example
 
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"Y\\")")
-      ~U[2023-11-01 00:00:00Z]
+      ~U[2023-11-01 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"M\\")")
-      ~U[2022-12-01 00:00:00Z]
+      ~U[2022-12-01 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"W\\")")
-      ~U[2022-11-08 00:00:00Z]
+      ~U[2022-11-08 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"D\\")")
-      ~U[2022-11-02 00:00:00Z]
+      ~U[2022-11-02 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"h\\")")
-      ~U[2022-11-01 01:00:00Z]
+      ~U[2022-11-01 01:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"m\\")")
-      ~U[2022-11-01 00:01:00Z]
+      ~U[2022-11-01 00:01:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"s\\")")
-      ~U[2022-11-01 00:00:01Z]
+      ~U[2022-11-01 00:00:01.000000Z]
 
   # Examples with leap year handling
 
       iex> Expression.evaluate!("@datetime_add(date(2020, 02, 28), 1, \\"D\\")")
-      ~U[2020-02-29 00:00:00Z]
+      ~U[2020-02-29 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2021, 02, 28), 1, \\"D\\")")
-      ~U[2021-03-01 00:00:00Z]
+      ~U[2021-03-01 00:00:00.000000Z]
 
   # Examples with negative offsets
 
       iex> Expression.evaluate!("@datetime_add(date(2020, 02, 29), -1, \\"D\\")")
-      ~U[2020-02-28 00:00:00Z]
+      ~U[2020-02-28 00:00:00.000000Z]
       iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
-      ~U[2021-02-28 00:00:00Z]
+      ~U[2021-02-28 00:00:00.000000Z]
 
   """
   @expression_doc doc: "Calculates a new datetime based on the offset and unit provided.",
@@ -113,7 +108,7 @@ defmodule Expression.Callbacks.Standard do
                   },
                   result: ~U[2022-08-31 00:00:00Z]
   def datetime_add(ctx, datetime, offset, unit) do
-    datetime = extract_dateish(eval!(datetime, ctx))
+    datetime = extract_datetimeish(eval!(datetime, ctx))
     [offset, unit] = eval_args!([offset, unit], ctx)
 
     case unit do
@@ -128,8 +123,8 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Converts date stored in text to an actual date,
-  using `strftime` formatting.
+  Converts date stored in text to an actual date object and
+  formats it using `strftime` formatting.
 
   It will fallback to "%Y-%m-%d %H:%M:%S" if no formatting is supplied
 
@@ -141,13 +136,25 @@ defmodule Expression.Callbacks.Standard do
       "2020-12-20"
 
   """
+  @expression_doc doc: "Convert a date string to a formatted date string",
+                  expression: "datevalue(\"2022-01-01\")",
+                  result: %{"__value__" => "2022-01-01 00:00:00", "date" => ~D[2022-01-01]}
+  @expression_doc doc: "Convert a date string and read the date field",
+                  expression: "datevalue(\"2022-01-01\").date",
+                  result: ~D[2022-01-01]
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
-    Timex.format!(date, format, :strftime)
+    date = extract_dateish(date)
+    %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
   end
 
   def datevalue(ctx, date) do
-    Timex.format!(eval!(date, ctx), "%Y-%m-%d %H:%M:%S", :strftime)
+    date = extract_dateish(eval!(date, ctx))
+
+    %{
+      "__value__" => Timex.format!(date, "%Y-%m-%d %H:%M:%S", :strftime),
+      "date" => date
+    }
   end
 
   @doc """
@@ -1177,6 +1184,20 @@ defmodule Expression.Callbacks.Standard do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
     case DateTimeParser.parse_date(expression) do
+      {:ok, date} -> date
+      {:error, _} -> nil
+    end
+  end
+
+  defp extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
+
+  defp extract_datetimeish(date) when is_struct(date, Date),
+    do: DateTime.new!(date, Time.new!(0, 0, 0, 0))
+
+  defp extract_datetimeish(expression) do
+    expression = Regex.replace(~r/[a-z]/u, expression, "")
+
+    case DateTimeParser.parse_datetime(expression) do
       {:ok, date} -> date
       {:error, _} -> nil
     end

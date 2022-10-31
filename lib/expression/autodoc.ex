@@ -64,45 +64,41 @@ defmodule Expression.Autodoc do
     {line_number, doc} = get_existing_docstring(module)
 
     expression_doc_tests =
-      Enum.map_join(expression_docs, "\n", fn expression_doc ->
+      expression_docs
+      |> Enum.reverse()
+      |> Enum.with_index(1)
+      |> Enum.map_join("\n", fn {expression_doc, index} ->
         """
-        ## Example expression:
+        ## Example #{index}:
 
-        #{expression_doc[:doc]}
+          > #{expression_doc[:doc]}
 
-        When used as a Stack expression
+        When used as a Stack expression it returns a #{format_result(expression_doc[:result])}#{format_context(expression_doc[:context])}.
 
         ```
         #{expression_doc[:expression]}
-        ```
-
-        it returns `#{inspect(expression_doc[:result])}` of type `#{type_of(expression_doc[:result])}` when used
-        with the following context:
-
-        ```elixir
-        #{inspect(expression_doc[:context])}
         ```
 
         When used as an expression in text, prepend it with an `@`:
 
         ```expression
         > "... @#{expression_doc[:expression]} ..."
-        "#{Expression.stringify(expression_doc[:result])}"
+        "#{stringify(expression_doc[:result])}"
         ```
-
-        ## Example code:
 
             iex> Expression.evaluate_block!(
             ...>   #{inspect(expression_doc[:expression])},
-            ...>   #{inspect(expression_doc[:context])}
+            ...>   #{inspect(expression_doc[:context] || %{})}
             ...> )
             #{inspect(expression_doc[:result])}
 
             iex> Expression.evaluate_as_string!(
             ...>   #{inspect("@" <> expression_doc[:expression])},
-            ...>   #{inspect(expression_doc[:context])}
+            ...>   #{inspect(expression_doc[:context] || %{})}
             ...> )
-            #{inspect(Expression.stringify(expression_doc[:result]))}
+            #{inspect(stringify(expression_doc[:result]))}
+
+        ---
 
         """
       end)
@@ -126,13 +122,49 @@ defmodule Expression.Autodoc do
     ])
   end
 
+  def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
+  def type_of(binary) when is_binary(binary), do: "String"
+
+  def stringify(%{"__value__" => value}), do: Expression.stringify(value)
+  def stringify(value), do: Expression.stringify(value)
 
   def get_existing_docstring(module) do
     case Module.get_attribute(module, :doc) do
       {line_number, doc} -> {line_number, doc}
       nil -> {0, nil}
     end
+  end
+
+  def format_result(%{"__value__" => value} = result) when is_map(result) do
+    other_fields =
+      result
+      |> Map.drop(["__value__"])
+      |> Enum.map(fn {key, value} ->
+        "* *#{key}* of type **#{type_of(value)}**"
+      end)
+
+    """
+    complex **#{type_of(value)}** type of default value:
+    ```elixir
+    #{inspect(value)}
+    ```
+    with the following fields:\n\n#{Enum.join(other_fields, "\n")}
+    """
+  end
+
+  def format_result(result), do: "**#{type_of(result)}** type: `#{inspect(result)}`"
+
+  def format_context(nil), do: ""
+
+  def format_context(context) do
+    """
+    when used with the following context:
+
+    ```elixir
+    #{inspect(context)}
+    ```
+    """
   end
 
   def format_function_name(name) do

@@ -52,9 +52,9 @@ defmodule Expression.EvalTest do
       {:ok, ast, "", _, _, _} = Parser.parse("@map(1..3, &date(2022, 5, &1))")
 
       assert [
-               ~U[2022-05-01 00:00:00Z],
-               ~U[2022-05-02 00:00:00Z],
-               ~U[2022-05-03 00:00:00Z]
+               ~D[2022-05-01],
+               ~D[2022-05-02],
+               ~D[2022-05-03]
              ] == Eval.eval!(ast, %{})
     end
 
