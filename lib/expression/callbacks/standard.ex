@@ -128,19 +128,15 @@ defmodule Expression.Callbacks.Standard do
 
   It will fallback to "%Y-%m-%d %H:%M:%S" if no formatting is supplied
 
-  # Example
-
-      iex> Expression.evaluate!("@datevalue(date(2020, 12, 20))")
-      "2020-12-20 00:00:00"
-      iex> Expression.evaluate!("@datevalue(date(2020, 12, 20), '%Y-%m-%d')")
-      "2020-12-20"
-
   """
-  @expression_doc doc: "Convert a date string to a formatted date string",
+  @expression_doc doc: "Convert a date from a piece of text to a formatted date string",
                   expression: "datevalue(\"2022-01-01\")",
                   result: %{"__value__" => "2022-01-01 00:00:00", "date" => ~D[2022-01-01]}
-  @expression_doc doc: "Convert a date string and read the date field",
+  @expression_doc doc: "Convert a date from a piece of text and read the date field",
                   expression: "datevalue(\"2022-01-01\").date",
+                  result: ~D[2022-01-01]
+  @expression_doc doc: "Convert a date value and read the date field",
+                  expression: "datevalue(date(2022, 1, 1)).date",
                   result: ~D[2022-01-01]
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
@@ -159,14 +155,13 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns only the day of the month of a date (1 to 31)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> day = Expression.evaluate!("@day(now())")
-      iex> day == now.day
-      true
   """
+  @expression_doc doc: "Getting today's day of the month",
+                  expression: "day(date(2022, 9, 10))",
+                  result: 10
+  @expression_doc doc: "Getting today's day of the month",
+                  expression: "day(now())",
+                  result: DateTime.utc_now().day
   def day(ctx, date) do
     %{day: day} = eval!(date, ctx)
     day

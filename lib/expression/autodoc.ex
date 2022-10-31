@@ -76,7 +76,7 @@ defmodule Expression.Autodoc do
         When used as a Stack expression it returns a #{format_result(expression_doc[:result])}#{format_context(expression_doc[:context])}.
 
         ```
-        #{expression_doc[:expression]}
+        #{expression_doc[:expression]} -> #{inspect(expression_doc[:result])}
         ```
 
         When used as an expression in text, prepend it with an `@`:
@@ -124,6 +124,9 @@ defmodule Expression.Autodoc do
 
   def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
+  def type_of(%Decimal{}), do: "Decimal"
+  def type_of(integer) when is_integer(integer), do: "Integer"
+  def type_of(float) when is_float(float), do: "Float"
   def type_of(binary) when is_binary(binary), do: "String"
 
   def stringify(%{"__value__" => value}), do: Expression.stringify(value)
