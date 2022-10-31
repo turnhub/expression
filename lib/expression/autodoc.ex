@@ -73,7 +73,7 @@ defmodule Expression.Autodoc do
 
           > #{expression_doc[:doc]}
 
-        When used as a Stack expression it returns a #{format_result(expression_doc[:result])}#{format_context(expression_doc[:context])}.
+        When used as a Stack expression it returns a #{format_result(expression_doc[:result])}#{format_context(expression_doc[:context])}
 
         ```
         #{expression_doc[:expression]} -> #{inspect(expression_doc[:result])}
@@ -156,17 +156,17 @@ defmodule Expression.Autodoc do
     """
   end
 
-  def format_result(result), do: "**#{type_of(result)}** type: `#{inspect(result)}`"
+  def format_result(result), do: " *#{type_of(result)}** type: `#{inspect(result)}`."
 
-  def format_context(nil), do: ""
+  def format_context(nil), do: "."
 
   def format_context(context) do
     """
-    when used with the following context:
+     when used with the following context:
 
     ```elixir
     #{inspect(context)}
-    ```
+    ```.
     """
   end
 
