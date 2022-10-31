@@ -232,7 +232,7 @@ defmodule Expression.Callbacks.Standard do
       iex> DateTime.to_unix(eval_now) - DateTime.to_unix(now) in [0, 1]
       true
   """
-  @expression_doc doc: "return the current datetime",
+  @expression_doc doc: "return the current timestamp as a DateTime value",
                   expression: "now()",
                   fake_result: DateTime.utc_now()
   @expression_doc doc: "return the current datetime and format it using `datevalue`",
