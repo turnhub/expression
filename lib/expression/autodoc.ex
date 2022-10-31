@@ -36,7 +36,6 @@ defmodule Expression.Autodoc do
       @before_compile Expression.Autodoc
 
       import Expression.Autodoc
-      require Expression.Autodoc
     end
   end
 
