@@ -78,11 +78,11 @@ defmodule Expression.Autodoc do
         code_expression = expression_doc[:code_expression] || expression_doc[:expression]
         context = expression_doc[:context]
 
-        {real_test, result} =
+        {doctest_prompt, result} =
           if result = expression_doc[:result] do
-            {true, result}
+            {"iex", result}
           else
-            {false, expression_doc[:fake_result]}
+            {"  $", expression_doc[:fake_result]}
           end
 
         """
@@ -103,18 +103,7 @@ defmodule Expression.Autodoc do
         "#{stringify(result)}"
         ```
 
-            #{if(real_test, do: "iex", else: "  $")}> import ExUnit.Assertions
-            #{if(real_test, do: "iex", else: "  $")}> result = Expression.evaluate_block!(
-            ...>   #{inspect(expression)},
-            ...>   #{inspect(context || %{})}
-            ...> )
-            #{if(real_test, do: "iex", else: "  $")}> assert #{inspect(result)} = result
-            result
-            #{if(real_test, do: "iex", else: "  $")}> Expression.evaluate_as_string!(
-            ...>   #{inspect("@" <> expression)},
-            ...>   #{inspect(context || %{})}
-            ...> )
-            #{inspect(stringify(result))}
+        #{generate_ex_doc(doctest_prompt, expression, context || %{}, result)}
 
         ---
 
@@ -140,6 +129,23 @@ defmodule Expression.Autodoc do
        format_docs(expression_docs)}
       | existing_expression_docs
     ])
+  end
+
+  def generate_ex_doc(prompt \\ "iex", expression, context, result) do
+    """
+        #{prompt}> import ExUnit.Assertions
+        #{prompt}> result = Expression.evaluate_block!(
+        ...>   #{inspect(expression)},
+        ...>   #{inspect(context || %{})}
+        ...> )
+        #{prompt}> assert #{inspect(result)} = result
+        result
+        #{prompt}> Expression.evaluate_as_string!(
+        ...>   #{inspect("@" <> expression)},
+        ...>   #{inspect(context || %{})}
+        ...> )
+        #{inspect(stringify(result))}
+    """
   end
 
   def type_of(%Time{}), do: "Time"
