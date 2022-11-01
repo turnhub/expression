@@ -40,6 +40,7 @@ defmodule Expression do
   @type expression_type ::
           String.t()
           | number
+          | map
           | DateTime.t()
           | Date.t()
           | Decimal.t()
@@ -118,6 +119,7 @@ defmodule Expression do
   def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
   def stringify(%Date{} = date), do: Date.to_iso8601(date)
   def stringify(%Decimal{} = decimal), do: Decimal.to_string(decimal, :normal)
+  def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 
   defp default_value(val, opts \\ [])
