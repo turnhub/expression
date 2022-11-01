@@ -161,6 +161,7 @@ defmodule Expression.Autodoc do
     )
   end
 
+  def type_of(map) when is_map(map), do: "Map"
   def type_of(%Time{}), do: "Time"
   def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
