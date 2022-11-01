@@ -351,7 +351,7 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns FALSE if the argument supplied evaluates to truth-y
+  Returns `false` if the argument supplied evaluates to truth-y
 
   # Example
 
@@ -364,7 +364,7 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns one value if the condition evaluates to TRUE, and another value if it evaluates to FALSE
+  Returns one value if the condition evaluates to `true`, and another value if it evaluates to `false`
 
   # Example
 
@@ -393,7 +393,7 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns TRUE if any argument is TRUE.
+  Returns `true` if any argument is `true`.
   Returns the first truthy value found or otherwise false.
 
   Accepts any amount of arguments for testing truthiness.
@@ -789,7 +789,7 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns the number of words in the given text string. If by_spaces is specified and is TRUE then the function splits the text into words only by spaces. Otherwise the text is split by punctuation characters as well
+  Returns the number of words in the given text string. If by_spaces is specified and is `true` then the function splits the text into words only by spaces. Otherwise the text is split by punctuation characters as well
 
   ```
   > You entered @word_count("one two three") words
@@ -818,7 +818,7 @@ defmodule Expression.Callbacks.Standard do
   Extracts a substring of the words beginning at start, and up to but not-including stop.
   If stop is omitted then the substring will be all words from start until the end of the text.
   If stop is a negative number, then it is treated as count backwards from the end of the text.
-  If by_spaces is specified and is TRUE then the function splits the text into words only by spaces.
+  If by_spaces is specified and is `true` then the function splits the text into words only by spaces.
   Otherwise the text is split by punctuation characters as well
   """
   @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", 2, 4)",
@@ -887,7 +887,7 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns TRUE if the argument is a number.
+  Returns `true` if the argument is a number.
   """
   @expression_doc expression: "isnumber(1)", result: true
   @expression_doc expression: "isnumber(1.0)", result: true
@@ -1460,6 +1460,17 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @doc """
+  map over a list of items and apply the mapper function to every item, returning
+  the result.
+  """
+  @expression_doc doc: "Map over the range of numbers, create a date in January for every number",
+                  expression: "map(1..3, &date(2022, 1, &1))",
+                  result: [~D[2022-01-01], ~D[2022-01-02], ~D[2022-01-03]]
+  @expression_doc doc:
+                    "Map over the range of numbers, multiple each by itself and return the result",
+                  expression: "map(1..3, &(&1 * &1))",
+                  result: [1, 4, 9]
   def map(ctx, enumerable, mapper) do
     [enumerable, mapper] = eval_args!([enumerable, mapper], ctx)
 

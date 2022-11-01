@@ -35,7 +35,7 @@ defmodule Expression.AutodocTest do
   test "vargs" do
     assert [{"or", :vargs, args, docstring, expression_docs}] = find_docs(Standard, "or")
 
-    assert docstring =~ "Returns TRUE if any argument is TRUE"
+    assert docstring =~ "Returns `true` if any argument is `true`"
 
     assert ["arguments"] = args
 
@@ -48,16 +48,6 @@ defmodule Expression.AutodocTest do
     assert docstring =~ "Returns the current date time as UTC"
 
     assert expression_docs
-  end
-
-  test "undocumented" do
-    assert [{"map", :direct, args, docstring, expression_docs}] = find_docs(Standard, "map")
-
-    refute docstring
-
-    assert ["enumerable", "mapper"] = args
-
-    assert expression_docs == []
   end
 
   test "private functions excluded" do

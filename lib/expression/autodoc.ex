@@ -103,13 +103,13 @@ defmodule Expression.Autodoc do
         "#{stringify(result)}"
         ```
 
+            #{if(real_test, do: "iex", else: "  $")}> import ExUnit.Assertions
             #{if(real_test, do: "iex", else: "  $")}> result = Expression.evaluate_block!(
             ...>   #{inspect(expression)},
             ...>   #{inspect(context || %{})}
             ...> )
-            #{if(real_test, do: "iex", else: "  $")}> match?(#{inspect(result)}, result)
-            true
-
+            #{if(real_test, do: "iex", else: "  $")}> assert #{inspect(result)} = result
+            result
             #{if(real_test, do: "iex", else: "  $")}> Expression.evaluate_as_string!(
             ...>   #{inspect("@" <> expression)},
             ...>   #{inspect(context || %{})}
@@ -151,6 +151,9 @@ defmodule Expression.Autodoc do
   def type_of(integer) when is_integer(integer), do: "Integer"
   def type_of(float) when is_float(float), do: "Float"
   def type_of(binary) when is_binary(binary), do: "String"
+
+  def type_of(list) when is_list(list),
+    do: "List with values " <> Enum.map_join(list, ", ", &type_of/1)
 
   def stringify(%{"__value__" => value}), do: Expression.stringify(value)
   def stringify(value), do: Expression.stringify(value)
