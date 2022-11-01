@@ -161,7 +161,6 @@ defmodule Expression.Autodoc do
     )
   end
 
-  def type_of(map) when is_map(map), do: "Map"
   def type_of(%Time{}), do: "Time"
   def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
@@ -171,6 +170,7 @@ defmodule Expression.Autodoc do
   def type_of(integer) when is_integer(integer), do: "Integer"
   def type_of(float) when is_float(float), do: "Float"
   def type_of(binary) when is_binary(binary), do: "String"
+  def type_of(map) when is_map(map), do: "Map"
 
   def type_of(list) when is_list(list),
     do: "List with values " <> Enum.map_join(list, ", ", &type_of/1)
