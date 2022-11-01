@@ -66,37 +66,6 @@ defmodule Expression.Callbacks.Standard do
 
   Specifying a negative offset results in date calculations back in time.
 
-  # Example
-
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"Y\\")")
-      ~U[2023-11-01 00:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"M\\")")
-      ~U[2022-12-01 00:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"W\\")")
-      ~U[2022-11-08 00:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"D\\")")
-      ~U[2022-11-02 00:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"h\\")")
-      ~U[2022-11-01 01:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"m\\")")
-      ~U[2022-11-01 00:01:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2022, 11, 1), 1, \\"s\\")")
-      ~U[2022-11-01 00:00:01.000000Z]
-
-  # Examples with leap year handling
-
-      iex> Expression.evaluate!("@datetime_add(date(2020, 02, 28), 1, \\"D\\")")
-      ~U[2020-02-29 00:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2021, 02, 28), 1, \\"D\\")")
-      ~U[2021-03-01 00:00:00.000000Z]
-
-  # Examples with negative offsets
-
-      iex> Expression.evaluate!("@datetime_add(date(2020, 02, 29), -1, \\"D\\")")
-      ~U[2020-02-28 00:00:00.000000Z]
-      iex> Expression.evaluate!("@datetime_add(date(2021, 03, 1), -1, \\"D\\")")
-      ~U[2021-02-28 00:00:00.000000Z]
-
   """
   @expression_doc doc: "Calculates a new datetime based on the offset and unit provided.",
                   expression: "datetime_add(datetime, offset, unit)",
@@ -106,6 +75,15 @@ defmodule Expression.Callbacks.Standard do
                     "unit" => "M"
                   },
                   result: ~U[2022-08-31 00:00:00Z]
+  @expression_doc doc: "Leap year handling in a leap year.",
+                  expression: "datetime_add(date(2020, 02, 28), 1, \"D\")",
+                  result: ~U[2020-02-29 00:00:00.000000Z]
+  @expression_doc doc: "Leap year handling outside of a leap year.",
+                  expression: "datetime_add(date(2021, 02, 28), 1, \"D\")",
+                  result: ~U[2021-03-01 00:00:00.000000Z]
+  @expression_doc doc: "Negative offsets",
+                  expression: "datetime_add(date(2020, 02, 29), -1, \"D\")",
+                  result: ~U[2020-02-28 00:00:00.000000Z]
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = extract_datetimeish(eval!(datetime, ctx))
     [offset, unit] = eval_args!([offset, unit], ctx)
@@ -353,26 +331,14 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns `false` if the argument supplied evaluates to truth-y
-
-  # Example
-
-      iex> Expression.evaluate!("@and(not(false), true)")
-      true
-
   """
+  @expression_doc expression: "not(false)", result: true
   def not_(ctx, argument) do
     !eval!(argument, ctx)
   end
 
   @doc """
   Returns one value if the condition evaluates to `true`, and another value if it evaluates to `false`
-
-  # Example
-
-      iex> Expression.evaluate!("@if(true, \\"Yes\\", \\"No\\")")
-      "Yes"
-      iex> Expression.evaluate!("@if(false, \\"Yes\\", \\"No\\")")
-      "No"
   """
   @expression_doc expression: "if(true, \"Yes\", \"No\")",
                   code_expression: """
