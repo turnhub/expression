@@ -204,7 +204,7 @@ defmodule Expression.Autodoc do
   def format_function_args(args) do
     args
     |> Enum.map(&elem(&1, 0))
-    |> Enum.reject(&(&1 == :ctx))
+    |> Enum.reject(&(&1 in [:ctx, :_ctx]))
     |> Enum.map(&to_string/1)
   end
 

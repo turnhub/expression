@@ -44,6 +44,14 @@ defmodule Expression.AutodocTest do
     assert expression_docs
   end
 
+  test "replace _ctx" do
+    assert [{"now", :direct, [], docstring, expression_docs}] = find_docs(Standard, "now")
+
+    assert docstring =~ "Returns the current date time as UTC"
+
+    assert expression_docs
+  end
+
   test "undocumented" do
     assert [{"map", :direct, args, docstring, expression_docs}] = find_docs(Standard, "map")
 
