@@ -229,8 +229,9 @@ defmodule Expression.Callbacks.Standard do
                   fake_result: DateTime.utc_now()
   @expression_doc doc: "return the current datetime and format it using `datevalue`",
                   expression: "datevalue(now(), \"%Y-%m-%d\")",
-                  result: %{
-                    "__value__" => DateTime.utc_now() |> Timex.format!("%Y-%m-%d", :strftime)
+                  fake_result: %{
+                    "__value__" => DateTime.utc_now() |> Timex.format!("%Y-%m-%d", :strftime),
+                    "date" => DateTime.utc_now()
                   }
   def now(_ctx) do
     DateTime.utc_now()

@@ -79,10 +79,10 @@ defmodule Expression.Autodoc do
         context = expression_doc[:context]
 
         {doctest_prompt, result} =
-          if result = expression_doc[:result] do
-            {"iex", result}
+          if is_nil(expression_doc[:fake_result]) do
+            {"iex", expression_doc[:result]}
           else
-            {"  $", expression_doc[:fake_result]}
+            {"..$", expression_doc[:fake_result]}
           end
 
         """
@@ -138,14 +138,27 @@ defmodule Expression.Autodoc do
         ...>   #{inspect(expression)},
         ...>   #{inspect(context || %{})}
         ...> )
-        #{prompt}> assert #{inspect(result)} = result
-        result
+        #{generate_assert(prompt, result)}
         #{prompt}> Expression.evaluate_as_string!(
         ...>   #{inspect("@" <> expression)},
         ...>   #{inspect(context || %{})}
         ...> )
         #{inspect(stringify(result))}
     """
+  end
+
+  def generate_assert(prompt, result) when is_nil(result) or result == false do
+    Enum.join(["#{prompt}> refute result", "#{inspect(result)}"], "\n    ")
+  end
+
+  def generate_assert(prompt, result) do
+    Enum.join(
+      [
+        "#{prompt}> assert #{inspect(result)} = result",
+        "#{inspect(result)}"
+      ],
+      "\n    "
+    )
   end
 
   def type_of(%Time{}), do: "Time"
