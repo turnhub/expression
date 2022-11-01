@@ -238,15 +238,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns only the second of a datetime (0 to 59)
-
-  # Example
-
-      iex> now = DateTime.utc_now()
-      iex> second = Expression.evaluate!("@second(now)", %{"now" => now})
-      iex> now.second == second
-      true
-
   """
+  @expression_doc expression: "second(now)",
+                  context: %{"now" => DateTime.utc_now()},
+                  result: DateTime.utc_now().second
   def second(ctx, date) do
     %{second: second} = eval!(date, ctx)
     second
@@ -254,13 +249,9 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Defines a time value which can be used for time arithmetic
-
-  # Example
-
-      iex> Expression.evaluate!("@time(12, 13, 14)")
-      %Time{hour: 12, minute: 13, second: 14}
-
   """
+  @expression_doc expression: "time(12, 13, 14)",
+                  result: %Time{hour: 12, minute: 13, second: 14}
   def time(ctx, hours, minutes, seconds) do
     [hours, minutes, seconds] = eval_args!([hours, minutes, seconds], ctx)
     %Time{hour: hours, minute: minutes, second: seconds}
@@ -268,15 +259,11 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Converts time stored in text to an actual time
-
-  # Example
-
-      iex> Expression.evaluate!("@timevalue(\\"2:30\\")")
-      %Time{hour: 2, minute: 30, second: 0}
-
-      iex> Expression.evaluate!("@timevalue(\\"2:30:55\\")")
-      %Time{hour: 2, minute: 30, second: 55}
   """
+  @expression_doc expression: "timevalue(\"2:30\")",
+                  result: %Time{hour: 2, minute: 30, second: 0}
+  @expression_doc expression: "timevalue(\"2:30:55\")",
+                  result: %Time{hour: 2, minute: 30, second: 55}
   def timevalue(ctx, expression) do
     expression = eval!(expression, ctx)
 
@@ -300,71 +287,64 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns the current date
-
-  ```
-  Today's date is @TODAY()
-  ```
-
-  # Example
-
-      iex> today = Date.utc_today()
-      iex> today == Expression.evaluate!("@today()")
-      true
-
   """
+  @expression_doc expression: "today()",
+                  result: Date.utc_today()
   def today(_ctx) do
     Date.utc_today()
   end
 
   @doc """
   Returns the day of the week of a date (1 for Sunday to 7 for Saturday)
-
-  # Example
-
-      iex> today = DateTime.utc_now()
-      iex> expected = Timex.weekday(today)
-      iex> weekday = Expression.evaluate!("@weekday(today)", %{"today" => today})
-      iex> weekday == expected
-      true
   """
+  @expression_doc expression: "weekday(today)",
+                  context: %{"today" => ~D[2022-11-06]},
+                  result: 1
+  @expression_doc expression: "weekday(today)",
+                  context: %{"today" => ~D[2022-11-01]},
+                  result: 3
   def weekday(ctx, date) do
-    Timex.weekday(eval!(date, ctx))
+    iso_week_day = Timex.weekday(eval!(date, ctx))
+
+    if iso_week_day == 7 do
+      1
+    else
+      iso_week_day + 1
+    end
   end
 
   @doc """
   Returns only the year of a date
-
-
-  # Example
-
-      iex> %{year: year} = now = DateTime.utc_now()
-      iex> year == Expression.evaluate!("@year(now)", %{"now" => now})
-
   """
+  @expression_doc expression: "year(now)",
+                  context: %{"now" => DateTime.utc_now()},
+                  result: DateTime.utc_now().year
   def year(ctx, date) do
-    %{year: year} = eval!(date, ctx)
+    %{year: year} = extract_dateish(eval!(date, ctx))
     year
   end
 
   @doc """
-  Returns TRUE if and only if all its arguments evaluate to TRUE
-
-  # Example
-
-      iex> Expression.evaluate_as_boolean!("@AND(contact.gender = \\"F\\", contact.age >= 18)", %{
-      iex>  "contact" => %{
-      iex>    "gender" => "F",
-      iex>    "age" => 32
-      iex>  }})
-      true
-
-      iex> Expression.evaluate_as_boolean!("@AND(contact.gender = \\"F\\", contact.age >= 18)", %{
-      iex>  "contact" => %{
-      iex>    "gender" => "?",
-      iex>    "age" => 32
-      iex>  }})
-      false
+  Returns `true` if and only if all its arguments evaluate to `true`
   """
+  @expression_doc expression: "and(contact.gender = \"F\", contact.age >= 18)",
+                  code_expression: "contact.gender = \"F\" and contact.age >= 18",
+                  context: %{
+                    "contact" => %{
+                      "gender" => "F",
+                      "age" => 32
+                    }
+                  },
+                  result: true
+  @expression_doc expression: "and(contact.gender = \"F\", contact.age >= 18)",
+                  code_expression: "contact.gender = \"F\" and contact.age >= 18",
+                  context: %{
+                    "contact" => %{
+                      "gender" => "?",
+                      "age" => 32
+                    }
+                  },
+                  result: false
   def and_vargs(ctx, arguments) do
     arguments = eval_args!(arguments, ctx)
     Enum.all?(arguments, & &1)
@@ -393,6 +373,18 @@ defmodule Expression.Callbacks.Standard do
       iex> Expression.evaluate!("@if(false, \\"Yes\\", \\"No\\")")
       "No"
   """
+  @expression_doc expression: "if(true, \"Yes\", \"No\")",
+                  code_expression: """
+                  if true do
+                    "Yes"
+                  else
+                    "No"
+                  end
+                  """,
+                  result: "Yes"
+  @expression_doc expression: "if(false, \"Yes\", \"No\")",
+                  code_expression: "# Shorthand\nif(false, do: \"Yes\", else: \"No\")",
+                  result: "No"
   def if_(ctx, condition, yes, no) do
     if(eval!(condition, ctx),
       do: eval!(yes, ctx),
@@ -408,13 +400,17 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc doc: "Return true if any of the values are true",
                   expression: "or(true, false)",
+                  code_expression: "true or false",
                   result: true
   @expression_doc doc: "Return the first value that is truthy",
                   expression: "or(false, \"foo\")",
+                  code_expression: "false or \"foo\"",
                   result: "foo"
   @expression_doc expression: "or(true, true)",
+                  code_expression: "true or true",
                   result: true
   @expression_doc expression: "or(false, false)",
+                  code_expression: "false or false",
                   result: false
   def or_vargs(ctx, arguments) do
     arguments = eval_args!(arguments, ctx)
@@ -423,51 +419,39 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns the absolute value of a number
-
-  # Example
-
-      iex> Expression.evaluate_as_string!("The absolute value of -1 is @ABS(-1)")
-      "The absolute value of -1 is 1"
-
   """
+  @expression_doc expression: "abs(-1)",
+                  result: 1
   def abs(ctx, number) do
     abs(eval!(number, ctx))
   end
 
   @doc """
   Returns the maximum value of all arguments
-
-  # Example
-
-      iex> Expression.evaluate!("@max(1, 2, 3)")
-      3
   """
+  @expression_doc expression: "max(1, 2, 3)",
+                  result: 3
   def max_vargs(ctx, arguments) do
     Enum.max(eval_args!(arguments, ctx))
   end
 
   @doc """
   Returns the minimum value of all arguments
-
-  #  Example
-
-      iex> Expression.evaluate!("@min(1, 2, 3)")
-      1
   """
+  @expression_doc expression: "min(1, 2, 3)",
+                  result: 1
   def min_vargs(ctx, arguments) do
     Enum.min(eval_args!(arguments, ctx))
   end
 
   @doc """
   Returns the result of a number raised to a power - equivalent to the ^ operator
-
-  ```
-  2 to the power of 3 is @POWER(2, 3)
-  ```
   """
+  @expression_doc expression: "power(2, 3)",
+                  fake_result: Decimal.from_float(8.0)
   def power(ctx, a, b) do
     [a, b] = eval_args!([a, b], ctx)
-    :math.pow(a, b)
+    Decimal.from_float(:math.pow(a, b))
   end
 
   @doc """
@@ -476,13 +460,9 @@ defmodule Expression.Callbacks.Standard do
   ```
   You have @SUM(contact.reports, contact.forms) reports and forms
   ```
-
-  # Example
-
-      iex> Expression.evaluate!("@sum(1, 2, 3)")
-      6
-
   """
+  @expression_doc expression: "sum(1, 2, 3)",
+                  result: 6
   def sum_vargs(ctx, arguments) do
     Enum.sum(eval_args!(arguments, ctx))
   end
@@ -490,13 +470,13 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the character specified by a number
 
-
-  # Example
-
-      iex> Expression.evaluate_as_string!("As easy as @CHAR(65), @CHAR(66), @CHAR(67)")
-      "As easy as A, B, C"
-
+  ```
+  > "As easy as @char(65), @char(66), @char(67)"
+  "As easy as A, B, C"
+  ```
   """
+  @expression_doc expression: "char(65)",
+                  result: "A"
   def char(ctx, code) do
     code = eval!(code, ctx)
     <<code>>
@@ -504,20 +484,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Removes all non-printable characters from a text string
-
-  ```
-
-  ```
-
-  # Example
-
-      iex> Expression.evaluate_as_string!("You entered @CLEAN(step.value)", %{
-      iex>   "step" => %{
-      iex>     "value" => <<65, 0, 66, 0, 67>>
-      iex>   }
-      iex> })
-      "You entered ABC"
   """
+  @expression_doc expression: "clean(value)",
+                  context: %{"value" => <<65, 0, 66, 0, 67>>},
+                  result: "ABC"
   def clean(ctx, binary) do
     binary
     |> eval!(ctx)
@@ -529,11 +499,13 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns a numeric code for the first character in a text string
 
-  # Example
-
-      iex> Expression.evaluate_as_string!("The numeric code of A is @CODE(\\"A\\")")
-      "The numeric code of A is 65"
+  ```
+  > "The numeric code of A is @CODE(\\"A\\")"
+  "The numeric code of A is 65"
+  ```
   """
+  @expression_doc expression: "code(\"A\")",
+                  result: 65
   def code(ctx, code_ast) do
     <<code>> = eval!(code_ast, ctx)
     code
@@ -542,17 +514,19 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Joins text strings into one text string
 
-
-  # Example
-
-      iex> Expression.evaluate_as_string!("Your name is @CONCATENATE(contact.first_name, \\" \\", contact.last_name)", %{
-      iex>   "contact" => %{
-      iex>     "first_name" => "name",
-      iex>     "last_name" => "surname"
-      iex>    }
-      iex> })
-      "Your name is name surname"
+  ```
+  > "Your name is @CONCATENATE(contact.first_name, \\" \\", contact.last_name)"
+  "Your name is name surname"
+  ```
   """
+  @expression_doc expression: "concatenate(contact.first_name, \" \", contact.last_name)",
+                  context: %{
+                    "contact" => %{
+                      "first_name" => "name",
+                      "last_name" => "surname"
+                    }
+                  },
+                  result: "name surname"
   def concatenate_vargs(ctx, arguments) do
     Enum.join(eval_args!(arguments, ctx), "")
   end
@@ -561,28 +535,25 @@ defmodule Expression.Callbacks.Standard do
   Formats the given number in decimal format using a period and commas
 
   ```
-  You have @FIXED(contact.balance, 2) in your account
+  > You have @fixed(contact.balance, 2) in your account
+  "You have 4.21 in your account"
   ```
-
-  # Example
-
-      iex> Expression.evaluate!("@fixed(4.209922, 2, false)")
-      "4.21"
-      iex> Expression.evaluate!("@fixed(4000.424242, 4, true)")
-      "4,000.4242"
-      iex> Expression.evaluate!("@fixed(3.7979, 2, false)")
-      "3.80"
-      iex> Expression.evaluate!("@fixed(3.7979, 2)")
-      "3.80"
-
   """
+  @expression_doc expression: "fixed(4.209922, 2, false)",
+                  result: "4.21"
+  @expression_doc expression: "fixed(4000.424242, 4, true)",
+                  result: "4,000.4242"
+  @expression_doc expression: "fixed(3.7979, 2, false)",
+                  result: "3.80"
+  @expression_doc expression: "fixed(3.7979, 2)",
+                  result: "3.80"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
     Number.Delimit.number_to_delimited(number, precision: precision)
   end
 
-  def fixed(ctx, number, precision, boolean) do
-    case eval_args!([number, precision, boolean], ctx) do
+  def fixed(ctx, number, precision, no_commas) do
+    case eval_args!([number, precision, no_commas], ctx) do
       [number, precision, true] ->
         Number.Delimit.number_to_delimited(number,
           precision: precision,
@@ -597,16 +568,13 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns the first characters in a text string. This is Unicode safe.
-
-  # Example
-
-      iex> Expression.evaluate!("@left(\\"foobar\\", 4)")
-      "foob"
-
-      iex> Expression.evaluate!("@left(\\"Умерла Мадлен Олбрайт - первая женщина на посту главы Госдепа США\\", 20)")
-      "Умерла Мадлен Олбрай"
-
   """
+  @expression_doc expression: "left(\"foobar\", 4)",
+                  result: "foob"
+
+  @expression_doc expression:
+                    "left(\"Умерла Мадлен Олбрайт - первая женщина на посту главы Госдепа США\", 20)",
+                  result: "Умерла Мадлен Олбрай"
   def left(ctx, binary, size) do
     [binary, size] = eval_args!([binary, size], ctx)
     String.slice(binary, 0, size)
@@ -614,39 +582,29 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns the number of characters in a text string
-
-  # Example
-
-      iex> Expression.evaluate!("@len(\\"foo\\")")
-      3
-      iex> Expression.evaluate!("@len(\\"zoë\\")")
-      3
   """
+  @expression_doc expression: "len(\"foo\")",
+                  result: 3
+  @expression_doc expression: "len(\"zoë\")",
+                  result: 3
   def len(ctx, binary) do
     String.length(eval!(binary, ctx))
   end
 
   @doc """
   Converts a text string to lowercase
-
-  # Example
-
-      iex> Expression.evaluate!("@lower(\\"Foo Bar\\")")
-      "foo bar"
-
   """
+  @expression_doc expression: "lower(\"Foo Bar\")",
+                  result: "foo bar"
   def lower(ctx, binary) do
     String.downcase(eval!(binary, ctx))
   end
 
   @doc """
   Capitalizes the first letter of every word in a text string
-
-  # Example
-
-      iex> Expression.evaluate!("@proper(\\"foo bar\\")")
-      "Foo Bar"
   """
+  @expression_doc expression: "proper(\"foo bar\")",
+                  result: "Foo Bar"
   def proper(ctx, binary) do
     binary
     |> eval!(ctx)
@@ -656,12 +614,9 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Repeats text a given number of times
-
-  # Example
-
-      iex> Expression.evaluate!("@rept(\\"*\\", 10)")
-      "**********"
   """
+  @expression_doc expression: "rept(\"*\", 10)",
+                  result: "**********"
   def rept(ctx, value, amount) do
     [value, amount] = eval_args!([value, amount], ctx)
     String.duplicate(value, amount)
@@ -670,16 +625,12 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the last characters in a text string.
   This is Unicode safe.
-
-  # Example
-
-      iex> Expression.evaluate!("@right(\\"testing\\", 3)")
-      "ing"
-
-      iex> Expression.evaluate!("@right(\\"Умерла Мадлен Олбрайт - первая женщина на посту главы Госдепа США\\", 20)")
-      "ту главы Госдепа США"
-
   """
+  @expression_doc expression: "right(\"testing\", 3)",
+                  result: "ing"
+  @expression_doc expression:
+                    "right(\"Умерла Мадлен Олбрайт - первая женщина на посту главы Госдепа США\", 20)",
+                  result: "ту главы Госдепа США"
   def right(ctx, binary, size) do
     [binary, size] = eval_args!([binary, size], ctx)
     String.slice(binary, -size, size)
@@ -687,13 +638,9 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Substitutes new_text for old_text in a text string. If instance_num is given, then only that instance will be substituted
-
-  # Example
-
-      iex> Expression.evaluate!("@substitute(\\"I can't\\", \\"can't\\", \\"can do\\")")
-      "I can do"
-
   """
+  @expression_doc expression: "substitute(\"I can't\", \"can't\", \"can do\")",
+                  result: "I can do"
   def substitute(ctx, subject, pattern, replacement) do
     [subject, pattern, replacement] = eval_args!([subject, pattern, replacement], ctx)
     String.replace(subject, pattern, replacement)
@@ -701,15 +648,9 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns the unicode character specified by a number
-
-  # Example
-
-      iex> Expression.evaluate!("@unichar(65)")
-      "A"
-      iex> Expression.evaluate!("@unichar(233)")
-      "é"
-
   """
+  @expression_doc expression: "unichar(65)", result: "A"
+  @expression_doc expression: "unichar(233)", result: "é"
   def unichar(ctx, code) do
     code = eval!(code, ctx)
     <<code::utf8>>
@@ -717,14 +658,9 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns a numeric code for the first character in a text string
-
-  # Example
-
-      iex> Expression.evaluate!("@unicode(\\"A\\")")
-      65
-      iex> Expression.evaluate!("@unicode(\\"é\\")")
-      233
   """
+  @expression_doc expression: "unicode(\"A\")", result: 65
+  @expression_doc expression: "unicode(\"é\")", result: 233
   def unicode(ctx, letter) do
     <<code::utf8>> = eval!(letter, ctx)
     code
@@ -732,25 +668,18 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Converts a text string to uppercase
-
-  # Example
-
-      iex> Expression.evaluate!("@upper(\\"foo\\")")
-      "FOO"
   """
+  @expression_doc expression: "upper(\"foo\")",
+                  result: "FOO"
   def upper(ctx, binary) do
     String.upcase(eval!(binary, ctx))
   end
 
   @doc """
   Returns the first word in the given text - equivalent to WORD(text, 1)
-
-  # Example
-
-      iex> Expression.evaluate!("@first_word(\\"foo bar baz\\")")
-      "foo"
-
   """
+  @expression_doc expression: "first_word(\"foo bar baz\")",
+                  result: "foo"
   def first_word(ctx, binary) do
     [word | _] = String.split(eval!(binary, ctx), " ")
     word
@@ -758,16 +687,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Formats a number as a percentage
-
-  # Example
-
-      iex> Expression.evaluate!("@percent(2/10)")
-      "20%"
-      iex> Expression.evaluate!("@percent(0.2)")
-      "20%"
-      iex> Expression.evaluate!("@percent(d)", %{"d" => Decimal.new("0.2")})
-      "20%"
   """
+  @expression_doc expression: "percent(2/10)", result: "20%"
+  @expression_doc expression: "percent(0.2)", result: "20%"
+  @expression_doc expression: "percent(d)", context: %{"d" => "0.2"}, result: "20%"
   def percent(ctx, decimal) do
     decimal =
       case eval!(decimal, ctx) do
@@ -784,13 +707,8 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Formats digits in text for reading in TTS
-
-  # Example
-
-      iex> Expression.evaluate!("@read_digits(\\"+271\\")")
-      "plus two seven one"
-
   """
+  @expression_doc expression: "read_digits(\"+271\")", result: "plus two seven one"
   def read_digits(ctx, binary) do
     map = %{
       "+" => "plus",
@@ -816,15 +734,9 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Removes the first word from the given text. The remaining text will be unchanged
-
-  # Example
-
-      iex> Expression.evaluate!("@remove_first_word(\\"foo bar\\")")
-      "bar"
-      iex> Expression.evaluate!("@remove_first_word(\\"foo-bar\\", \\"-\\")")
-      "bar"
   """
-
+  @expression_doc expression: "remove_first_word(\"foo bar\")", result: "bar"
+  @expression_doc expression: "remove_first_word(\"foo-bar\", \"-\")", result: "bar"
   def remove_first_word(ctx, binary) do
     binary = eval!(binary, ctx)
     separator = " "
@@ -839,19 +751,12 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Extracts the nth word from the given text string. If stop is a negative number,
   then it is treated as count backwards from the end of the text. If by_spaces is
-  specified and is TRUE then the function splits the text into words only by spaces.
+  specified and is `true` then the function splits the text into words only by spaces.
   Otherwise the text is split by punctuation characters as well
-
-  # Example
-
-      iex> Expression.evaluate!("@word(\\"hello cow-boy\\", 2)")
-      "cow"
-      iex> Expression.evaluate!("@word(\\"hello cow-boy\\", 2, true)")
-      "cow-boy"
-      iex> Expression.evaluate!("@word(\\"hello cow-boy\\", -1)")
-      "boy"
-
   """
+  @expression_doc expression: "word(\"hello cow-boy\", 2)", result: "cow"
+  @expression_doc expression: "word(\"hello cow-boy\", 2, true)", result: "cow-boy"
+  @expression_doc expression: "word(\"hello cow-boy\", -1)", result: "boy"
   def word(ctx, binary, n) do
     [binary, n] = eval_args!([binary, n], ctx)
     parts = String.split(binary, @punctuation_pattern)
@@ -887,16 +792,12 @@ defmodule Expression.Callbacks.Standard do
   Returns the number of words in the given text string. If by_spaces is specified and is TRUE then the function splits the text into words only by spaces. Otherwise the text is split by punctuation characters as well
 
   ```
-  You entered @WORD_COUNT(step.value) words
+  > You entered @word_count("one two three") words
+  You entered 3 words
   ```
-
-  # Example
-
-      iex> Expression.evaluate!("@word_count(\\"hello cow-boy\\")")
-      3
-      iex> Expression.evaluate!("@word_count(\\"hello cow-boy\\", true)")
-      2
   """
+  @expression_doc expression: "word_count(\"hello cow-boy\")", result: 3
+  @expression_doc expression: "word_count(\"hello cow-boy\", true)", result: 2
   def word_count(ctx, binary) do
     binary
     |> eval!(ctx)
@@ -919,18 +820,15 @@ defmodule Expression.Callbacks.Standard do
   If stop is a negative number, then it is treated as count backwards from the end of the text.
   If by_spaces is specified and is TRUE then the function splits the text into words only by spaces.
   Otherwise the text is split by punctuation characters as well
-
-  # Example
-
-      iex> Expression.evaluate!("@word_slice(\\"RapidPro expressions are fun\\", 2, 4)")
-      "expressions are"
-      iex> Expression.evaluate!("@word_slice(\\"RapidPro expressions are fun\\", 2)")
-      "expressions are fun"
-      iex> Expression.evaluate!("@word_slice(\\"RapidPro expressions are fun\\", 1, -2)")
-      "RapidPro expressions"
-      iex> Expression.evaluate!("@word_slice(\\"RapidPro expressions are fun\\", -1)")
-      "fun"
   """
+  @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", 2, 4)",
+                  result: "expressions are"
+  @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", 2)",
+                  result: "expressions are fun"
+  @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", 1, -2)",
+                  result: "FLOIP expressions"
+  @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", -1)",
+                  result: "fun"
   def word_slice(ctx, binary, start) do
     [binary, start] = eval_args!([binary, start], ctx)
 
@@ -990,21 +888,11 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns TRUE if the argument is a number.
-
-  # Example
-
-      iex> Expression.evaluate!("@isnumber(1)")
-      true
-      iex> Expression.evaluate!("@isnumber(1.0)")
-      true
-      iex> Expression.evaluate!("@isnumber(dec)", %{"dec" => Decimal.new("1.0")})
-      true
-      iex> Expression.evaluate!("@isnumber(\\"1.0\\")")
-      true
-      iex> Expression.evaluate!("@isnumber(\\"a\\")")
-      false
-
   """
+  @expression_doc expression: "isnumber(1)", result: true
+  @expression_doc expression: "isnumber(1.0)", result: true
+  @expression_doc expression: "isnumber(\"1.0\")", result: true
+  @expression_doc expression: "isnumber(\"a\")", result: false
   def isnumber(ctx, var) do
     var = eval!(var, ctx)
 
@@ -1027,41 +915,24 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Returns TRUE if the argument is a boolean.
-
-  # Example
-
-      iex> Expression.evaluate!("@isbool(true)")
-      true
-      iex> Expression.evaluate!("@isbool(false)")
-      true
-      iex> Expression.evaluate!("@isbool(1)")
-      false
-      iex> Expression.evaluate!("@isbool(0)")
-      false
-      iex> Expression.evaluate!("@isbool(\\"true\\")")
-      false
-      iex> Expression.evaluate!("@isbool(\\"false\\")")
-      false
+  Returns `true` if the argument is a boolean.
   """
+  @expression_doc expression: "isbool(true)", result: true
+  @expression_doc expression: "isbool(false)", result: true
+  @expression_doc expression: "isbool(1)", result: false
+  @expression_doc expression: "isbool(0)", result: false
+  @expression_doc expression: "isbool(\"true\")", result: false
+  @expression_doc expression: "isbool(\"false\")", result: false
   def isbool(ctx, var) do
     eval!(var, ctx) in [true, false]
   end
 
   @doc """
-  Returns TRUE if the argument is a string.
-
-  # Example
-
-      iex> Expression.evaluate!("@isstring(\\"hello\\")")
-      true
-      iex> Expression.evaluate!("@isstring(false)")
-      false
-      iex> Expression.evaluate!("@isstring(1)")
-      false
-      iex> Expression.evaluate!("@isstring(d)", %{"d" => Decimal.new("1.0")})
-      false
+  Returns `true` if the argument is a string.
   """
+  @expression_doc expression: "isstring(\"hello\")", result: true
+  @expression_doc expression: "isstring(false)", result: false
+  @expression_doc expression: "isstring(1)", result: false
   def isstring(ctx, binary), do: is_binary(eval!(binary, ctx))
 
   defp search_words(haystack, words) do
@@ -1087,15 +958,9 @@ defmodule Expression.Callbacks.Standard do
   Tests whether all the words are contained in text
 
   The words can be in any order and may appear more than once.
-
-  # Example
-
-      iex> Expression.evaluate!("@has_all_words(\\"the quick brown FOX\\", \\"the fox\\")")
-      true
-      iex> Expression.evaluate!("@has_all_words(\\"the quick brown FOX\\", \\"red fox\\")")
-      false
-
   """
+  @expression_doc expression: "has_all_words(\"the quick brown FOX\", \"the fox\")", result: true
+  @expression_doc expression: "has_all_words(\"the quick brown FOX\", \"red fox\")", result: false
   def has_all_words(ctx, haystack, words) do
     [haystack, words] = eval_args!([haystack, words], ctx)
     {patterns, results} = search_words(haystack, words)
@@ -1107,15 +972,9 @@ defmodule Expression.Callbacks.Standard do
   Tests whether any of the words are contained in the text
 
   Only one of the words needs to match and it may appear more than once.
-
-  # Example
-
-      iex> Expression.evaluate!("@has_any_word(\\"The Quick Brown Fox\\", \\"fox quick\\")")
-      true
-      iex> Expression.evaluate!("@has_any_word(\\"The Quick Brown Fox\\", \\"yellow\\")")
-      false
-
   """
+  @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"fox quick\")", result: true
+  @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"yellow\")", result: false
   def has_any_word(ctx, haystack, words) do
     [haystack, words] = eval_args!([haystack, words], ctx)
     haystack_words = String.split(haystack)
@@ -1143,17 +1002,11 @@ defmodule Expression.Callbacks.Standard do
 
   Both text values are trimmed of surrounding whitespace, but otherwise matching is
   strict without any tokenization.
-
-  # Example
-
-      iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"the quick\\")")
-      true
-      iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"the    quick\\")")
-      false
-      iex> Expression.evaluate!("@has_beginning(\\"The Quick Brown\\", \\"quick brown\\")")
-      false
-
   """
+  @expression_doc expression: "has_beginning(\"The Quick Brown\", \"the quick\")", result: true
+  @expression_doc expression: "has_beginning(\"The Quick Brown\", \"the    quick\")",
+                  result: false
+  @expression_doc expression: "has_beginning(\"The Quick Brown\", \"quick brown\")", result: false
   def has_beginning(ctx, text, beginning) do
     [text, beginning] = eval_args!([text, beginning], ctx)
 
@@ -1194,31 +1047,22 @@ defmodule Expression.Callbacks.Standard do
   Tests whether `expression` contains a date formatted according to our environment
 
   This is very naively implemented with a regular expression.
-
-  Supported:
-
-  # Example
-
-      iex> Expression.evaluate!("@has_date(\\"the date is 15/01/2017\\")")
-      true
-      iex> Expression.evaluate!("@has_date(\\"there is no date here, just a year 2017\\")")
-      false
-
   """
+  @expression_doc expression: "has_date(\"the date is 15/01/2017\")", result: true
+  @expression_doc expression: "has_date(\"there is no date here, just a year 2017\")",
+                  result: false
   def has_date(ctx, expression) do
     !!extract_dateish(eval!(expression, ctx))
   end
 
   @doc """
   Tests whether `expression` is a date equal to `date_string`
-
-  # Examples
-
-      iex> Expression.evaluate!("@has_date_eq(\\"the date is 15/01/2017\\", \\"2017-01-15\\")")
-      true
-      iex> Expression.evaluate!("@has_date_eq(\\"there is no date here, just a year 2017\\", \\"2017-01-15\\")")
-      false
   """
+  @expression_doc expression: "has_date_eq(\"the date is 15/01/2017\", \"2017-01-15\")",
+                  result: true
+  @expression_doc expression:
+                    "has_date_eq(\"there is no date here, just a year 2017\", \"2017-01-15\")",
+                  result: false
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
@@ -1229,15 +1073,11 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` is a date after the date `date_string`
-
-  # Example
-
-      iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-01-01\\")")
-      true
-      iex> Expression.evaluate!("@has_date_gt(\\"the date is 15/01/2017\\", \\"2017-03-15\\")")
-      false
-
   """
+  @expression_doc expression: "has_date_gt(\"the date is 15/01/2017\", \"2017-01-01\")",
+                  result: true
+  @expression_doc expression: "has_date_gt(\"the date is 15/01/2017\", \"2017-03-15\")",
+                  result: false
   def has_date_gt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
@@ -1248,15 +1088,11 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a date before the date `date_string`
-
-  # Example
-
-      iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2017\\", \\"2017-06-01\\")")
-      true
-      iex> Expression.evaluate!("@has_date_lt(\\"the date is 15/01/2021\\", \\"2017-03-15\\")")
-      false
-
   """
+  @expression_doc expression: "has_date_lt(\"the date is 15/01/2017\", \"2017-06-01\")",
+                  result: true
+  @expression_doc expression: "has_date_lt(\"the date is 15/01/2021\", \"2017-03-15\")",
+                  result: false
   def has_date_lt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = extract_dateish(expression)
@@ -1267,15 +1103,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether an email is contained in text
-
-  # Example:
-
-      iex> Expression.evaluate!("@has_email(\\"my email is foo1@bar.com, please respond\\")")
-      true
-      iex> Expression.evaluate!("@has_email(\\"i'm not sharing my email\\")")
-      false
-
   """
+  @expression_doc expression: "has_email(\"my email is foo1@bar.com, please respond\")",
+                  result: true
+  @expression_doc expression: "has_email(\"i'm not sharing my email\")", result: false
   def has_email(ctx, expression) do
     expression = eval!(expression, ctx)
 
@@ -1288,20 +1119,31 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns whether the contact is part of group with the passed in UUID
-
-  # Example:
-
-      iex> contact = %{
-      ...>   "groups" => [%{
-      ...>     "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
-      ...>   }]
-      ...> }
-      iex> Expression.evaluate!("@has_group(contact.groups, \\"b7cf0d83-f1c9-411c-96fd-c511a4cfa86d\\")", %{"contact" => contact})
-      true
-      iex> Expression.evaluate!("@has_group(contact.groups, \\"00000000-0000-0000-0000-000000000000\\")", %{"contact" => contact})
-      false
-
   """
+  @expression_doc expression:
+                    "has_group(contact.groups, \"b7cf0d83-f1c9-411c-96fd-c511a4cfa86d\")",
+                  context: %{
+                    "contact" => %{
+                      "groups" => [
+                        %{
+                          "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
+                        }
+                      ]
+                    }
+                  },
+                  result: true
+  @expression_doc expression:
+                    "has_group(contact.groups, \"00000000-0000-0000-0000-000000000000\")",
+                  context: %{
+                    "contact" => %{
+                      "groups" => [
+                        %{
+                          "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
+                        }
+                      ]
+                    }
+                  },
+                  result: false
   def has_group(ctx, groups, uuid) do
     [groups, uuid] = eval_args!([groups, uuid], ctx)
     group = Enum.find(groups, nil, &(&1["uuid"] == uuid))
