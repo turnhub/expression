@@ -24,14 +24,12 @@ defmodule Expression.AutodocTest do
   end
 
   test "regular docstrings" do
-    assert [{"has_time", :direct, args, docstring, expression_docs}] =
+    assert [{"has_time", :direct, args, docstring, _expression_docs}] =
              find_docs(Standard, "has_time")
 
     assert docstring =~ "Tests whether `expression` contains a time."
 
     assert ["expression"] = args
-
-    assert expression_docs == []
   end
 
   test "vargs" do

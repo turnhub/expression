@@ -973,8 +973,10 @@ defmodule Expression.Callbacks.Standard do
 
   Only one of the words needs to match and it may appear more than once.
   """
-  @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"fox quick\")", result: true
-  @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"yellow\")", result: false
+  @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"fox quick\")",
+                  result: %{"__value__" => true, "match" => "Quick Fox"}
+  @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"yellow\")",
+                  result: %{"__value__" => false, "match" => nil}
   def has_any_word(ctx, haystack, words) do
     [haystack, words] = eval_args!([haystack, words], ctx)
     haystack_words = String.split(haystack)
@@ -991,9 +993,11 @@ defmodule Expression.Callbacks.Standard do
 
     matched_haystack_words = Enum.map(matched_indices, &Enum.at(haystack_words, &1))
 
+    match? = Enum.any?(matched_haystack_words)
+
     %{
-      "__value__" => Enum.any?(matched_haystack_words),
-      "match" => Enum.join(matched_haystack_words, " ")
+      "__value__" => match?,
+      "match" => if(match?, do: Enum.join(matched_haystack_words, " "), else: nil)
     }
   end
 
@@ -1200,15 +1204,12 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a number
-
-  # Example
-
-      iex> true = Expression.evaluate!("@has_number(\\"the number is 42 and 5\\")")
-      iex> true = Expression.evaluate!("@has_number(\\"العدد ٤٢\\")")
-      iex> true = Expression.evaluate!("@has_number(\\"٠.٥\\")")
-      iex> true = Expression.evaluate!("@has_number(\\"0.6\\")")
-
   """
+  @expression_doc expression: "has_number(\"the number is 42 and 5\")", result: true
+  @expression_doc expression: "has_number(\"العدد ٤٢\")", result: true
+  @expression_doc expression: "has_number(\"٠.٥\")", result: true
+  @expression_doc expression: "has_number(\"0.6\")", result: true
+
   def has_number(ctx, expression) do
     expression = eval!(expression, ctx)
     number = extract_numberish(expression)
@@ -1218,18 +1219,15 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a number equal to the value
-
-  # Example
-
-      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", 42)")
-      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", 42.0)")
-      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42\\", \\"42\\")")
-      iex> true = Expression.evaluate!("@has_number_eq(\\"the number is 42.0\\", \\"42\\")")
-      iex> false = Expression.evaluate!("@has_number_eq(\\"the number is 40\\", \\"42\\")")
-      iex> false = Expression.evaluate!("@has_number_eq(\\"the number is 40\\", \\"foo\\")")
-      iex> false = Expression.evaluate!("@has_number_eq(\\"four hundred\\", \\"foo\\")")
-
   """
+
+  @expression_doc expression: "has_number_eq(\"the number is 42\", 42)", result: true
+  @expression_doc expression: "has_number_eq(\"the number is 42\", 42.0)", result: true
+  @expression_doc expression: "has_number_eq(\"the number is 42\", \"42\")", result: true
+  @expression_doc expression: "has_number_eq(\"the number is 42.0\", \"42\")", result: true
+  @expression_doc expression: "has_number_eq(\"the number is 40\", \"42\")", result: false
+  @expression_doc expression: "has_number_eq(\"the number is 40\", \"foo\")", result: false
+  @expression_doc expression: "has_number_eq(\"four hundred\", \"foo\")", result: false
   def has_number_eq(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
 
@@ -1245,17 +1243,14 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a number greater than min
-
-  # Example
-
-      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", 40)")
-      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", 40.0)")
-      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42\\", \\"40\\")")
-      iex> true = Expression.evaluate!("@has_number_gt(\\"the number is 42.0\\", \\"40\\")")
-      iex> false = Expression.evaluate!("@has_number_gt(\\"the number is 40\\", \\"40\\")")
-      iex> false = Expression.evaluate!("@has_number_gt(\\"the number is 40\\", \\"foo\\")")
-      iex> false = Expression.evaluate!("@has_number_gt(\\"four hundred\\", \\"foo\\")")
   """
+  @expression_doc expression: "has_number_gt(\"the number is 42\", 40)", result: true
+  @expression_doc expression: "has_number_gt(\"the number is 42\", 40.0)", result: true
+  @expression_doc expression: "has_number_gt(\"the number is 42\", \"40\")", result: true
+  @expression_doc expression: "has_number_gt(\"the number is 42.0\", \"40\")", result: true
+  @expression_doc expression: "has_number_gt(\"the number is 40\", \"40\")", result: false
+  @expression_doc expression: "has_number_gt(\"the number is 40\", \"foo\")", result: false
+  @expression_doc expression: "has_number_gt(\"four hundred\", \"foo\")", result: false
   def has_number_gt(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
 
@@ -1271,17 +1266,14 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a number greater than or equal to min
-
-  # Example
-
-      iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", 42)")
-      iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", 42.0)")
-      iex> true = Expression.evaluate!("@has_number_gte(\\"the number is 42\\", \\"42\\")")
-      iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 42.0\\", \\"45\\")")
-      iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 40\\", \\"45\\")")
-      iex> false = Expression.evaluate!("@has_number_gte(\\"the number is 40\\", \\"foo\\")")
-      iex> false = Expression.evaluate!("@has_number_gte(\\"four hundred\\", \\"foo\\")")
   """
+  @expression_doc expression: "has_number_gte(\"the number is 42\", 42)", result: true
+  @expression_doc expression: "has_number_gte(\"the number is 42\", 42.0)", result: true
+  @expression_doc expression: "has_number_gte(\"the number is 42\", \"42\")", result: true
+  @expression_doc expression: "has_number_gte(\"the number is 42.0\", \"45\")", result: false
+  @expression_doc expression: "has_number_gte(\"the number is 40\", \"45\")", result: false
+  @expression_doc expression: "has_number_gte(\"the number is 40\", \"foo\")", result: false
+  @expression_doc expression: "has_number_gte(\"four hundred\", \"foo\")", result: false
   def has_number_gte(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
 
@@ -1297,17 +1289,14 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a number less than max
-
-  # Example
-
-      iex> true = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", 44)")
-      iex> true = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", 44.0)")
-      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 42\\", \\"40\\")")
-      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 42.0\\", \\"40\\")")
-      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 40\\", \\"40\\")")
-      iex> false = Expression.evaluate!("@has_number_lt(\\"the number is 40\\", \\"foo\\")")
-      iex> false = Expression.evaluate!("@has_number_lt(\\"four hundred\\", \\"foo\\")")
   """
+  @expression_doc expression: "has_number_lt(\"the number is 42\", 44)", result: true
+  @expression_doc expression: "has_number_lt(\"the number is 42\", 44.0)", result: true
+  @expression_doc expression: "has_number_lt(\"the number is 42\", \"40\")", result: false
+  @expression_doc expression: "has_number_lt(\"the number is 42.0\", \"40\")", result: false
+  @expression_doc expression: "has_number_lt(\"the number is 40\", \"40\")", result: false
+  @expression_doc expression: "has_number_lt(\"the number is 40\", \"foo\")", result: false
+  @expression_doc expression: "has_number_lt(\"four hundred\", \"foo\")", result: false
   def has_number_lt(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
 
@@ -1323,17 +1312,13 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a number less than or equal to max
-
-  # Example
-
-      iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", 42)")
-      iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", 42.0)")
-      iex> true = Expression.evaluate!("@has_number_lte(\\"the number is 42\\", \\"42\\")")
-      iex> false = Expression.evaluate!("@has_number_lte(\\"the number is 42.0\\", \\"40\\")")
-      iex> false = Expression.evaluate!("@has_number_lte(\\"the number is 40\\", \\"foo\\")")
-      iex> false = Expression.evaluate!("@has_number_lte(\\"four hundred\\", \\"foo\\")")
-
   """
+  @expression_doc expression: "has_number_lte(\"the number is 42\", 42)", result: true
+  @expression_doc expression: "has_number_lte(\"the number is 42\", 42.0)", result: true
+  @expression_doc expression: "has_number_lte(\"the number is 42\", \"42\")", result: true
+  @expression_doc expression: "has_number_lte(\"the number is 42.0\", \"40\")", result: false
+  @expression_doc expression: "has_number_lte(\"the number is 40\", \"foo\")", result: false
+  @expression_doc expression: "has_number_lte(\"four hundred\", \"foo\")", result: false
   def has_number_lte(ctx, expression, decimal) do
     [expression, decimal] = eval_args!([expression, decimal], ctx)
 
@@ -1351,17 +1336,12 @@ defmodule Expression.Callbacks.Standard do
   Tests whether the text contains only phrase
 
   The phrase must be the only text in the text to match
-
-  # Example
-
-      iex> Expression.evaluate!("@has_only_phrase(\\"Quick Brown\\", \\"quick brown\\")")
-      true
-      iex> Expression.evaluate!("@has_only_phrase(\\"\\", \\"\\")")
-      true
-      iex> Expression.evaluate!("@has_only_phrase(\\"The Quick Brown Fox\\", \\"quick brown\\")")
-      false
-
   """
+  @expression_doc expression: "has_only_phrase(\"Quick Brown\", \"quick brown\")", result: true
+  @expression_doc expression: "has_only_phrase(\"\", \"\")", result: true
+  @expression_doc expression: "has_only_phrase(\"The Quick Brown Fox\", \"quick brown\")",
+                  result: false
+
   def has_only_phrase(ctx, expression, phrase) do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
 
@@ -1374,17 +1354,10 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Returns whether two text values are equal (case sensitive). In the case that they are, it will return the text as the match.
-
-  # Example
-
-      iex> Expression.evaluate!("@has_only_text(\\"foo\\", \\"foo\\")")
-      true
-      iex> Expression.evaluate!("@has_only_text(\\"\\", \\"\\")")
-      true
-      iex> Expression.evaluate!("@has_only_text(\\"foo\\", \\"FOO\\")")
-      false
-
   """
+  @expression_doc expression: "has_only_text(\"foo\", \"foo\")", result: true
+  @expression_doc expression: "has_only_text(\"\", \"\")", result: true
+  @expression_doc expression: "has_only_text(\"foo\", \"FOO\")", result: false
   def has_only_text(ctx, expression_one, expression_two) do
     [expression_one, expression_two] = eval_args!([expression_one, expression_two], ctx)
     expression_one == expression_two
@@ -1394,15 +1367,9 @@ defmodule Expression.Callbacks.Standard do
   Tests whether `expression` matches the regex pattern
 
   Both text values are trimmed of surrounding whitespace and matching is case-insensitive.
-
-  # Examples
-
-      iex> Expression.evaluate!("@has_pattern(\\"Buy cheese please\\", \\"buy (\\\\w+)\\")")
-      true
-      iex> Expression.evaluate!("@has_pattern(\\"Sell cheese please\\", \\"buy (\\\\w+)\\")")
-      false
-
   """
+  @expression_doc expression: "has_pattern(\"Buy cheese please\", \"buy (\\w+)\")", result: true
+  @expression_doc expression: "has_pattern(\"Sell cheese please\", \"buy (\\w+)\")", result: false
   def has_pattern(ctx, expression, pattern) do
     [expression, pattern] = eval_args!([expression, pattern], ctx)
 
@@ -1418,19 +1385,14 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expresssion` contains a phone number.
   The optional country_code argument specifies the country to use for parsing.
-
-  # Example
-
-      iex> Expression.evaluate!("@has_phone(\\"my number is +12067799294 thanks\\")")
-      true
-      iex> Expression.evaluate!("@has_phone(\\"my number is 2067799294 thanks\\", \\"US\\")")
-      true
-      iex> Expression.evaluate!("@has_phone(\\"my number is 206 779 9294 thanks\\", \\"US\\")")
-      true
-      iex> Expression.evaluate!("@has_phone(\\"my number is none of your business\\", \\"US\\")")
-      false
-
   """
+  @expression_doc expression: "has_phone(\"my number is +12067799294 thanks\")", result: true
+  @expression_doc expression: "has_phone(\"my number is 2067799294 thanks\", \"US\")",
+                  result: true
+  @expression_doc expression: "has_phone(\"my number is 206 779 9294 thanks\", \"US\")",
+                  result: true
+  @expression_doc expression: "has_phone(\"my number is none of your business\", \"US\")",
+                  result: false
   def has_phone(ctx, expression) do
     [expression] = eval_args!([expression], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, expression, "")
@@ -1457,17 +1419,10 @@ defmodule Expression.Callbacks.Standard do
   Tests whether phrase is contained in `expression`
 
   The words in the test phrase must appear in the same order with no other words in between.
-
-  # Examples
-
-      iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"brown fox\\")")
-      true
-      iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"quick fox\\")")
-      false
-      iex> Expression.evaluate!("@has_phrase(\\"the quick brown fox\\", \\"\\")")
-      true
-
   """
+  @expression_doc expression: "has_phrase(\"the quick brown fox\", \"brown fox\")", result: true
+  @expression_doc expression: "has_phrase(\"the quick brown fox\", \"quick fox\")", result: false
+  @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
   def has_phrase(ctx, expression, phrase) do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
     lower_expression = String.downcase(expression)
@@ -1479,18 +1434,11 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether there the `expression` has any characters in it
-
-  # Examples
-
-      iex> Expression.evaluate!("@has_text(\\"quick brown\\")")
-      true
-      iex> Expression.evaluate!("@has_text(\\"\\")")
-      false
-      iex> Expression.evaluate!("@has_text(\\" \\n\\")")
-      false
-      iex> Expression.evaluate!("@has_text(123)")
-      true
   """
+  @expression_doc expression: "has_text(\"quick brown\")", result: true
+  @expression_doc expression: "has_text(\"\")", result: false
+  @expression_doc expression: "has_text(\" \n\")", result: false
+  @expression_doc expression: "has_text(123)", result: true
   def has_text(ctx, expression) do
     expression = eval!(expression, ctx) |> to_string()
     String.trim(expression) != ""
@@ -1498,19 +1446,12 @@ defmodule Expression.Callbacks.Standard do
 
   @doc """
   Tests whether `expression` contains a time.
-
-  # Examples
-
-      iex> Expression.evaluate!("@has_time(\\"the time is 10:30\\")")
-      true
-      iex> Expression.evaluate!("@has_time(\\"the time is 10:00 pm\\")")
-      true
-      iex> Expression.evaluate!("@has_time(\\"the time is 10:30:45\\")")
-      true
-      iex> Expression.evaluate!("@has_time(\\"there is no time here, just the number 25\\")")
-      false
-
   """
+  @expression_doc expression: "has_time(\"the time is 10:30\")", result: true
+  @expression_doc expression: "has_time(\"the time is 10:00 pm\")", result: true
+  @expression_doc expression: "has_time(\"the time is 10:30:45\")", result: true
+  @expression_doc expression: "has_time(\"there is no time here, just the number 25\")",
+                  result: false
   def has_time(ctx, expression) do
     case DateTimeParser.parse_time(eval!(expression, ctx)) do
       # Future match result: time
