@@ -211,7 +211,7 @@ defmodule Expression.Autodoc do
 
     ```elixir
     #{inspect(context)}
-    ```.
+    ```
     """
   end
 
