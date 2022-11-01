@@ -75,24 +75,25 @@ defmodule Expression.Autodoc do
       |> Enum.map_join("\n", fn {expression_doc, index} ->
         doc = expression_doc[:doc]
         expression = expression_doc[:expression]
-        context = expression_doc[:context] || %{}
+        code_expression = expression_doc[:code_expression] || expression_doc[:expression]
+        context = expression_doc[:context]
 
-        {real_test, result} =
-          if result = expression_doc[:result] do
-            {true, result}
+        {doctest_prompt, result} =
+          if is_nil(expression_doc[:fake_result]) do
+            {"iex", expression_doc[:result]}
           else
-            {false, expression_doc[:fake_result]}
+            {"..$", expression_doc[:fake_result]}
           end
 
         """
         ## Example #{index}:
+        #{if(doc, do: "\n> #{doc}\n", else: "")}
 
-          > #{doc}
-
-        When used as a Stack expression it returns a #{format_result(result)}#{format_context(context)}
+        When used in the following Stack expression it returns a #{format_result(result)}#{format_context(context)}
 
         ```
-        #{expression} -> #{inspect(result)}
+        > #{Enum.join(String.split(code_expression, "\n"), "\n> ")}
+        #{inspect(result)}
         ```
 
         When used as an expression in text, prepend it with an `@`:
@@ -102,18 +103,7 @@ defmodule Expression.Autodoc do
         "#{stringify(result)}"
         ```
 
-            #{if(real_test, do: "iex", else: "  $")}> result = Expression.evaluate_block!(
-            ...>   #{inspect(expression)},
-            ...>   #{inspect(context)}
-            ...> )
-            #{if(real_test, do: "iex", else: "  $")}> match?(#{inspect(result)}, result)
-            true
-
-            #{if(real_test, do: "iex", else: "  $")}> Expression.evaluate_as_string!(
-            ...>   #{inspect("@" <> expression)},
-            ...>   #{inspect(context)}
-            ...> )
-            #{inspect(stringify(result))}
+        #{generate_ex_doc(doctest_prompt, expression, context || %{}, result)}
 
         ---
 
@@ -141,6 +131,37 @@ defmodule Expression.Autodoc do
     ])
   end
 
+  def generate_ex_doc(prompt \\ "iex", expression, context, result) do
+    """
+        #{prompt}> import ExUnit.Assertions
+        #{prompt}> result = Expression.evaluate_block!(
+        ...>   #{inspect(expression)},
+        ...>   #{inspect(context || %{})}
+        ...> )
+        #{generate_assert(prompt, result)}
+        #{prompt}> Expression.evaluate_as_string!(
+        ...>   #{inspect("@" <> expression)},
+        ...>   #{inspect(context || %{})}
+        ...> )
+        #{inspect(stringify(result))}
+    """
+  end
+
+  def generate_assert(prompt, result) when is_nil(result) or result == false do
+    Enum.join(["#{prompt}> refute result", "#{inspect(result)}"], "\n    ")
+  end
+
+  def generate_assert(prompt, result) do
+    Enum.join(
+      [
+        "#{prompt}> assert #{inspect(result)} = result",
+        "#{inspect(result)}"
+      ],
+      "\n    "
+    )
+  end
+
+  def type_of(%Time{}), do: "Time"
   def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
   def type_of(%Decimal{}), do: "Decimal"
@@ -149,6 +170,9 @@ defmodule Expression.Autodoc do
   def type_of(integer) when is_integer(integer), do: "Integer"
   def type_of(float) when is_float(float), do: "Float"
   def type_of(binary) when is_binary(binary), do: "String"
+
+  def type_of(list) when is_list(list),
+    do: "List with values " <> Enum.map_join(list, ", ", &type_of/1)
 
   def stringify(%{"__value__" => value}), do: Expression.stringify(value)
   def stringify(value), do: Expression.stringify(value)
@@ -177,9 +201,9 @@ defmodule Expression.Autodoc do
     """
   end
 
-  def format_result(result), do: " value of type **#{type_of(result)}**: `#{inspect(result)}`."
+  def format_result(result), do: " value of type **#{type_of(result)}**: `#{inspect(result)}`"
 
-  def format_context(%{}), do: "."
+  def format_context(nil), do: "."
 
   def format_context(context) do
     """

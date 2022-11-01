@@ -1,24 +1,21 @@
 defmodule Expression.Callbacks do
   @moduledoc """
-  The function callbacks for the standard function set available
-  in FLOIP expressions.
+  Use this module to implement one's own callbacks.
+  The standard callbacks available are implemented in `Expression.Callbacks.Standard`.
 
-  This should be relatively swappable with another implementation.
-  The only requirement is the `handle/3` function.
+  ```elixir
+  defmodule MyCallbacks do
+    use Expression.Callbacks
 
-  FLOIP functions are case insensitive. All functions in this callback
-  module are implemented as lowercase names.
+    @doc \"\"\"
+    Roll a dice and randomly return a number between 1 and 6.
+    \"\"\"
+    def dice_roll(ctx) do
+      Enum.random(1..6)
+    end
 
-  Some functions accept a variable amount of arguments. Elixir doesn't
-  support variable arguments in functions.
-
-  If a function accepts a variable number of arguments the convention
-  is to call the `<function_name>_vargs/2` callback where the context
-  is given as the first argument and the argument list as a second
-  argument.
-
-  Reserved names such as `and`, `if`, and `or` are suffixed with an
-  underscore.
+  end
+  ```
   """
 
   alias Expression.Callbacks.Standard
