@@ -10,7 +10,7 @@ defmodule Expression.EvalTest do
   test "substitutions in substitutions" do
     assert "Your application was successful" ==
              Expression.evaluate_as_string!(
-               "Your application @if(conditional, \"was @confirm\", \"was @deny\")",
+               ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
                %{
                  "conditional" => true,
                  "confirm" => "successful",
@@ -20,7 +20,7 @@ defmodule Expression.EvalTest do
 
     assert "Your application was unsuccessful" ==
              Expression.evaluate_as_string!(
-               "Your application @if(conditional, \"was @confirm\", \"was @deny\")",
+               ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
                %{
                  "conditional" => false,
                  "confirm" => "successful",
