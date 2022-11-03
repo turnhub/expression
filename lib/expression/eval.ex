@@ -119,7 +119,12 @@ defmodule Expression.Eval do
     end
   end
 
+  def eval!({:literal, literal}, context, mod) when is_binary(literal) do
+    Expression.evaluate_as_string!(literal, context, mod)
+  end
+
   def eval!({:literal, literal}, _context, _mod), do: literal
+
   def eval!({:text, text}, _context, _mod), do: text
 
   def eval!({operator, [a, b]}, ctx, mod) when operator in @kernel_operators do
