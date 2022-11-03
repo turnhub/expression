@@ -7,6 +7,28 @@ defmodule Expression.EvalTest do
     assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
+  test "substitutions in substitutions" do
+    assert "Your application was successful" ==
+             Expression.evaluate_as_string!(
+               "Your application @if(conditional, \"was @confirm\", \"was @deny\")",
+               %{
+                 "conditional" => true,
+                 "confirm" => "successful",
+                 "deny" => "unsuccessful"
+               }
+             )
+
+    assert "Your application was unsuccessful" ==
+             Expression.evaluate_as_string!(
+               "Your application @if(conditional, \"was @confirm\", \"was @deny\")",
+               %{
+                 "conditional" => false,
+                 "confirm" => "successful",
+                 "deny" => "unsuccessful"
+               }
+             )
+  end
+
   test "attributes on substitutions" do
     assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
   end
