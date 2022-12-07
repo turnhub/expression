@@ -184,6 +184,9 @@ defmodule Expression.Eval do
     apply(Kernel, operator, args)
   end
 
+  @doc """
+  Return the default value for a potentially complex value.
+  """
   def default_value(val, opts \\ [])
   def default_value(%{"__value__" => default_value}, _opts), do: default_value
 
@@ -195,6 +198,7 @@ defmodule Expression.Eval do
     do: Enum.map(items, &default_value(&1, opts))
 
   def default_value(value, _opts), do: value
+
   def decimal_op(:+, a, b), do: Decimal.add(a, b)
   def decimal_op(:*, a, b), do: Decimal.mult(a, b)
   def decimal_op(:/, a, b), do: Decimal.div(a, b)
