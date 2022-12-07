@@ -173,17 +173,28 @@ defmodule Expression.Eval do
     args =
       [a, b]
       |> Enum.map(&guard_type!(&1, :num))
-      |> Enum.map(&Expression.default_value/1)
+      |> Enum.map(&default_value/1)
 
     apply(Kernel, operator, args)
   end
 
   # just leave it to the Kernel to figure out at this stage
   def op(operator, a, b) when operator in @kernel_operators do
-    args = Enum.map([a, b], &Expression.default_value/1)
+    args = Enum.map([a, b], &default_value/1)
     apply(Kernel, operator, args)
   end
 
+  def default_value(val, opts \\ [])
+  def default_value(%{"__value__" => default_value}, _opts), do: default_value
+
+  def default_value({:not_found, attributes}, opts) do
+    if(opts[:handle_not_found], do: "@#{Enum.join(attributes, ".")}", else: nil)
+  end
+
+  def default_value(items, opts) when is_list(items),
+    do: Enum.map(items, &default_value(&1, opts))
+
+  def default_value(value, _opts), do: value
   def decimal_op(:+, a, b), do: Decimal.add(a, b)
   def decimal_op(:*, a, b), do: Decimal.mult(a, b)
   def decimal_op(:/, a, b), do: Decimal.div(a, b)

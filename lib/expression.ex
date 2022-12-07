@@ -87,14 +87,14 @@ defmodule Expression do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
-    |> default_value()
+    |> Eval.default_value()
   end
 
   def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
-    |> default_value(handle_not_found: true)
+    |> Eval.default_value(handle_not_found: true)
     |> stringify()
   end
 
@@ -121,18 +121,6 @@ defmodule Expression do
   def stringify(%Decimal{} = decimal), do: Decimal.to_string(decimal, :normal)
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
-
-  def default_value(val, opts \\ [])
-  def default_value(%{"__value__" => default_value}, _opts), do: default_value
-
-  def default_value({:not_found, attributes}, opts) do
-    if(opts[:handle_not_found], do: "@#{Enum.join(attributes, ".")}", else: nil)
-  end
-
-  def default_value(items, opts) when is_list(items),
-    do: Enum.map(items, &default_value(&1, opts))
-
-  def default_value(value, _opts), do: value
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}
