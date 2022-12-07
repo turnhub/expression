@@ -122,17 +122,17 @@ defmodule Expression do
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 
-  defp default_value(val, opts \\ [])
-  defp default_value(%{"__value__" => default_value}, _opts), do: default_value
+  def default_value(val, opts \\ [])
+  def default_value(%{"__value__" => default_value}, _opts), do: default_value
 
-  defp default_value({:not_found, attributes}, opts) do
+  def default_value({:not_found, attributes}, opts) do
     if(opts[:handle_not_found], do: "@#{Enum.join(attributes, ".")}", else: nil)
   end
 
-  defp default_value(items, opts) when is_list(items),
+  def default_value(items, opts) when is_list(items),
     do: Enum.map(items, &default_value(&1, opts))
 
-  defp default_value(value, _opts), do: value
+  def default_value(value, _opts), do: value
 
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}

@@ -85,6 +85,20 @@ defmodule ExpressionTest do
                })
     end
 
+    @tag :current
+    test "operators against default values" do
+      assert %{"__value__" => to_string(Date.utc_today()), "date" => Date.utc_today()} ==
+               Expression.evaluate_block!("datevalue(today(), '%Y-%m-%d')")
+
+      assert Expression.evaluate_block!("date == today()", %{
+               "date" => Date.utc_today()
+             })
+
+      assert Expression.evaluate_block!("date == datevalue(today(), '%Y-%m-%d')", %{
+               "date" => to_string(Date.utc_today())
+             })
+    end
+
     test "example logical comparison between integers" do
       assert {:ok, true} ==
                Expression.evaluate("@(contact.age > 18)", %{"contact" => %{"age" => 20}})

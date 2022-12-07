@@ -113,6 +113,7 @@ defmodule Expression.Eval do
     key = eval!(key_ast, context, mod)
 
     case key do
+      {:not_found, _} -> nil
       index when is_number(index) -> get_in(subject, [Access.at(index)])
       range when is_struct(range, Range) -> Enum.slice(subject, range)
       binary when is_binary(binary) -> Map.get(subject, binary)
@@ -169,12 +170,18 @@ defmodule Expression.Eval do
 
   # when acting on any other supported type but still expected to be numeric
   def op(operator, a, b) when operator in @numeric_kernel_operators do
-    apply(Kernel, operator, [guard_type!(a, :num), guard_type!(b, :num)])
+    args =
+      [a, b]
+      |> Enum.map(&guard_type!(&1, :num))
+      |> Enum.map(&Expression.default_value/1)
+
+    apply(Kernel, operator, args)
   end
 
   # just leave it to the Kernel to figure out at this stage
   def op(operator, a, b) when operator in @kernel_operators do
-    apply(Kernel, operator, [a, b])
+    args = Enum.map([a, b], &Expression.default_value/1)
+    apply(Kernel, operator, args)
   end
 
   def decimal_op(:+, a, b), do: Decimal.add(a, b)
@@ -199,5 +206,11 @@ defmodule Expression.Eval do
   defp guard_type!({:not_found, attributes}, :num),
     do: raise("attribute is not found: `#{Enum.join(attributes, ".")}`")
 
+  defp guard_type!({:not_found, attributes}, _),
+    do: raise("attribute is not found: `#{Enum.join(attributes, ".")}`")
+
   defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
+
+  def handle_not_found({:not_found, _}), do: nil
+  def handle_not_found(value), do: value
 end
