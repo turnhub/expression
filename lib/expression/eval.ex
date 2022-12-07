@@ -186,6 +186,10 @@ defmodule Expression.Eval do
 
   @doc """
   Return the default value for a potentially complex value.
+
+  Complex values can be Maps that have a `__value__` key, if that's
+  returned then we can to use the `__value__` value when eval'ing against
+  operators or functions.
   """
   def default_value(val, opts \\ [])
   def default_value(%{"__value__" => default_value}, _opts), do: default_value
