@@ -85,7 +85,6 @@ defmodule ExpressionTest do
                })
     end
 
-    @tag :current
     test "operators against default values" do
       assert %{"__value__" => to_string(Date.utc_today()), "date" => Date.utc_today()} ==
                Expression.evaluate_block!("datevalue(today(), '%Y-%m-%d')")
