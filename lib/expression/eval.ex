@@ -113,6 +113,7 @@ defmodule Expression.Eval do
     key = eval!(key_ast, context, mod)
 
     case key do
+      {:not_found, _} -> nil
       index when is_number(index) -> get_in(subject, [Access.at(index)])
       range when is_struct(range, Range) -> Enum.slice(subject, range)
       binary when is_binary(binary) -> Map.get(subject, binary)
@@ -169,13 +170,38 @@ defmodule Expression.Eval do
 
   # when acting on any other supported type but still expected to be numeric
   def op(operator, a, b) when operator in @numeric_kernel_operators do
-    apply(Kernel, operator, [guard_type!(a, :num), guard_type!(b, :num)])
+    args =
+      [a, b]
+      |> Enum.map(&guard_type!(&1, :num))
+      |> Enum.map(&default_value/1)
+
+    apply(Kernel, operator, args)
   end
 
   # just leave it to the Kernel to figure out at this stage
   def op(operator, a, b) when operator in @kernel_operators do
-    apply(Kernel, operator, [a, b])
+    args = Enum.map([a, b], &default_value/1)
+    apply(Kernel, operator, args)
   end
+
+  @doc """
+  Return the default value for a potentially complex value.
+
+  Complex values can be Maps that have a `__value__` key, if that's
+  returned then we can to use the `__value__` value when eval'ing against
+  operators or functions.
+  """
+  def default_value(val, opts \\ [])
+  def default_value(%{"__value__" => default_value}, _opts), do: default_value
+
+  def default_value({:not_found, attributes}, opts) do
+    if(opts[:handle_not_found], do: "@#{Enum.join(attributes, ".")}", else: nil)
+  end
+
+  def default_value(items, opts) when is_list(items),
+    do: Enum.map(items, &default_value(&1, opts))
+
+  def default_value(value, _opts), do: value
 
   def decimal_op(:+, a, b), do: Decimal.add(a, b)
   def decimal_op(:*, a, b), do: Decimal.mult(a, b)
@@ -199,5 +225,11 @@ defmodule Expression.Eval do
   defp guard_type!({:not_found, attributes}, :num),
     do: raise("attribute is not found: `#{Enum.join(attributes, ".")}`")
 
+  defp guard_type!({:not_found, attributes}, _),
+    do: raise("attribute is not found: `#{Enum.join(attributes, ".")}`")
+
   defp guard_type!(v, :num), do: raise("expression is not a number: `#{inspect(v)}`")
+
+  def handle_not_found({:not_found, _}), do: nil
+  def handle_not_found(value), do: value
 end
