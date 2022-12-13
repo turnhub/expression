@@ -22,6 +22,7 @@ defmodule Expression.Callbacks.Standard do
   """
 
   import Expression.Callbacks.EvalHelpers
+  use Expression.Callbacks
   use Expression.Autodoc
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
