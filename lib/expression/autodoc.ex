@@ -103,7 +103,7 @@ defmodule Expression.Autodoc do
         "#{stringify(result)}"
         ```
 
-        #{generate_ex_doc(doctest_prompt, expression, context || %{}, result)}
+        #{generate_ex_doc(doctest_prompt, module, expression, context || %{}, result)}
 
         ---
 
@@ -131,17 +131,19 @@ defmodule Expression.Autodoc do
     ])
   end
 
-  def generate_ex_doc(prompt \\ "iex", expression, context, result) do
+  def generate_ex_doc(prompt \\ "iex", module, expression, context, result) do
     """
         #{prompt}> import ExUnit.Assertions
         #{prompt}> result = Expression.evaluate_block!(
         ...>   #{inspect(expression)},
-        ...>   #{inspect(context || %{})}
+        ...>   #{inspect(context || %{})},
+        ...>   #{module}
         ...> )
         #{generate_assert(prompt, result)}
         #{prompt}> Expression.evaluate_as_string!(
         ...>   #{inspect("@" <> expression)},
-        ...>   #{inspect(context || %{})}
+        ...>   #{inspect(context || %{})},
+        ...>   #{module}
         ...> )
         #{inspect(stringify(result))}
     """
