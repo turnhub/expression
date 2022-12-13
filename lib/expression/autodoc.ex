@@ -137,13 +137,13 @@ defmodule Expression.Autodoc do
         #{prompt}> result = Expression.evaluate_block!(
         ...>   #{inspect(expression)},
         ...>   #{inspect(context || %{})},
-        ...>   #{module}
+        ...>   #{inspect(module)}
         ...> )
         #{generate_assert(prompt, result)}
         #{prompt}> Expression.evaluate_as_string!(
         ...>   #{inspect("@" <> expression)},
         ...>   #{inspect(context || %{})},
-        ...>   #{module}
+        ...>   #{inspect(module)}
         ...> )
         #{inspect(stringify(result))}
     """
