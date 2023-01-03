@@ -62,6 +62,10 @@ defmodule Expression do
     end
   end
 
+  def escape(expression) when is_binary(expression) do
+    String.replace(expression, ~r/@([a-z]+)(\(|\.)/i, "@@\\g{1}\\g{2}")
+  end
+
   def parse!(expression) do
     case Parser.parse(expression) do
       {:ok, ast, "", _, _, _} ->

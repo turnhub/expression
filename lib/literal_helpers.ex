@@ -23,22 +23,33 @@ defmodule Expression.LiteralHelpers do
   end
 
   def single_quoted_string do
-    ignore(string(~s(')))
-    |> repeat(
-      lookahead_not(ascii_char([?']))
-      |> choice([string(~s(\')), utf8_char([])])
+    ignore(ascii_char([?']))
+    |> repeat_while(
+      choice([
+        string(~S(\')) |> replace(?'),
+        utf8_char([])
+      ]),
+      {:not_single_quote, []}
     )
-    |> ignore(string(~s(')))
+    |> ignore(ascii_char([?']))
     |> reduce({List, :to_string, []})
   end
 
   def double_quoted_string do
-    ignore(string(~s(")))
-    |> repeat(
-      lookahead_not(ascii_char([?"]))
-      |> choice([string(~s(\")), utf8_char([])])
+    ignore(ascii_char([?"]))
+    |> repeat_while(
+      choice([
+        string(~S(\")) |> replace(?"),
+        utf8_char([])
+      ]),
+      {:not_double_quote, []}
     )
-    |> ignore(string(~s(")))
+    |> ignore(ascii_char([?"]))
     |> reduce({List, :to_string, []})
   end
+
+  def not_double_quote(<<?", _::binary>>, context, _, _), do: {:halt, context}
+  def not_double_quote(_, context, _, _), do: {:cont, context}
+  def not_single_quote(<<?', _::binary>>, context, _, _), do: {:halt, context}
+  def not_single_quote(_, context, _, _), do: {:cont, context}
 end
