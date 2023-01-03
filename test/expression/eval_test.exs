@@ -12,6 +12,7 @@ defmodule Expression.EvalTest do
              Expression.evaluate_block!(~S("string with quotes \" inside"))
 
     # Note the escaping of the @IF here with an @
+    # credo:disable-for-lines:2 Credo.Check.Readability.StringSigils
     assert true ==
              Expression.evaluate_block!(
                "block.response = \"@@IF(cursor + 1 < total_items, \\\"Next article ➡️\\\", \\\"⏮ First article\\\")\"",
