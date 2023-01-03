@@ -295,4 +295,12 @@ defmodule ExpressionTest do
       end
     end
   end
+
+  @tag :current
+  test "escaping" do
+    assert "@@if(foo, bar, baz)" == Expression.escape("@if(foo, bar, baz)")
+    assert "@@bar.baz" == Expression.escape("@bar.baz")
+    assert "@@if(foo, @bar, baz)" == Expression.escape("@if(foo, @bar, baz)")
+    assert "@@if(foo, @@bar.baz, baz)" == Expression.escape("@if(foo, @bar.baz, baz)")
+  end
 end
