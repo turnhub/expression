@@ -96,6 +96,10 @@ defmodule ExpressionTest do
       assert Expression.evaluate_block!("date == datevalue(today(), '%Y-%m-%d')", %{
                "date" => to_string(Date.utc_today())
              })
+
+      assert Expression.evaluate_block!("block.value = \"1\"", %{
+               "block" => %{"value" => %{"__value__" => "1", "label" => "1", "name" => "1"}}
+             })
     end
 
     test "example logical comparison between integers" do

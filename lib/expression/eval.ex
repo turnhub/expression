@@ -192,6 +192,10 @@ defmodule Expression.Eval do
   operators or functions.
   """
   def default_value(val, opts \\ [])
+
+  def default_value(%{"__value__" => default_value}, _opts) when is_integer(default_value),
+    do: to_string(default_value)
+
   def default_value(%{"__value__" => default_value}, _opts), do: default_value
 
   def default_value({:not_found, attributes}, opts) do
