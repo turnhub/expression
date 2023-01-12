@@ -98,6 +98,44 @@ defmodule ExpressionTest do
              })
     end
 
+    test "operators against datetimes" do
+      ctx = %{
+        "contact" => %{
+          "reminder_timestamp" => "2023-01-12T14:49:18.957984Z"
+        }
+      }
+
+      assert false ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp < datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert false ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp <= datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert true ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp > datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert true ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp >= datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert true ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp == datetime_add(contact.reminder_timestamp, 0, \"M\")",
+                 ctx
+               )
+    end
+
     test "example logical comparison between integers" do
       assert {:ok, true} ==
                Expression.evaluate("@(contact.age > 18)", %{"contact" => %{"age" => 20}})
