@@ -168,6 +168,42 @@ defmodule Expression.Eval do
     decimal_op(operator, a, b)
   end
 
+  def op(:>, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
+    do: DateTime.compare(a, b) == :gt
+
+  def op(:>=, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
+    do: DateTime.compare(a, b) in [:gt, :eq]
+
+  def op(:<, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
+    do: DateTime.compare(a, b) == :lt
+
+  def op(:<=, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
+    do: DateTime.compare(a, b) in [:lt, :eq]
+
+  def op(:==, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
+    do: DateTime.compare(a, b) == :eq
+
+  def op(:=, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) == :eq
+
+  def op(:>, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) == :gt
+
+  def op(:>=, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) in [:gt, :eq]
+
+  def op(:<, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) == :lt
+
+  def op(:<=, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) in [:lt, :eq]
+
+  def op(:==, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) == :eq
+
+  def op(:=, a, b) when is_struct(a, Date) and is_struct(b, Date),
+    do: Date.compare(a, b) == :eq
+
   # when acting on any other supported type but still expected to be numeric
   def op(operator, a, b) when operator in @numeric_kernel_operators do
     args =

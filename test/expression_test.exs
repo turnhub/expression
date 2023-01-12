@@ -85,6 +85,7 @@ defmodule ExpressionTest do
                })
     end
 
+    @tag :current
     test "operators against default values" do
       assert %{"__value__" => to_string(Date.utc_today()), "date" => Date.utc_today()} ==
                Expression.evaluate_block!("datevalue(today(), '%Y-%m-%d')")
@@ -96,6 +97,45 @@ defmodule ExpressionTest do
       assert Expression.evaluate_block!("date == datevalue(today(), '%Y-%m-%d')", %{
                "date" => to_string(Date.utc_today())
              })
+    end
+
+    @tag :current
+    test "operators against datetimes" do
+      ctx = %{
+        "contact" => %{
+          "reminder_timestamp" => "2023-01-12T14:49:18.957984Z"
+        }
+      }
+
+      assert false ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp < datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert false ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp <= datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert true ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp > datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert true ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp >= datetime_add(contact.reminder_timestamp, -1, \"M\")",
+                 ctx
+               )
+
+      assert true ==
+               Expression.evaluate_block!(
+                 "contact.reminder_timestamp == datetime_add(contact.reminder_timestamp, 0, \"M\")",
+                 ctx
+               )
     end
 
     test "example logical comparison between integers" do
