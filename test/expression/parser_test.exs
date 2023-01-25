@@ -76,6 +76,8 @@ defmodule Expression.ParserTest do
     test "literals" do
       assert_ast([expression: [literal: 1]], "@(1)")
       assert_ast([expression: [literal: -1]], "@(-1)")
+      assert_ast([expression: [literal: 123_456]], "@(123_456)")
+      assert_ast([expression: [literal: -123_456]], "@(-123_456)")
       assert_ast([expression: [literal: true]], "@(tRuE)")
       assert_ast([expression: [literal: false]], "@(fAlSe)")
       assert_ast([expression: [literal: Decimal.new("1.23")]], "@(1.23)")
