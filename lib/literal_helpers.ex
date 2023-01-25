@@ -4,7 +4,13 @@ defmodule Expression.LiteralHelpers do
 
   def int do
     optional(string("-"))
-    |> concat(integer(min: 1))
+    |> times(
+      choice([
+        integer(min: 1),
+        ignore(utf8_char([?_]))
+      ]),
+      min: 1
+    )
     |> reduce({Enum, :join, [""]})
     |> map({String, :to_integer, []})
   end
