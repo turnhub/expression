@@ -2,7 +2,6 @@ defmodule ExpressionContextTest do
   use ExUnit.Case, async: true
   doctest Expression.Context
 
-  @tag :current
   test "context with underscores" do
     assert %{
              "trouble" => "_she_calls_me_princes___🤔",
