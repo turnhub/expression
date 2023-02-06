@@ -87,6 +87,11 @@ defmodule Expression.ParserTest do
         [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],
         "@(2022-05-24T00:00:00)"
       )
+
+      assert_ast(
+        [expression: [literal: "_she_calls_me_princes___🤔"]],
+        "@(\"_she_calls_me_princes___🤔\")"
+      )
     end
 
     test "lists" do
