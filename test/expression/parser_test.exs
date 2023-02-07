@@ -82,6 +82,7 @@ defmodule Expression.ParserTest do
       assert_ast([expression: [literal: false]], "@(fAlSe)")
       assert_ast([expression: [literal: Decimal.new("1.23")]], "@(1.23)")
       assert_ast([expression: [literal: Decimal.new("-1.23")]], "@(-1.23)")
+      assert_ast([expression: [literal: Decimal.new("-0.00002")]], "@(-0.00002)")
 
       assert_ast(
         [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],
