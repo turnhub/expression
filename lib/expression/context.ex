@@ -70,6 +70,8 @@ defmodule Expression.Context do
       # when we're getting something entirely unexpected
       {:error, _reason, _, _, _, _} -> binary
     end
+  rescue
+    ArgumentError -> binary
   end
 
   defp evaluate!(value), do: value
