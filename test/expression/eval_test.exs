@@ -190,6 +190,8 @@ defmodule Expression.EvalTest do
     assert Decimal.new("1.14286") == Decimal.round(Eval.eval!(ast, %{}), 5)
     {:ok, ast, "", _, _, _} = Parser.parse("@(6.8 / 2.0 + 1.5)")
     assert Decimal.new("4.9") == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(2.002 * 0.05)")
+    assert Decimal.new("0.10010") == Eval.eval!(ast, %{})
   end
 
   test "text" do
