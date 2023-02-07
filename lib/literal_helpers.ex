@@ -17,9 +17,9 @@ defmodule Expression.LiteralHelpers do
 
   def decimal do
     optional(string("-"))
-    |> concat(integer(min: 1))
+    |> concat(utf8_string([?0..?9], min: 1))
     |> concat(string("."))
-    |> concat(integer(min: 1))
+    |> concat(utf8_string([?0..?9], min: 1))
     |> reduce({Enum, :join, [""]})
     |> map({Decimal, :new, []})
   end
