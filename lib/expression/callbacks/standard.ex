@@ -26,6 +26,20 @@ defmodule Expression.Callbacks.Standard do
   use Expression.Autodoc
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
+  @datetime_struct %DateTime{
+    calendar: Calendar.ISO,
+    day: nil,
+    hour: nil,
+    microsecond: {0, 0},
+    minute: nil,
+    month: 2,
+    second: 0,
+    std_offset: 0,
+    time_zone: "America/Sao_Paulo",
+    utc_offset: -10_800,
+    year: 2023,
+    zone_abbr: "-03"
+  }
   @doc """
   Defines a new date value
   """
@@ -98,6 +112,80 @@ defmodule Expression.Callbacks.Standard do
       "m" -> Timex.shift(datetime, minutes: offset)
       "s" -> Timex.shift(datetime, seconds: offset)
     end
+  end
+
+  @doc """
+  Calculates a new datetime based on a base date, a desired day and a desired time.
+
+  If no base date is supplied, it will fallback to current time.
+  """
+  @expression_doc doc:
+                    "Shifts a datetime to the next occurrence of a given day of the week and a set time.",
+                  expression: "next(\"monday\", \"10:00\", datetime)",
+                  context: %{
+                    "datetime" => ~U[2023-02-03 20:18:03Z],
+                    "number" => %{"from_addr" => "+552197295926"}
+                  },
+                  fake_result: Map.merge(@datetime_struct, %{day: 6, hour: 10, minute: 0})
+  @expression_doc doc:
+                    "If the day of the week is the same as the base date, the next occurrence is 7 days later.",
+                  expression: "next(\"thursday\", \"10:30\", datetime)",
+                  context: %{
+                    "datetime" => ~U[2023-02-02 20:18:03Z],
+                    "number" => %{"from_addr" => "+552197295926"}
+                  },
+                  fake_result: Map.merge(@datetime_struct, %{day: 9, hour: 10, minute: 30})
+  @spec next(map, {:literal, String.t()}, {:literal, String.t()}, any) :: DateTime.t()
+  def next(
+        %{"number" => %{"from_addr" => from_addr}} = ctx,
+        desired_day,
+        time,
+        base_date \\ DateTime.utc_now()
+      ) do
+    base_date =
+      if is_struct(base_date) == false,
+        do: extract_datetimeish(eval!(base_date, ctx)),
+        else: base_date
+
+    [desired_day, time] = eval_args!([desired_day, time], ctx)
+
+    [hour, minute] = time |> String.split(":") |> Enum.map(&String.to_integer/1)
+
+    # here we turn the days of the week into integers so we can calculate whether the desired date weekday falls before
+    # the base date or after
+    num_base_date = Timex.weekday(base_date)
+    num_desired_day = Timex.day_to_num(desired_day)
+
+    # get the timezone based on the person's phone number
+    timezone =
+      from_addr
+      |> Expression.DateHelpers.timezones_for_e164()
+      |> List.first()
+
+    cond do
+      # if the base date falls on the same day of the week as the desired date,
+      # it will be scheduled for the following week
+      num_base_date == num_desired_day ->
+        base_date
+        |> Timex.shift(days: 7)
+        |> Timex.set(hour: hour, minute: minute, second: 0, timezone: timezone)
+
+      num_base_date > num_desired_day ->
+        base_date
+        |> Timex.shift(days: 7 - (num_base_date - num_desired_day))
+        |> Timex.set(hour: hour, minute: minute, second: 0, timezone: timezone)
+
+      num_base_date < num_desired_day ->
+        base_date
+        |> Timex.shift(days: num_desired_day - num_base_date)
+        |> Timex.set(hour: hour, minute: minute, second: 0, timezone: timezone)
+    end
+  end
+
+  def test(base_date, _number) do
+    base_date
+    |> Timex.shift(days: 5)
+    |> Timex.set(hour: 5, minute: 5, second: 0, timezone: "America/Sao_Paulo")
   end
 
   @doc """
@@ -1351,7 +1439,7 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
-  Tests whether `expresssion` contains a phone number.
+  Tests whether `expression` contains a phone number.
   The optional country_code argument specifies the country to use for parsing.
   """
   @expression_doc expression: "has_phone(\"my number is +12067799294 thanks\")", result: true
