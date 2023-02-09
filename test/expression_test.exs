@@ -93,7 +93,7 @@ defmodule ExpressionTest do
                "date" => Date.utc_today()
              })
 
-      assert Expression.evaluate_block!("date == datevalue(today(), '%Y-%m-%d')", %{
+      assert Expression.evaluate_block!("date == datevalue(today(), '%Y-%m-%d').date", %{
                "date" => to_string(Date.utc_today())
              })
     end
