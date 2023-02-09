@@ -49,6 +49,7 @@ defmodule Expression do
   alias Expression.Eval
   alias Expression.Parser
 
+  @spec parse_expression(String.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def parse_expression(expression_block) do
     case Parser.aexpr(expression_block) do
       {:ok, ast, "", _, _, _} ->
@@ -62,6 +63,7 @@ defmodule Expression do
     end
   end
 
+  @spec parse_expression!(String.t()) :: Keyword.t()
   def parse_expression!(expression_block) do
     case Parser.aexpr(expression_block) do
       {:ok, ast, "", _, _, _} ->
@@ -75,10 +77,12 @@ defmodule Expression do
     end
   end
 
+  @spec escape(String.t()) :: String.t()
   def escape(expression) when is_binary(expression) do
     String.replace(expression, ~r/@([a-z]+)(\(|\.)/i, "@@\\g{1}\\g{2}")
   end
 
+  @spec parse!(String.t()) :: Keyword.t()
   def parse!(expression) do
     case Parser.parse(expression) do
       {:ok, ast, "", _, _, _} ->
