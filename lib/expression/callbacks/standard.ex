@@ -989,6 +989,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @spec extract_dateish(DateTime.t() | Date.t() | String.t()) :: Date.t() | nil
   defp extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
   defp extract_dateish(date) when is_struct(date, Date), do: date
 
@@ -1002,14 +1003,12 @@ defmodule Expression.Callbacks.Standard do
       {:ok, [{:literal, date}]} when is_struct(date, Date) ->
         date
 
-      {:ok, result} ->
-        result
-
       _other ->
         nil
     end
   end
 
+  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t()) :: DateTime.t() | nil
   defp extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
 
   defp extract_datetimeish(date) when is_struct(date, Date),
@@ -1025,14 +1024,12 @@ defmodule Expression.Callbacks.Standard do
       {:ok, [{:literal, date}]} when is_struct(date, Date) ->
         DateTime.new!(date, ~T[00:00:00])
 
-      {:ok, result} ->
-        result
-
       _other ->
         nil
     end
   end
 
+  @spec extract_timeish(DateTime.t() | Time.t() | String.t()) :: Time.t() | nil
   defp extract_timeish(datetime) when is_struct(datetime, DateTime),
     do: DateTime.to_time(datetime)
 
