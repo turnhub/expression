@@ -24,6 +24,8 @@ defmodule Expression.Parser do
     :literal,
     choice([
       datetime(),
+      date(),
+      time(),
       decimal(),
       int(),
       boolean(),

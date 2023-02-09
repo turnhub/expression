@@ -19,7 +19,7 @@ defmodule Expression.DateHelpers do
     |> integer(4)
   end
 
-  def us_time(combinator \\ empty()) do
+  def plain_time(combinator \\ empty()) do
     combinator
     |> integer(2)
     |> ignore(string(":"))
@@ -32,7 +32,7 @@ defmodule Expression.DateHelpers do
     combinator
     |> us_date()
     |> ignore(string(" "))
-    |> concat(us_time())
+    |> concat(plain_time())
   end
 
   def iso_date(combinator \\ empty()) do
@@ -67,6 +67,12 @@ defmodule Expression.DateHelpers do
     |> concat(iso_time())
   end
 
+  def time(combinator \\ empty()) do
+    combinator
+    |> plain_time()
+    |> reduce(:to_time)
+  end
+
   def date(combinator \\ empty()) do
     combinator
     |> choice([
@@ -82,10 +88,18 @@ defmodule Expression.DateHelpers do
       tag(us_datetime(), :us_format),
       tag(iso_datetime(), :iso_format)
     ])
-    |> reduce(:to_date)
+    |> reduce(:to_datetime)
   end
 
-  def to_date(opts) do
+  def to_time(parsed_values) do
+    values =
+      [:hour, :minute, :second]
+      |> Enum.zip(parsed_values)
+
+    Time.new!(values[:hour], values[:minute], values[:second] || 0)
+  end
+
+  def to_datetime(opts) do
     values =
       case opts do
         [iso_format: parsed_value] ->
@@ -122,5 +136,18 @@ defmodule Expression.DateHelpers do
       |> Keyword.merge(values)
 
     struct(DateTime, fields)
+  end
+
+  def to_date(opts) do
+    values =
+      case opts do
+        [iso_format: parsed_value] ->
+          Enum.zip([:year, :month, :day], parsed_value)
+
+        [us_format: parsed_value] ->
+          Enum.zip([:day, :month, :year], parsed_value)
+      end
+
+    Date.new!(values[:year], values[:month], values[:day])
   end
 end

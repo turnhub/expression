@@ -49,6 +49,19 @@ defmodule Expression do
   alias Expression.Eval
   alias Expression.Parser
 
+  def parse_expression(expression_block) do
+    case Parser.aexpr(expression_block) do
+      {:ok, ast, "", _, _, _} ->
+        {:ok, ast}
+
+      {:ok, _ast, remainder, _, _, _} ->
+        {:error, "Unable to parse: #{inspect(remainder)}"}
+
+      {:error, reason, problematic, _, _, _} ->
+        {:error, "#{reason} in #{inspect(problematic)}"}
+    end
+  end
+
   def parse_expression!(expression_block) do
     case Parser.aexpr(expression_block) do
       {:ok, ast, "", _, _, _} ->

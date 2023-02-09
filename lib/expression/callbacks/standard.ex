@@ -992,12 +992,21 @@ defmodule Expression.Callbacks.Standard do
   defp extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
   defp extract_dateish(date) when is_struct(date, Date), do: date
 
-  defp extract_dateish(expression) do
+  defp extract_dateish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
-    case DateTimeParser.parse_date(expression) do
-      {:ok, date} -> date
-      {:error, _} -> nil
+    case Expression.parse_expression(expression) do
+      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
+        DateTime.to_date(datetime)
+
+      {:ok, [{:literal, date}]} when is_struct(date, Date) ->
+        date
+
+      {:ok, result} ->
+        result
+
+      _other ->
+        nil
     end
   end
 
@@ -1006,12 +1015,45 @@ defmodule Expression.Callbacks.Standard do
   defp extract_datetimeish(date) when is_struct(date, Date),
     do: DateTime.new!(date, Time.new!(0, 0, 0, 0))
 
-  defp extract_datetimeish(expression) do
+  defp extract_datetimeish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
-    case DateTimeParser.parse_datetime(expression) do
-      {:ok, date} -> date
-      {:error, _} -> nil
+    case Expression.parse_expression(expression) do
+      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
+        datetime
+
+      {:ok, [{:literal, date}]} when is_struct(date, Date) ->
+        DateTime.new!(date, ~T[00:00:00])
+
+      {:ok, result} ->
+        result
+
+      _other ->
+        nil
+    end
+  end
+
+  defp extract_timeish(datetime) when is_struct(datetime, DateTime),
+    do: DateTime.to_time(datetime)
+
+  defp extract_timeish(time) when is_struct(time, Time),
+    do: time
+
+  defp extract_timeish(expression) when is_binary(expression) do
+    expression = Regex.replace(~r/[a-z\s]/u, expression, "")
+
+    case Expression.parse_expression(expression) do
+      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
+        DateTime.to_time(datetime)
+
+      {:ok, [{:literal, time}]} when is_struct(time, Time) ->
+        time
+
+      {:ok, result} ->
+        result
+
+      _other ->
+        nil
     end
   end
 
@@ -1415,16 +1457,22 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a time.
   """
-  @expression_doc expression: "has_time(\"the time is 10:30\")", result: true
-  @expression_doc expression: "has_time(\"the time is 10:00 pm\")", result: true
-  @expression_doc expression: "has_time(\"the time is 10:30:45\")", result: true
+  @expression_doc expression: "has_time(\"the time is 10:30\")",
+                  result: %{"__value__" => true, "match" => ~T[10:30:00]}
+  @expression_doc expression: "has_time(\"the time is 10:00 pm\")",
+                  result: %{"__value__" => true, "match" => ~T[10:00:00]}
+  @expression_doc expression: "has_time(\"the time is 10:30:45\")",
+                  result: %{"__value__" => true, "match" => ~T[10:30:45]}
   @expression_doc expression: "has_time(\"there is no time here, just the number 25\")",
                   result: false
   def has_time(ctx, expression) do
-    case DateTimeParser.parse_time(eval!(expression, ctx)) do
-      # Future match result: time
-      {:ok, _time} -> true
-      _ -> false
+    if time = extract_timeish(eval!(expression, ctx)) do
+      %{
+        "__value__" => true,
+        "match" => time
+      }
+    else
+      false
     end
   end
 

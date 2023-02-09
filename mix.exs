@@ -46,15 +46,15 @@ defmodule Expression.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:nimble_parsec, "~> 1.1"},
+      {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:decimal, "~> 2.0"},
-      {:date_time_parser, "~> 1.1.2"},
-      {:number, "~> 1.0"},
-      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},
       {:ex_phone_number, "~> 0.3.0"},
-      {:credo, "~> 1.5", only: [:dev], runtime: false},
-      {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
+      {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
+      {:nimble_parsec, "~> 1.1"},
+      {:number, "~> 1.0"},
+      {:timex, "~> 3.7"},
       {:version_tasks, "~> 0.12.0", only: [:dev], runtime: false}
     ]
   end
