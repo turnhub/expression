@@ -150,4 +150,69 @@ defmodule Expression.DateHelpers do
 
     Date.new!(values[:year], values[:month], values[:day])
   end
+
+  @spec extract_dateish(DateTime.t() | Date.t() | String.t()) :: Date.t() | nil
+  def extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
+  def extract_dateish(date) when is_struct(date, Date), do: date
+
+  def extract_dateish(expression) when is_binary(expression) do
+    expression = Regex.replace(~r/[a-z]/u, expression, "")
+
+    case Expression.parse_expression(expression) do
+      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
+        DateTime.to_date(datetime)
+
+      {:ok, [{:literal, date}]} when is_struct(date, Date) ->
+        date
+
+      _other ->
+        nil
+    end
+  end
+
+  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t()) :: DateTime.t() | nil
+  def extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
+
+  def extract_datetimeish(date) when is_struct(date, Date),
+    do: DateTime.new!(date, Time.new!(0, 0, 0, 0))
+
+  def extract_datetimeish(expression) when is_binary(expression) do
+    expression = Regex.replace(~r/[a-z]/u, expression, "")
+
+    case Expression.parse_expression(expression) do
+      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
+        datetime
+
+      {:ok, [{:literal, date}]} when is_struct(date, Date) ->
+        DateTime.new!(date, ~T[00:00:00])
+
+      _other ->
+        nil
+    end
+  end
+
+  @spec extract_timeish(DateTime.t() | Time.t() | String.t()) :: Time.t() | nil
+  def extract_timeish(datetime) when is_struct(datetime, DateTime),
+    do: DateTime.to_time(datetime)
+
+  def extract_timeish(time) when is_struct(time, Time),
+    do: time
+
+  def extract_timeish(expression) when is_binary(expression) do
+    expression = Regex.replace(~r/[a-z\s]/u, expression, "")
+
+    case Expression.parse_expression(expression) do
+      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
+        DateTime.to_time(datetime)
+
+      {:ok, [{:literal, time}]} when is_struct(time, Time) ->
+        time
+
+      {:ok, result} ->
+        result
+
+      _other ->
+        nil
+    end
+  end
 end

@@ -22,8 +22,11 @@ defmodule Expression.Callbacks.Standard do
   """
 
   import Expression.Callbacks.EvalHelpers
+
   use Expression.Callbacks
   use Expression.Autodoc
+
+  alias Expression.DateHelpers
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
   @doc """
@@ -86,7 +89,7 @@ defmodule Expression.Callbacks.Standard do
                   expression: "datetime_add(date(2020, 02, 29), -1, \"D\")",
                   result: ~U[2020-02-28 00:00:00.000000Z]
   def datetime_add(ctx, datetime, offset, unit) do
-    datetime = extract_datetimeish(eval!(datetime, ctx))
+    datetime = DateHelpers.extract_datetimeish(eval!(datetime, ctx))
     [offset, unit] = eval_args!([offset, unit], ctx)
 
     case unit do
@@ -118,12 +121,12 @@ defmodule Expression.Callbacks.Standard do
                   result: ~D[2022-01-01]
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
-    date = extract_dateish(date)
+    date = DateHelpers.extract_dateish(date)
     %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
   end
 
   def datevalue(ctx, date) do
-    date = extract_dateish(eval!(date, ctx))
+    date = DateHelpers.extract_dateish(eval!(date, ctx))
 
     %{
       "__value__" => Timex.format!(date, "%Y-%m-%d %H:%M:%S", :strftime),
@@ -160,7 +163,7 @@ defmodule Expression.Callbacks.Standard do
                   result: ~D[2022-11-10]
   def edate(ctx, date, months) do
     [date, months] = eval_args!([date, months], ctx)
-    extract_dateish(date) |> Timex.shift(months: months)
+    DateHelpers.extract_dateish(date) |> Timex.shift(months: months)
   end
 
   @doc """
@@ -181,7 +184,7 @@ defmodule Expression.Callbacks.Standard do
                   expression: "minute(now())",
                   result: DateTime.utc_now().minute
   def minute(ctx, date) do
-    %{minute: minute} = extract_datetimeish(eval!(date, ctx))
+    %{minute: minute} = DateHelpers.extract_datetimeish(eval!(date, ctx))
     minute
   end
 
@@ -300,7 +303,7 @@ defmodule Expression.Callbacks.Standard do
                   context: %{"now" => DateTime.utc_now()},
                   result: DateTime.utc_now().year
   def year(ctx, date) do
-    %{year: year} = extract_dateish(eval!(date, ctx))
+    %{year: year} = DateHelpers.extract_dateish(eval!(date, ctx))
     year
   end
 
@@ -989,71 +992,6 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
-  @spec extract_dateish(DateTime.t() | Date.t() | String.t()) :: Date.t() | nil
-  defp extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
-  defp extract_dateish(date) when is_struct(date, Date), do: date
-
-  defp extract_dateish(expression) when is_binary(expression) do
-    expression = Regex.replace(~r/[a-z]/u, expression, "")
-
-    case Expression.parse_expression(expression) do
-      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
-        DateTime.to_date(datetime)
-
-      {:ok, [{:literal, date}]} when is_struct(date, Date) ->
-        date
-
-      _other ->
-        nil
-    end
-  end
-
-  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t()) :: DateTime.t() | nil
-  defp extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
-
-  defp extract_datetimeish(date) when is_struct(date, Date),
-    do: DateTime.new!(date, Time.new!(0, 0, 0, 0))
-
-  defp extract_datetimeish(expression) when is_binary(expression) do
-    expression = Regex.replace(~r/[a-z]/u, expression, "")
-
-    case Expression.parse_expression(expression) do
-      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
-        datetime
-
-      {:ok, [{:literal, date}]} when is_struct(date, Date) ->
-        DateTime.new!(date, ~T[00:00:00])
-
-      _other ->
-        nil
-    end
-  end
-
-  @spec extract_timeish(DateTime.t() | Time.t() | String.t()) :: Time.t() | nil
-  defp extract_timeish(datetime) when is_struct(datetime, DateTime),
-    do: DateTime.to_time(datetime)
-
-  defp extract_timeish(time) when is_struct(time, Time),
-    do: time
-
-  defp extract_timeish(expression) when is_binary(expression) do
-    expression = Regex.replace(~r/[a-z\s]/u, expression, "")
-
-    case Expression.parse_expression(expression) do
-      {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
-        DateTime.to_time(datetime)
-
-      {:ok, [{:literal, time}]} when is_struct(time, Time) ->
-        time
-
-      {:ok, result} ->
-        result
-
-      _other ->
-        nil
-    end
-  end
-
   @doc """
   Tests whether `expression` contains a date formatted according to our environment
 
@@ -1063,7 +1001,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_date(\"there is no date here, just a year 2017\")",
                   result: false
   def has_date(ctx, expression) do
-    !!extract_dateish(eval!(expression, ctx))
+    !!DateHelpers.extract_dateish(eval!(expression, ctx))
   end
 
   @doc """
@@ -1076,8 +1014,8 @@ defmodule Expression.Callbacks.Standard do
                   result: false
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
-    found_date = extract_dateish(expression)
-    test_date = extract_dateish(date_string)
+    found_date = DateHelpers.extract_dateish(expression)
+    test_date = DateHelpers.extract_dateish(date_string)
     # Future match result: found_date
     found_date == test_date
   end
@@ -1091,8 +1029,8 @@ defmodule Expression.Callbacks.Standard do
                   result: false
   def has_date_gt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
-    found_date = extract_dateish(expression)
-    test_date = extract_dateish(date_string)
+    found_date = DateHelpers.extract_dateish(expression)
+    test_date = DateHelpers.extract_dateish(date_string)
     # future match result: found_date
     Date.compare(found_date, test_date) == :gt
   end
@@ -1106,8 +1044,8 @@ defmodule Expression.Callbacks.Standard do
                   result: false
   def has_date_lt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
-    found_date = extract_dateish(expression)
-    test_date = extract_dateish(date_string)
+    found_date = DateHelpers.extract_dateish(expression)
+    test_date = DateHelpers.extract_dateish(date_string)
     # future match result: found_date
     Date.compare(found_date, test_date) == :lt
   end
@@ -1463,7 +1401,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_time(\"there is no time here, just the number 25\")",
                   result: false
   def has_time(ctx, expression) do
-    if time = extract_timeish(eval!(expression, ctx)) do
+    if time = DateHelpers.extract_timeish(eval!(expression, ctx)) do
       %{
         "__value__" => true,
         "match" => time

@@ -51,6 +51,6 @@ defmodule Expression.AutodocTest do
   end
 
   test "private functions excluded" do
-    assert [] = find_docs(Standard, "extract_dateish")
+    assert [] = find_docs(Standard, "search_words")
   end
 end
