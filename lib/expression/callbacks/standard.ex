@@ -1431,4 +1431,17 @@ defmodule Expression.Callbacks.Standard do
     # call the mapper with each list of arguments as a single argument
     |> Enum.map(mapper)
   end
+
+  @doc """
+  Return the division remainder of two integers.
+  """
+  @expression_doc expression: "rem(4, 2)",
+                  result: 0
+  @expression_doc expression: "rem(85, 3)",
+                  result: 1
+  def rem(ctx, integer1, integer2) do
+    [integer1, integer2] = eval_args!([integer1, integer2], ctx)
+
+    rem(integer1, integer2)
+  end
 end
