@@ -217,7 +217,6 @@ defmodule Expression.Eval do
   # just leave it to the Kernel to figure out at this stage
   def op(operator, a, b) when operator in @kernel_operators do
     args = Enum.map([a, b], &default_value/1)
-    IO.inspect({operator, args}, label: "==??")
     apply(Kernel, operator, args)
   end
 
