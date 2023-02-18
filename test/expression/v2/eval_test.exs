@@ -13,7 +13,7 @@ defmodule Expression.V2.EvalTest do
     |> Eval.eval(binding)
   end
 
-  describe "quoting" do
+  describe "eval" do
     test "vars" do
       assert "bar" == eval("foo", foo: "bar")
     end
@@ -48,6 +48,14 @@ defmodule Expression.V2.EvalTest do
 
     test "functions vars & properties" do
       assert 10 == eval("echo(foo.bar).baz", foo: %{bar: %{baz: 10}})
+    end
+
+    test "ints & floats" do
+      assert true == eval("1.0 <= 1")
+      assert true == eval("1.0 == 1")
+      assert true == eval("1.0 = 1")
+      assert false == eval("1.0 > 1")
+      assert true == eval("1.1 > 1")
     end
   end
 end

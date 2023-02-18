@@ -105,7 +105,14 @@ defmodule Expression.V2.Parser do
   addition_subtraction_operator =
     choice([
       string("+"),
-      string("-")
+      string("-"),
+      string(">="),
+      string(">"),
+      string("!="),
+      string("<="),
+      string("<"),
+      string("=="),
+      replace(string("="), "==")
     ])
 
   # A block is a expression that can be parsed and is surrounded
