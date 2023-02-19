@@ -4,12 +4,11 @@ defmodule Expression.V2.EvalTest do
   alias Expression.V2.Parser
   alias Expression.V2.Eval
 
-  def eval(binary, binding \\ [], callback_modules \\ [Expression.V2.Callbacks]) do
+  def eval(binary, binding \\ [], callback_module \\ Expression.V2.Callbacks) do
     {:ok, ast, "", _, _, _} = Parser.expression(binary)
 
     ast
-    |> Eval.to_quoted()
-    |> Eval.import_modules(callback_modules)
+    |> Eval.to_quoted(callback_module)
     |> Eval.eval(binding)
   end
 
