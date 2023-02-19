@@ -1,5 +1,5 @@
 defmodule Expression.V2.EvalTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Expression.V2.Parser
   alias Expression.V2.Eval
@@ -18,11 +18,11 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "properties" do
-      assert "baz" == eval("foo.bar", foo: %{bar: "baz"})
+      assert "baz" == eval("foo.bar", foo: %{"bar" => "baz"})
     end
 
     test "attributes" do
-      assert "baz" == eval("foo[bar]", foo: %{bar: "baz"})
+      assert "baz" == eval("foo[\"bar\"]", foo: %{"bar" => "baz"})
     end
 
     test "function calls" do
@@ -46,7 +46,7 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "functions vars & properties" do
-      assert 10 == eval("echo(foo.bar).baz", foo: %{bar: %{baz: 10}})
+      assert 10 == eval("echo(foo.bar).baz", foo: %{"bar" => %{"baz" => 10}})
     end
 
     test "ints & floats" do
@@ -55,6 +55,22 @@ defmodule Expression.V2.EvalTest do
       assert true == eval("1.0 = 1")
       assert false == eval("1.0 > 1")
       assert true == eval("1.1 > 1")
+    end
+
+    test "if" do
+      assert 1 == eval("if(true, 1, contact)")
+    end
+
+    test "complex values" do
+      assert %{"__value__" => true, "match" => "Fox"} ==
+               eval(~S|has_any_word("The Quick Brown Fox", "red fox")|)
+
+      assert "Fox" ==
+               eval(~S|has_any_word("The Quick Brown Fox", "red fox").match|)
+    end
+
+    test "lambda & map" do
+      assert [1, 2, 3] == eval("map(foo, &(&1))", foo: [1, 2, 3])
     end
   end
 end

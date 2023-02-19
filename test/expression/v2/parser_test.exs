@@ -1,5 +1,5 @@
 defmodule Expression.V2.ParserTest do
-  use ExUnit.Case
+  use ExUnit.Case, async: true
 
   alias Expression.V2.Parser
 
@@ -101,6 +101,19 @@ defmodule Expression.V2.ParserTest do
     test "when called on function results" do
       assert {:ok, [[:__property__, [["function", []], "bar"]]], "", _, _, _} =
                Parser.parse("@(function().bar)")
+    end
+  end
+
+  describe "lists" do
+    test "plain" do
+      assert {:ok, [[1, 2, 3]], "", _, _, _} = Parser.parse("@([1,2,3])")
+    end
+  end
+
+  describe "lambdas" do
+    test "parsing lambdas" do
+      assert {:ok, [[["map", ["foo", ["&", ["&1"]]]]]], "", _, _, _} =
+               Parser.parse("@map(foo, &(&1))")
     end
   end
 

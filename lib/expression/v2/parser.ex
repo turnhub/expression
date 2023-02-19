@@ -1,6 +1,27 @@
 defmodule Expression.V2.Parser do
   import NimbleParsec
 
+  boolean_true =
+    choice([string("t"), string("T")])
+    |> choice([string("r"), string("R")])
+    |> choice([string("u"), string("U")])
+    |> choice([string("e"), string("E")])
+    |> replace(true)
+
+  boolean_false =
+    choice([string("f"), string("F")])
+    |> choice([string("a"), string("A")])
+    |> choice([string("l"), string("L")])
+    |> choice([string("s"), string("S")])
+    |> choice([string("e"), string("E")])
+    |> replace(false)
+
+  boolean =
+    choice([
+      boolean_true,
+      boolean_false
+    ])
+
   float =
     integer(min: 1)
     |> string(".")
@@ -54,9 +75,18 @@ defmodule Expression.V2.Parser do
     |> ignore(repeat(whitespace))
   end
 
-  function =
-    atom
-    |> ignore(string("("))
+  list =
+    ignore(string("["))
+    |> wrap(
+      repeat(
+        parsec(:term_operator)
+        |> optional(ignore(ignore_surrounding_whitespace.(string(","))))
+      )
+    )
+    |> ignore(string("]"))
+
+  function_arguments =
+    ignore(string("("))
     |> wrap(
       repeat(
         parsec(:term_operator)
@@ -64,6 +94,20 @@ defmodule Expression.V2.Parser do
       )
     )
     |> ignore(string(")"))
+
+  function =
+    atom
+    |> concat(function_arguments)
+    |> reduce(:ensure_list)
+
+  lambda_capture =
+    string("&")
+    |> concat(integer(min: 1))
+    |> reduce({Enum, :join, []})
+
+  lambda =
+    string("&")
+    |> concat(function_arguments)
     |> reduce(:ensure_list)
 
   def ensure_list([binary]) when is_binary(binary), do: [binary, []]
@@ -125,11 +169,15 @@ defmodule Expression.V2.Parser do
   term =
     times(
       choice([
+        label(list, "a list"),
         label(float, "a float"),
         label(integer(min: 1), "an integer"),
         label(parsec(:string_with_quotes), "a quoted string"),
+        label(boolean, "a boolean"),
         label(attribute, "an attribute"),
         label(property, "a property"),
+        label(lambda_capture, "a capture"),
+        label(lambda, "an anonymous function"),
         label(function, "a function"),
         label(block, "a group"),
         label(atom, "an atom")
