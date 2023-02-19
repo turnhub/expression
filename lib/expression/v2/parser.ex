@@ -107,11 +107,29 @@ defmodule Expression.V2.Parser do
 
   lambda =
     string("&")
-    |> concat(function_arguments)
+    |> choice([
+      # either we get a block as a function
+      function_arguments,
+      # or we refer to a function directly
+      wrap(parsec(:term_operator))
+    ])
     |> reduce(:ensure_list)
 
   def ensure_list([binary]) when is_binary(binary), do: [binary, []]
   def ensure_list([binary, args]) when is_binary(binary) and is_list(args), do: [binary, args]
+
+  range =
+    integer(min: 1)
+    |> ignore(string(".."))
+    |> concat(integer(min: 1))
+    |> optional(
+      ignore(string("//"))
+      |> concat(integer(min: 1))
+    )
+    |> reduce(:ensure_range)
+
+  def ensure_range([first, last, step]), do: Range.new(first, last, step)
+  def ensure_range([first, last]), do: Range.new(first, last)
 
   property =
     choice([function, atom])
@@ -169,6 +187,7 @@ defmodule Expression.V2.Parser do
   term =
     times(
       choice([
+        label(range, "a range"),
         label(list, "a list"),
         label(float, "a float"),
         label(integer(min: 1), "an integer"),

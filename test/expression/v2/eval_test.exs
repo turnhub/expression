@@ -71,6 +71,12 @@ defmodule Expression.V2.EvalTest do
 
     test "lambda & map" do
       assert [1, 2, 3] == eval("map(foo, &(&1))", foo: [1, 2, 3])
+
+      assert [[1, "Button"], [2, "Button"], [3, "Button"]] =
+               eval("map(foo, &([&1, \"Button\"]))", foo: [1, 2, 3])
+
+      assert [~D[2022-05-01], ~D[2022-05-02], ~D[2022-05-03]] =
+               eval("map(1..3, &date(2022, 5, &1))")
     end
   end
 end

@@ -108,6 +108,21 @@ defmodule Expression.V2.ParserTest do
     test "plain" do
       assert {:ok, [[1, 2, 3]], "", _, _, _} = Parser.parse("@([1,2,3])")
     end
+
+    test "in lambda" do
+      assert {:ok, [[["map", ["foo", ["&", [["&1", "\"Button\""]]]]]]], "", _, _, _} =
+               Parser.parse("@map(foo, &([&1, \"Button\"]))")
+    end
+  end
+
+  describe "ranges" do
+    test "range" do
+      assert {:ok, [1..10], "", _, _, _} = Parser.parse("@(1..10)")
+    end
+
+    test "range with step" do
+      assert {:ok, [1..10//5], "", _, _, _} = Parser.parse("@(1..10//5)")
+    end
   end
 
   describe "lambdas" do

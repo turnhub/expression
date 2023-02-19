@@ -42,9 +42,8 @@ defmodule Expression.V2.Eval do
     {:&, [], [String.to_integer(index)]}
   end
 
-  def quoted(atom, _callback_module) when is_binary(atom), do: {String.to_atom(atom), [], nil}
-
-  def quoted([function_name, arguments], callback_module) when is_binary(function_name) do
+  def quoted([function_name, arguments], callback_module)
+      when is_binary(function_name) and is_list(arguments) do
     module_as_atoms =
       callback_module
       |> Module.split()
@@ -60,4 +59,15 @@ defmodule Expression.V2.Eval do
 
   def quoted(list, callback_module) when is_list(list),
     do: Enum.map(list, &quoted(&1, callback_module))
+
+  def quoted(atom, _callback_module) when is_binary(atom),
+    do: {String.to_atom(atom), [], nil}
+
+  def quoted(%Range{first: first, last: last, step: step}, _callback_module) do
+    {:%, [],
+     [
+       {:__aliases__, [], [:Range]},
+       {:%{}, [], [first: first, last: last, step: step]}
+     ]}
+  end
 end

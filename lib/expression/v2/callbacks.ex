@@ -5,6 +5,7 @@ defmodule Expression.V2.Callbacks do
     do: apply(Kernel, String.to_existing_atom(built_in), args)
 
   def callback(_context, "map", [enumerable, mapper]), do: Enum.map(enumerable, mapper)
+  def callback(_context, "date", [year, month, day]), do: Date.new!(year, month, day)
   def callback(_context, "echo", [a]), do: a
 
   def callback(_context, "has_any_word", [haystack, words]) do
