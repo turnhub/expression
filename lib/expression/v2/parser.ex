@@ -1,5 +1,6 @@
 defmodule Expression.V2.Parser do
   import NimbleParsec
+  import Expression.DateHelpers
 
   boolean_true =
     choice([string("t"), string("T")])
@@ -34,7 +35,7 @@ defmodule Expression.V2.Parser do
   # This is yanked wholesale from the NimbleParsec docs 
   # https://hexdocs.pm/nimble_parsec/NimbleParsec.html#repeat_while/4
   defparsecp(
-    :string_with_quotes,
+    :double_quoted_string,
     ascii_char([?"])
     |> repeat_while(
       choice([
@@ -49,6 +50,29 @@ defmodule Expression.V2.Parser do
 
   defp not_quote(<<?", _::binary>>, context, _, _), do: {:halt, context}
   defp not_quote(_, context, _, _), do: {:cont, context}
+
+  defparsec(
+    :single_quoted_string,
+    ignore(ascii_char([?']))
+    |> repeat_while(
+      choice([
+        string(~S(\')) |> replace(?'),
+        utf8_char([])
+      ]),
+      {:not_single_quote, []}
+    )
+    |> ignore(ascii_char([?']))
+    |> reduce({List, :to_string, []})
+  )
+
+  def not_single_quote(<<?', _::binary>>, context, _, _), do: {:halt, context}
+  def not_single_quote(_, context, _, _), do: {:cont, context}
+
+  string_with_quotes =
+    choice([
+      parsec(:single_quoted_string),
+      parsec(:double_quoted_string)
+    ])
 
   # Atoms are names, these can be variable names or function names etc.
   atom =
@@ -187,11 +211,14 @@ defmodule Expression.V2.Parser do
   term =
     times(
       choice([
+        label(datetime(), "a datetime"),
+        label(date(), "a date"),
+        label(time(), "a time"),
         label(range, "a range"),
         label(list, "a list"),
         label(float, "a float"),
         label(integer(min: 1), "an integer"),
-        label(parsec(:string_with_quotes), "a quoted string"),
+        label(string_with_quotes, "a quoted string"),
         label(boolean, "a boolean"),
         label(attribute, "an attribute"),
         label(property, "a property"),
