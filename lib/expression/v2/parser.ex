@@ -44,6 +44,7 @@ defmodule Expression.V2.Parser do
   import NimbleParsec
   import Expression.DateHelpers
 
+  # Booleans can be spelled in any mixed case
   boolean_true =
     choice([string("t"), string("T")])
     |> choice([string("r"), string("R")])
@@ -65,6 +66,9 @@ defmodule Expression.V2.Parser do
       boolean_false
     ])
 
+  # These are just regular floats, previous iteration used the
+  # Decimal library but that just made some simple arithmatic
+  # and comparisons more complicated than needed to be.
   float =
     integer(min: 1)
     |> string(".")
@@ -112,6 +116,7 @@ defmodule Expression.V2.Parser do
   def not_single_quote(<<?', _::binary>>, context, _, _), do: {:halt, context}
   def not_single_quote(_, context, _, _), do: {:cont, context}
 
+  # We support single & double quoted strings.
   string_with_quotes =
     choice([
       parsec(:single_quoted_string),
