@@ -1,6 +1,9 @@
 defmodule Expression.V2.Eval do
-  def eval(quoted, binding) do
+  def eval(ast, binding, callback_module) do
     binding = Keyword.put(binding, :context, %{"a" => 1})
+
+    # convert to valid Elixir AST
+    quoted = to_quoted(ast, callback_module)
 
     {term, _binding, _env} =
       {:__block__, [], quoted}

@@ -46,6 +46,7 @@ defmodule Expression.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
+      {:benchee, "~> 1.0", only: :dev},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:decimal, "~> 2.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},

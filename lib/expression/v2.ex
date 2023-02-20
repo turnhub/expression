@@ -15,13 +15,17 @@ defmodule Expression.V2 do
     end
   end
 
-  @spec eval(String.t() | [term], context :: map) :: [term]
-  def eval(expression, context) when is_binary(expression) do
-    with {:ok, ast} <- parse(expression) do
-      eval(ast, context)
+  @spec eval(String.t() | [term], context :: map, callback_module :: atom) :: [term]
+  def eval(expression, context, callback_module) when is_binary(expression) do
+    with {:ok, parts} <- parse(expression) do
+      Enum.map(parts, fn
+        part when is_list(part) -> eval([part], context, callback_module)
+        other -> other
+      end)
     end
   end
 
-  def eval(ast, context) when is_list(ast),
-    do: Eval.eval(ast, context)
+  def eval(ast, context, callback_module) when is_list(ast) do
+    Eval.eval(ast, Enum.into(context, []), callback_module)
+  end
 end
