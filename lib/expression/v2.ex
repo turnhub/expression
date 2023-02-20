@@ -29,17 +29,17 @@ defmodule Expression.V2 do
 
   # Examples
 
-    iex> alias Expression.V2
-    iex> V2.eval("the date is @date(2022, 2, 20)")
-    ["the date is ", ~D[2022-02-20]]
-    iex> V2.eval("the answer is @true")
-    ["the answer is ", true]
-    iex> V2.eval("22 divided by 7 is @(22 / 7)")
-    ["22 divided by 7 is ", 3.142857142857143]
-    iex> V2.eval("Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", %{contact: %{"name" => "mary"}})
-    ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
-    iex> V2.eval("@map(1..3, &date(2023, 1, &1))")
-    [[~D[2023-01-01], ~D[2023-01-02], ~D[2023-01-03]]]
+      iex> alias Expression.V2
+      iex> V2.eval("the date is @date(2022, 2, 20)")
+      ["the date is ", ~D[2022-02-20]]
+      iex> V2.eval("the answer is @true")
+      ["the answer is ", true]
+      iex> V2.eval("22 divided by 7 is @(22 / 7)")
+      ["22 divided by 7 is ", 3.142857142857143]
+      iex> V2.eval("Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", %{contact: %{"name" => "mary"}})
+      ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
+      iex> V2.eval("@map(1..3, &date(2023, 1, &1))")
+      [[~D[2023-01-01], ~D[2023-01-02], ~D[2023-01-03]]]
 
   """
 
