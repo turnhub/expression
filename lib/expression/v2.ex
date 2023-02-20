@@ -24,7 +24,25 @@ defmodule Expression.V2 do
   * Reading attributes off of maps, such as `contact[the_key]` which returns `"Doe"` from `%{"contact" => %{"name" => "Doe"}, "the_key" => "name"}`
   * Anonymous functions with `&` and `&1` as capture operators, `&(&1 + 1)` is an anonymous function that increments the input by 1.
 
+  The result of a call to `eval/3` is a list of typed evaluated items. It is up to the integrating library to determine how
+  best to convert these into a final end user representation.
+
+  # Examples
+
+    iex> alias Expression.V2
+    iex> V2.eval("the date is @date(2022, 2, 20)")
+    ["the date is ", ~D[2022-02-20]]
+    iex> V2.eval("the answer is @true")
+    ["the answer is ", true]
+    iex> V2.eval("22 divided by 7 is @(22 / 7)")
+    ["22 divided by 7 is ", 3.142857142857143]
+    iex> V2.eval("Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", %{contact: %{"name" => "mary"}})
+    ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
+    iex> V2.eval("@map(1..3, &date(2023, 1, &1))")
+    [[~D[2023-01-01], ~D[2023-01-02], ~D[2023-01-03]]]
+
   """
+
   alias Expression.V2.Eval
   alias Expression.V2.Parser
 
@@ -42,10 +60,12 @@ defmodule Expression.V2 do
   end
 
   @spec eval(String.t() | [term], context :: map, callback_module :: atom) :: [term]
+  def eval(expression_or_ast, context \\ %{}, callback_module \\ Expression.V2.Callbacks)
+
   def eval(expression, context, callback_module) when is_binary(expression) do
     with {:ok, parts} <- parse(expression) do
       Enum.map(parts, fn
-        part when is_list(part) -> eval([part], context, callback_module)
+        part when is_list(part) -> eval([part], context, callback_module) |> hd()
         other -> other
       end)
     end

@@ -14,6 +14,14 @@ defmodule Expression.V2.Callbacks do
   def callback(_context, "date", [year, month, day]), do: Date.new!(year, month, day)
   def callback(_context, "echo", [a]), do: a
   def callback(_context, "year", [date]), do: date.year
+  def callback(_context, "today", []), do: Date.utc_today()
+  def callback(_context, "concatenate", args), do: Enum.join(args, "")
+
+  def callback(_context, "proper", [string]),
+    do:
+      string
+      |> String.split(" ")
+      |> Enum.map_join(" ", &String.capitalize/1)
 
   def callback(_context, "has_any_word", [haystack, words]) do
     haystack_words = String.split(haystack)

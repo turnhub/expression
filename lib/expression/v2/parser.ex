@@ -327,13 +327,12 @@ defmodule Expression.V2.Parser do
   # Parses a block such as `@(1 + 1)`
   expression_block =
     ignore(string("@"))
-    |> concat(block)
+    |> concat(wrap(block))
 
   # Parsed a short hand such as `@now()`
   expression_shorthand =
     ignore(string("@"))
-    |> concat(term |> reduce(:fold_infixl))
-    |> wrap()
+    |> concat(wrap(parsec(:term_operator)))
 
   single_at = string("@")
 
