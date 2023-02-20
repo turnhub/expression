@@ -1,6 +1,45 @@
 defmodule Expression.V2.Parser do
   @moduledoc """
-  A NimbleParsec parser for FLOIP expressions
+  A NimbleParsec parser for FLOIP expressions.
+
+  FLOIP Expressions consist of plain text and of blocks. Plain text is returned untouched
+  but blocks are evaluated.
+
+  Blocks are prefixed with an `@` sign. Blocks can either have expressions between brackets or 
+  be used in a shorthand form when wanting to use a single function or variable substitution.
+
+  As an example, the following are identical:
+
+  * `@(now())` and `@now()`
+  * `@contact.name` and `@(contact.name)`
+
+  However, a full expression needs to be within brackets:
+
+  `Tomorrow's is @(today().day + 1)`
+
+  This parses it into an Abstract Syntax Tree (AST) which follows a style much like a Lisp would. 
+  It parses expressions in [Infix notation](https://en.wikipedia.org/wiki/Infix_notation) such as 
+  `1 + 1` and parses it into lists where the operator is the first element and the second element
+  is the list of arguments for the operator.
+
+  ```
+  ["+", [1, 1]]
+  ```
+
+  Similarly, functions are expressed as:
+
+  ```
+  ["function name", [arg1, arg2]]
+  ```
+
+  Variable references are single value lists.
+
+  ["contact"]
+
+  This module provides two functions for parsing. `parse/2` which will parse a full FLOIP expression
+  including text and blocks, and `expression/2` which will parse expression blocks.
+
+  Internally `parse/2` refers to the same parsers as `expression/2` for things that are expressions.
   """
   import NimbleParsec
   import Expression.DateHelpers
@@ -45,16 +84,17 @@ defmodule Expression.V2.Parser do
         ~S(\") |> string() |> replace(?"),
         utf8_char([])
       ]),
-      {:not_quote, []}
+      {:not_double_quote, []}
     )
     |> ascii_char([?"])
     |> reduce({List, :to_string, []})
   )
 
-  defp not_quote(<<?", _::binary>>, context, _, _), do: {:halt, context}
-  defp not_quote(_, context, _, _), do: {:cont, context}
+  @doc false
+  defp not_double_quote(<<?", _::binary>>, context, _, _), do: {:halt, context}
+  defp not_double_quote(_, context, _, _), do: {:cont, context}
 
-  defparsec(
+  defparsecp(
     :single_quoted_string,
     ignore(ascii_char([?']))
     |> repeat_while(
@@ -68,6 +108,7 @@ defmodule Expression.V2.Parser do
     |> reduce({List, :to_string, []})
   )
 
+  @doc false
   def not_single_quote(<<?', _::binary>>, context, _, _), do: {:halt, context}
   def not_single_quote(_, context, _, _), do: {:cont, context}
 
@@ -142,6 +183,7 @@ defmodule Expression.V2.Parser do
     ])
     |> reduce(:ensure_list)
 
+  @doc false
   def ensure_list([binary]) when is_binary(binary), do: [binary, []]
   def ensure_list([binary, args]) when is_binary(binary) and is_list(args), do: [binary, args]
 
@@ -155,6 +197,7 @@ defmodule Expression.V2.Parser do
     )
     |> reduce(:ensure_range)
 
+  @doc false
   def ensure_range([first, last, step]), do: Range.new(first, last, step)
   def ensure_range([first, last]), do: Range.new(first, last)
 
@@ -303,6 +346,7 @@ defmodule Expression.V2.Parser do
     |> times(min: 1)
     |> reduce({Enum, :join, []})
 
+  @doc false
   def fold_infixl(acc) do
     acc
     |> Enum.reverse()
@@ -313,8 +357,26 @@ defmodule Expression.V2.Parser do
     end)
   end
 
+  @doc """
+  Parse a block and return the AST
+    
+  ## Example
+      
+      iex> Expression.V2.Parser.expression("contact.age + 1")
+      {:ok, [["+", [[:__property__, ["contact", "age"]], 1]]], "", %{}, {1, 0}, 15}
+
+  """
   defparsec(:expression, parsec(:term_operator))
 
+  @doc """
+  Parse an expression and return the AST
+
+  ## Example
+      
+      iex> Expression.V2.Parser.parse("hello @world the time is @now()")
+      {:ok, ["hello ", ["world"], " the time is ", [["now", []]]], "", %{}, {1, 0}, 31}
+
+  """
   defparsec(
     :parse,
     repeat(choice([text, escaped_at, expression_block, expression_shorthand, single_at]))

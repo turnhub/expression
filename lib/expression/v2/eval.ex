@@ -1,9 +1,37 @@
 defmodule Expression.V2.Eval do
   @moduledoc """
-  An evaluator for AST returned by Expression.V2.Parser
+  An evaluator for AST returned by Expression.V2.Parser.
+
+  This reads the AST output returned by `Expression.V2.parse/2` and
+  evaluates it according to the given variable bindings and functions
+  available in the callback module specified.
+
+  It does this by emitting valid Elixir AST, mimicking what 
+  `[quote/2](https://hexdocs.pm/elixir/Kernel.SpecialForms.html#quote/2)` does.
+
+  The Elixir AST is then supplied to `Code.eval_quoted_with_env/3` with the binding
+  and Elixir evaluates it for us, reducing the need for us to ensure that our 
+  eval is correct and instead relying on us to generate correct AST instead.
+
+  The callback module referenced is inserted as the module for any function
+  that is called. So if we an expression uses a function called `foo(1, 2, 3)`
+  then the callback module **must** provide a `foo/3` function.
+
+  There is some special handling of some functions that either require lazy
+  loading or have specific Elixir AST syntax requirements.
+
+  These are documented in the `to_quoted/2` function.
   """
+
+  @doc """
+  Accepts AST as emitted by `Expression.V2.parse/2` and evaluates it against
+  the given variable binding and the functions defined in the callback module.
+  """
+  @spec eval([any], binding :: Keyword.t(), callback_module :: atom) :: [any]
   def eval(ast, binding, callback_module) do
-    binding = Keyword.put(binding, :context, %{"a" => 1})
+    # NOTE: I'm still not sure if the context is needed in this new approach
+    #       like it is in the current approach...
+    binding = Keyword.put(binding, :context, %{})
 
     # convert to valid Elixir AST
     quoted = to_quoted(ast, callback_module)
@@ -15,6 +43,24 @@ defmodule Expression.V2.Eval do
     term
   end
 
+  @doc """
+  Convert the AST returned from `Expression.V2.parse/2` into valid Elixir AST
+  that can be used by `Code.eval_quoted_with_env/3`.
+
+  There is some special handling here:
+
+  1. Lists are recursed into to ensure that all list items are properly quoted.
+  2. "\"Quoted strings\"" are unquoted and returned as regular strings to the AST.
+  3. "Normal strings" are converted into Atoms and treated as such during eval.
+  4. Literals such as numbers & booleans are left as is.
+  5. Range.t items are converted to valid Elixir AST.
+  6. `&` and `&1` captures are generated into valid Elixir AST captures.
+  7. `if` and similar lazy functions such as `or` are evaluated lazily depending
+     on the output of the test. As an example the AST for `if(foo, bar, baz)` would
+     only attempt to quote `baz` if `foo` resolves to `false`.
+  8. Any functions are generated as being function calls for the given callback module.
+  """
+  @spec to_quoted([term] | term, callback_module :: atom) :: [term]
   def to_quoted(ast, callback_module) when is_list(ast) do
     Enum.reduce(ast, [], fn element, acc ->
       [quoted(element, callback_module) | acc]
@@ -59,6 +105,8 @@ defmodule Expression.V2.Eval do
      [
        {:__aliases__, [], module_as_atoms},
        :callback,
+       # NOTE:  not sure if we need this, probably do, but we'd need to expose this
+       #        to the function and not to the whole expression.
        [{:context, [], nil}, function_name, Enum.map(arguments, &quoted(&1, callback_module))]
      ]}
   end
