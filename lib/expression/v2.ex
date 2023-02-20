@@ -1,6 +1,12 @@
 defmodule Expression.V2 do
   @moduledoc """
-  A second attempt at the parser, hopefully a little easier to read & maintain
+  A second attempt at the parser, hopefully a little easier to read & maintain.
+
+  `parse/1` parsed an Expression into AST.
+  `eval/3` evaluates the given AST using the context and the callback module.
+
+  For details on how this is done please read `Expression.V2.Parser` and
+  `Expression.V2.Eval`.
   """
   alias Expression.V2.Eval
   alias Expression.V2.Parser
