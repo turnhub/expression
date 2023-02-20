@@ -1,8 +1,8 @@
 defmodule Expression.V2.EvalTest do
   use ExUnit.Case, async: true
 
-  alias Expression.V2.Parser
   alias Expression.V2.Eval
+  alias Expression.V2.Parser
 
   def eval(binary_or_ast, binding \\ [], callback_module \\ Expression.V2.Callbacks)
 

@@ -29,13 +29,13 @@ defmodule Expression.V2.Parser do
   float =
     integer(min: 1)
     |> string(".")
-    # Using ascii string here instead of integer/2 to prevent us chopping 
+    # Using ascii string here instead of integer/2 to prevent us chopping
     # off leading zeros after the period.
     |> concat(ascii_string([?0..?9], min: 1))
     |> reduce({Enum, :join, [""]})
     |> map({String, :to_float, []})
 
-  # This is yanked wholesale from the NimbleParsec docs 
+  # This is yanked wholesale from the NimbleParsec docs
   # https://hexdocs.pm/nimble_parsec/NimbleParsec.html#repeat_while/4
   defparsecp(
     :double_quoted_string,
