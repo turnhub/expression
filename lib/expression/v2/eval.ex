@@ -1,4 +1,7 @@
 defmodule Expression.V2.Eval do
+  @moduledoc """
+  An evaluator for AST returned by Expression.V2.Parser
+  """
   def eval(ast, binding, callback_module) do
     binding = Keyword.put(binding, :context, %{"a" => 1})
 

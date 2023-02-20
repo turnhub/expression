@@ -1,4 +1,7 @@
 defmodule Expression.V2.Callbacks do
+  @moduledoc """
+  Callback functions to be used in Expressions
+  """
   @built_ins ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="]
 
   def callback(_context, built_in, args) when built_in in @built_ins,

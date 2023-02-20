@@ -1,4 +1,7 @@
 defmodule Expression.V2.Parser do
+  @moduledoc """
+  A NimbleParsec parser for FLOIP expressions
+  """
   import NimbleParsec
   import Expression.DateHelpers
 

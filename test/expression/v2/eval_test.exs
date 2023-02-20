@@ -14,7 +14,6 @@ defmodule Expression.V2.EvalTest do
   def eval(ast, binding, callback_module) do
     ast
     |> Eval.to_quoted(callback_module)
-    |> IO.inspect()
     |> Eval.eval(binding)
   end
 

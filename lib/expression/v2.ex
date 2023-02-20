@@ -1,4 +1,7 @@
 defmodule Expression.V2 do
+  @moduledoc """
+  A second attempt at the parser, hopefully a little easier to read & maintain
+  """
   alias Expression.V2.Parser
   alias Expression.V2.Eval
 
