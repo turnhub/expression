@@ -192,6 +192,16 @@ defmodule Expression.EvalTest do
     assert 4.9 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@(2.002 * 0.05)")
     assert 0.10010 == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(2 > 0.5)")
+    assert true == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(2 >= 2.0)")
+    assert true == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(2 < 0.5)")
+    assert false == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(2 <= 2.0)")
+    assert true == Eval.eval!(ast, %{})
+    {:ok, ast, "", _, _, _} = Parser.parse("@(2 == 2.0)")
+    assert true == Eval.eval!(ast, %{})
   end
 
   test "text" do
