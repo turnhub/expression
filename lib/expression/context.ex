@@ -23,9 +23,9 @@ defmodule Expression.Context do
     iex> Expression.Context.new(%{float: 1.234})
     %{"float" => 1.234}
     iex> now = DateTime.utc_now()
-    iex> ctx = Expression.Context.new(%{decimal: "1.234", nested: %{date: now}})
-    iex> ctx["decimal"]
-    #Decimal<1.234>
+    iex> ctx = Expression.Context.new(%{float: "1.234", nested: %{date: now}})
+    iex> ctx["float"]
+    1.234
     iex> now == ctx["nested"]["date"]
     true
     iex> Expression.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})

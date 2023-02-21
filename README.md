@@ -101,9 +101,9 @@ iex(4)> Expression.evaluate_as_string!("info@@support.com")
 Expression knows the following types:
 
 ```elixir
-iex> # Decimals
+iex> # Floats
 iex> Expression.evaluate("@(1.23)")
-{:ok, [#Decimal<1.23>]}
+{:ok, [1.23}
 iex> # Integers
 iex> Expression.evaluate("@(1)")
 {:ok, [1]}

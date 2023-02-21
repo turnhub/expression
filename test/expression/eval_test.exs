@@ -181,17 +181,17 @@ defmodule Expression.EvalTest do
 
   test "arithmetic with decimals" do
     {:ok, ast, "", _, _, _} = Parser.parse("@(1.5 + 1.5)")
-    assert Decimal.new("3.0") == Eval.eval!(ast, %{})
+    assert 3.0 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@(1.5 + 2.5 * 3.5)")
-    assert Decimal.new("10.25") == Eval.eval!(ast, %{})
+    assert 10.25 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@((1.5 + 2.5) * 3.5)")
-    assert Decimal.new("14.00") == Eval.eval!(ast, %{})
+    assert 14.00 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@((1.5 + 2.5) / 3.5)")
-    assert Decimal.new("1.14286") == Decimal.round(Eval.eval!(ast, %{}), 5)
+    assert 1.1428571428571428 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@(6.8 / 2.0 + 1.5)")
-    assert Decimal.new("4.9") == Eval.eval!(ast, %{})
+    assert 4.9 == Eval.eval!(ast, %{})
     {:ok, ast, "", _, _, _} = Parser.parse("@(2.002 * 0.05)")
-    assert Decimal.new("0.10010") == Eval.eval!(ast, %{})
+    assert 0.10010 == Eval.eval!(ast, %{})
   end
 
   test "text" do
