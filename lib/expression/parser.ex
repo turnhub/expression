@@ -26,7 +26,7 @@ defmodule Expression.Parser do
       datetime(),
       date(),
       time(),
-      decimal(),
+      float(),
       int(),
       boolean(),
       single_quoted_string(),

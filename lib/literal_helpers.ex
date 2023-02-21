@@ -15,17 +15,17 @@ defmodule Expression.LiteralHelpers do
     |> map({String, :to_integer, []})
   end
 
-  def decimal do
+  def float do
     optional(string("-"))
     |> concat(utf8_string([?0..?9], min: 1))
     |> concat(string("."))
     |> concat(utf8_string([?0..?9], min: 1))
     |> reduce({Enum, :join, [""]})
-    |> map({Decimal, :new, []})
+    |> map({String, :to_float, []})
   end
 
   def numeric do
-    choice([int(), decimal()])
+    choice([int(), float()])
   end
 
   def single_quoted_string do

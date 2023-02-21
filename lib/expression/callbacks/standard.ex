@@ -419,10 +419,10 @@ defmodule Expression.Callbacks.Standard do
   Returns the result of a number raised to a power - equivalent to the ^ operator
   """
   @expression_doc expression: "power(2, 3)",
-                  fake_result: Decimal.from_float(8.0)
+                  fake_result: 8.0
   def power(ctx, a, b) do
     [a, b] = eval_args!([a, b], ctx)
-    Decimal.from_float(:math.pow(a, b))
+    :math.pow(a, b)
   end
 
   @doc """
@@ -662,18 +662,12 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "percent(2/10)", result: "20%"
   @expression_doc expression: "percent(0.2)", result: "20%"
   @expression_doc expression: "percent(d)", context: %{"d" => "0.2"}, result: "20%"
-  def percent(ctx, decimal) do
-    decimal =
-      case eval!(decimal, ctx) do
-        float when is_float(float) -> Decimal.from_float(float)
-        binary when is_binary(binary) -> Decimal.new(binary)
-        decimal when is_struct(decimal, Decimal) -> decimal
-      end
+  def percent(ctx, float) do
+    float = eval!(float, ctx)
 
-    decimal
-    |> Decimal.mult(100)
-    |> Decimal.to_float()
-    |> Number.Percentage.number_to_percentage(precision: 0)
+    with float when is_number(float) <- parse_float(float) do
+      Number.Percentage.number_to_percentage(float * 100, precision: 0)
+    end
   end
 
   @doc """
@@ -871,18 +865,12 @@ defmodule Expression.Callbacks.Standard do
       var when is_float(var) or is_integer(var) ->
         true
 
-      var when is_struct(var, Decimal) ->
-        true
-
       var when is_binary(var) ->
-        Decimal.new(var)
-        true
+        String.match?(var, ~r/^\d+?.?\d+$/)
 
       _var ->
         false
     end
-  rescue
-    Decimal.Error -> false
   end
 
   @doc """
@@ -1103,12 +1091,12 @@ defmodule Expression.Callbacks.Standard do
   defp extract_numberish(expression) do
     with [match] <-
            Regex.run(~r/([0-9]+\.?[0-9]+)/u, replace_arabic_numerals(expression), capture: :first),
-         {decimal, ""} <- Decimal.parse(match) do
-      decimal
+         float <- parse_float(match) do
+      float
     else
       # Regex can return nil
       nil -> nil
-      # Decimal parsing can return :error
+      # Float parsing can return :error
       :error -> nil
     end
   end
@@ -1135,15 +1123,12 @@ defmodule Expression.Callbacks.Standard do
     end)
   end
 
-  defp parse_decimal(decimal) when is_struct(decimal, Decimal), do: decimal
-  defp parse_decimal(float) when is_float(float), do: Decimal.from_float(float)
+  def parse_float(number) when is_number(number), do: number
 
-  defp parse_decimal(number) when is_number(number), do: Decimal.new(number)
-
-  defp parse_decimal(binary) when is_binary(binary) do
-    case Decimal.parse(binary) do
-      {decimal, ""} -> decimal
-      :error -> :error
+  def parse_float(binary) when is_binary(binary) do
+    case Float.parse(binary) do
+      {float, ""} -> float
+      _ -> nil
     end
   end
 
@@ -1173,13 +1158,13 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_eq(\"the number is 40\", \"42\")", result: false
   @expression_doc expression: "has_number_eq(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_eq(\"four hundred\", \"foo\")", result: false
-  def has_number_eq(ctx, expression, decimal) do
-    [expression, decimal] = eval_args!([expression, decimal], ctx)
+  def has_number_eq(ctx, expression, float) do
+    [expression, float] = eval_args!([expression, float], ctx)
 
-    with %Decimal{} = number <- extract_numberish(expression),
-         %Decimal{} = decimal <- parse_decimal(decimal) do
+    with number when is_number(number) <- extract_numberish(expression),
+         float when is_number(float) <- parse_float(float) do
       # Future match result: number
-      Decimal.eq?(number, decimal)
+      float == number
     else
       nil -> false
       :error -> false
@@ -1196,13 +1181,13 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_gt(\"the number is 40\", \"40\")", result: false
   @expression_doc expression: "has_number_gt(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_gt(\"four hundred\", \"foo\")", result: false
-  def has_number_gt(ctx, expression, decimal) do
-    [expression, decimal] = eval_args!([expression, decimal], ctx)
+  def has_number_gt(ctx, expression, float) do
+    [expression, float] = eval_args!([expression, float], ctx)
 
-    with %Decimal{} = number <- extract_numberish(expression),
-         %Decimal{} = decimal <- parse_decimal(decimal) do
+    with number when is_number(number) <- extract_numberish(expression),
+         float when is_number(float) <- parse_float(float) do
       # Future match result: number
-      Decimal.gt?(number, decimal)
+      number > float
     else
       nil -> false
       :error -> false
@@ -1219,13 +1204,13 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_gte(\"the number is 40\", \"45\")", result: false
   @expression_doc expression: "has_number_gte(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_gte(\"four hundred\", \"foo\")", result: false
-  def has_number_gte(ctx, expression, decimal) do
-    [expression, decimal] = eval_args!([expression, decimal], ctx)
+  def has_number_gte(ctx, expression, float) do
+    [expression, float] = eval_args!([expression, float], ctx)
 
-    with %Decimal{} = number <- extract_numberish(expression),
-         %Decimal{} = decimal <- parse_decimal(decimal) do
+    with number when is_number(number) <- extract_numberish(expression),
+         float when is_number(float) <- parse_float(float) do
       # Future match result: number
-      Decimal.gt?(number, decimal) || Decimal.eq?(number, decimal)
+      number >= float
     else
       nil -> false
       :error -> false
@@ -1242,13 +1227,13 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lt(\"the number is 40\", \"40\")", result: false
   @expression_doc expression: "has_number_lt(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_lt(\"four hundred\", \"foo\")", result: false
-  def has_number_lt(ctx, expression, decimal) do
-    [expression, decimal] = eval_args!([expression, decimal], ctx)
+  def has_number_lt(ctx, expression, float) do
+    [expression, float] = eval_args!([expression, float], ctx)
 
-    with %Decimal{} = number <- extract_numberish(expression),
-         %Decimal{} = decimal <- parse_decimal(decimal) do
+    with number when is_number(number) <- extract_numberish(expression),
+         float when is_number(float) <- parse_float(float) do
       # Future match result: number
-      Decimal.lt?(number, decimal)
+      number < float
     else
       nil -> false
       :error -> false
@@ -1264,13 +1249,13 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lte(\"the number is 42.0\", \"40\")", result: false
   @expression_doc expression: "has_number_lte(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_lte(\"four hundred\", \"foo\")", result: false
-  def has_number_lte(ctx, expression, decimal) do
-    [expression, decimal] = eval_args!([expression, decimal], ctx)
+  def has_number_lte(ctx, expression, float) do
+    [expression, float] = eval_args!([expression, float], ctx)
 
-    with %Decimal{} = number <- extract_numberish(expression),
-         %Decimal{} = decimal <- parse_decimal(decimal) do
+    with number when is_number(number) <- extract_numberish(expression),
+         float when is_number(float) <- parse_float(float) do
       # Future match result: number
-      Decimal.lt?(number, decimal) || Decimal.eq?(number, decimal)
+      number <= float
     else
       nil -> false
       :error -> false

@@ -47,7 +47,6 @@ defmodule Expression.MixProject do
   defp deps do
     [
       {:credo, "~> 1.5", only: [:dev], runtime: false},
-      {:decimal, "~> 2.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},
       {:ex_phone_number, "~> 0.3.0"},

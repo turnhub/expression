@@ -80,9 +80,9 @@ defmodule Expression.ParserTest do
       assert_ast([expression: [literal: -123_456]], "@(-123_456)")
       assert_ast([expression: [literal: true]], "@(tRuE)")
       assert_ast([expression: [literal: false]], "@(fAlSe)")
-      assert_ast([expression: [literal: Decimal.new("1.23")]], "@(1.23)")
-      assert_ast([expression: [literal: Decimal.new("-1.23")]], "@(-1.23)")
-      assert_ast([expression: [literal: Decimal.new("-0.00002")]], "@(-0.00002)")
+      assert_ast([expression: [literal: 1.23]], "@(1.23)")
+      assert_ast([expression: [literal: -1.23]], "@(-1.23)")
+      assert_ast([expression: [literal: -0.00002]], "@(-0.00002)")
 
       assert_ast(
         [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],
@@ -453,7 +453,7 @@ defmodule Expression.ParserTest do
 
   describe "types" do
     test "decimal" do
-      assert_ast([expression: [literal: Decimal.new("1.23")]], "@(1.23)")
+      assert_ast([expression: [literal: 1.23]], "@(1.23)")
     end
 
     test "datetime" do
