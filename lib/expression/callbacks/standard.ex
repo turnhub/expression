@@ -662,18 +662,12 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "percent(2/10)", result: "20%"
   @expression_doc expression: "percent(0.2)", result: "20%"
   @expression_doc expression: "percent(d)", context: %{"d" => "0.2"}, result: "20%"
-  def percent(ctx, decimal) do
-    decimal =
-      case eval!(decimal, ctx) do
-        float when is_float(float) -> Decimal.from_float(float)
-        binary when is_binary(binary) -> Decimal.new(binary)
-        decimal when is_struct(decimal, Decimal) -> decimal
-      end
+  def percent(ctx, float) do
+    float = eval!(float, ctx)
 
-    decimal
-    |> Decimal.mult(100)
-    |> Decimal.to_float()
-    |> Number.Percentage.number_to_percentage(precision: 0)
+    with float when is_number(float) <- parse_float(float) do
+      Number.Percentage.number_to_percentage(float * 100, precision: 0)
+    end
   end
 
   @doc """

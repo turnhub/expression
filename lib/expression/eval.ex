@@ -158,16 +158,6 @@ defmodule Expression.Eval do
     apply(Kernel, operator, [a, b])
   end
 
-  # when acting on Decimal types
-  def op(operator, a, b)
-      when operator in @kernel_operators and
-             is_struct(a, Decimal) and
-             is_struct(b, Decimal) do
-    [a, b] = Enum.map([a, b], &guard_type!(&1, :num))
-
-    decimal_op(operator, a, b)
-  end
-
   def op(:>, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
     do: DateTime.compare(a, b) == :gt
 
@@ -239,24 +229,10 @@ defmodule Expression.Eval do
 
   def default_value(value, _opts), do: value
 
-  def decimal_op(:+, a, b), do: Decimal.add(a, b)
-  def decimal_op(:*, a, b), do: Decimal.mult(a, b)
-  def decimal_op(:/, a, b), do: Decimal.div(a, b)
-  def decimal_op(:-, a, b), do: Decimal.sub(a, b)
-  def decimal_op(:>, a, b), do: Decimal.gt?(a, b)
-  def decimal_op(:>=, a, b), do: Decimal.compare(a, b) in [:gt, :eq]
-  def decimal_op(:<, a, b), do: Decimal.lt?(a, b)
-  def decimal_op(:<=, a, b), do: Decimal.compare(a, b) in [:lt, :eq]
-  def decimal_op(:==, a, b), do: Decimal.eq?(a, b)
-  def decimal_op(:!=, a, b), do: not Decimal.eq?(a, b)
-
-  def decimal_op(operator, _a, _b),
-    do: raise("Invalid operator #{inspect(operator)} for decimal values.")
-
   def not_founds_as_nil({:not_found, _}), do: nil
   def not_founds_as_nil(other), do: other
 
-  defp guard_type!(v, :num) when is_number(v) or is_struct(v, Decimal), do: v
+  defp guard_type!(v, :num) when is_number(v), do: v
 
   defp guard_type!({:not_found, attributes}, :num),
     do: raise("attribute is not found: `#{Enum.join(attributes, ".")}`")
