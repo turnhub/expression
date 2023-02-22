@@ -13,7 +13,7 @@ defmodule Expression.V2.Eval do
   eval is correct and instead relying on us to generate correct AST instead.
 
   The callback module referenced is inserted as the module for any function
-  that is called. So if we an expression uses a function called `foo(1, 2, 3)`
+  that is called. So if an expression uses a function called `foo(1, 2, 3)`
   then the callback module **must** provide a `foo/3` function.
 
   There is some special handling of some functions that either require lazy
