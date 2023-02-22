@@ -48,7 +48,7 @@ defmodule Expression.V2.Eval do
 
   There is some special handling here:
 
-  1. Lists are recursed into to ensure that all list items are properly quoted.
+  1. Lists are recursed to ensure that all list items are properly quoted.
   2. "\"Quoted strings\"" are unquoted and returned as regular strings to the AST.
   3. "Normal strings" are converted into Atoms and treated as such during eval.
   4. Literals such as numbers & booleans are left as is.
