@@ -1,7 +1,7 @@
 defmodule Expression.MixProject do
   use Mix.Project
 
-  @version "2.13.0"
+  @version "2.16.0"
 
   def project do
     [
@@ -48,7 +48,6 @@ defmodule Expression.MixProject do
     [
       {:benchee, "~> 1.0", only: :dev},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
-      {:decimal, "~> 2.0"},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},
       {:ex_phone_number, "~> 0.3.0"},

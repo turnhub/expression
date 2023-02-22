@@ -166,7 +166,6 @@ defmodule Expression.Autodoc do
   def type_of(%Time{}), do: "Time"
   def type_of(%Date{}), do: "Date"
   def type_of(%DateTime{}), do: "DateTime"
-  def type_of(%Decimal{}), do: "Decimal"
   def type_of(boolean) when is_boolean(boolean), do: "Boolean"
   def type_of(nil) when is_nil(nil), do: "Null"
   def type_of(integer) when is_integer(integer), do: "Integer"
