@@ -16,7 +16,7 @@ defmodule Expression.V2.Eval do
   that is called. So if an expression uses a function called `foo(1, 2, 3)`
   then the callback module **must** provide a `foo/3` function.
 
-  There is some special handling of some functions that either require lazy
+  There is some special handling of some functions that either requires lazy
   loading or have specific Elixir AST syntax requirements.
 
   These are documented in the `to_quoted/2` function.
