@@ -45,6 +45,19 @@ defmodule Expression.V2.Eval do
     term
   end
 
+  @doc """
+  Wrap an AST block into an anonymous function that accepts
+  a single argument called context.
+
+  This happens _after_ all the code generation completes. The code
+  generated expects a variable called `context` to exist, wrapping
+  it in this function ensures that it does.
+
+  This is the anonymous function that is returned to the caller.
+  The caller is then responsible to call it with the correct context
+  variables.
+  """
+  @spec wrap_in_context(Macro.t()) :: Macro.t()
   def wrap_in_context(quoted) do
     {:fn, [],
      [
@@ -90,6 +103,8 @@ defmodule Expression.V2.Eval do
   defp quoted(boolean, _callback_module) when is_boolean(boolean), do: boolean
 
   defp quoted([:__property__, [a, b]], callback_module) when is_binary(b) do
+    # When the property we're trying to read is a binary then we're doing
+    # `foo.bar` in an expression and we convert this to a `Map.get(foo, "bar")`
     {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
      [
        quoted(a, callback_module),
@@ -98,6 +113,9 @@ defmodule Expression.V2.Eval do
   end
 
   defp quoted([:__attribute__, [a, b]], callback_module) when is_integer(b) do
+    # When the attribute we're trying to read is an integer then we're
+    # trying to read an index off of a list.
+    # `foo[1]` becomes `Enum.at(foo, 1)`
     {{:., [], [Enum, :at]}, [],
      [
        quoted(a, callback_module),
@@ -105,7 +123,11 @@ defmodule Expression.V2.Eval do
      ]}
   end
 
-  defp quoted([:__attribute__, [a, b]], callback_module) when is_binary(a) do
+  defp quoted([:__attribute__, [a, b]], callback_module) do
+    # For any other attributes, we're assuming we just want to read
+    # a property off of a Map so
+    # `foo[bar]` becomes `Map.get(foo, bar)`
+    # `foo["bar"]` becomse `Map.get(foo, "bar")` etc
     {{:., [], [Access, :get]}, [],
      [
        {{:., [], [Access, :get]}, [],
@@ -118,6 +140,8 @@ defmodule Expression.V2.Eval do
   end
 
   defp quoted(["if", [test, yes, no]], callback_module) do
+    # This is not handled as a callback function in the callback module
+    # because the arguments need to be evaluated lazily.
     {:if, [],
      [
        quoted(test, callback_module),
@@ -129,7 +153,32 @@ defmodule Expression.V2.Eval do
   end
 
   defp quoted(["&", args], callback_module) do
-    {:&, [], Enum.map(args, &quoted(&1, callback_module))}
+    # Rather than generating the regular Elixir anonymous short hand functions
+    # using & and &1 etc we write out a full anonymous function and rewrite
+    # the &1 place holders to `arg1` etc.
+    #
+    # This allows us to support nested anonymous functions when Elixir does
+    # not allow that.
+    function_ast = Enum.map(args, &quoted(&1, callback_module))
+
+    {function_ast, capture_vars} =
+      Macro.prewalk(function_ast, [], fn
+        {:&, [], [index]}, acc when is_integer(index) ->
+          var = {:"arg#{index}", [], nil}
+          {var, [var | acc]}
+
+        other, acc ->
+          {other, acc}
+      end)
+
+    {:fn, [],
+     [
+       {:->, [],
+        [
+          capture_vars,
+          {:__block__, [], function_ast}
+        ]}
+     ]}
   end
 
   defp quoted("&" <> index, _callback_module) do
