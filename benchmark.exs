@@ -8,6 +8,6 @@ Benchee.run(
   inputs: %{
     "simple" => {
       "Hello @contact.name, you were born in @(YEAR(contact.birthday))", 
-      %{contact: %{"name" => "mary", "birthday" => ~U[1920-02-02T00:00:00+0000]}}
+      %{"contact" => %{"name" => "mary", "birthday" => ~U[1920-02-02T00:00:00+0000]}}
     }
   })

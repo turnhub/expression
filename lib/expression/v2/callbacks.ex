@@ -7,8 +7,12 @@ defmodule Expression.V2.Callbacks do
   """
   @built_ins ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="]
 
-  def callback(_context, built_in, args) when built_in in @built_ins,
-    do: apply(Kernel, String.to_existing_atom(built_in), args)
+  def eval_function(function, context) when is_function(function), do: function.(context)
+  def eval_function(other, _), do: other
+
+  def callback(context, built_in, args) when built_in in @built_ins do
+    apply(Kernel, String.to_existing_atom(built_in), Enum.map(args, &eval_function(&1, context)))
+  end
 
   def callback(_context, "map", [enumerable, mapper]), do: Enum.map(enumerable, mapper)
   def callback(_context, "date", [year, month, day]), do: Date.new!(year, month, day)

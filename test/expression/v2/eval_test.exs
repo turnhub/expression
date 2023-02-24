@@ -2,25 +2,40 @@ defmodule Expression.V2.EvalTest do
   use ExUnit.Case, async: true
   doctest Expression.V2
 
+  alias Expression.V2
+  alias Expression.V2.Context
   alias Expression.V2.Eval
   alias Expression.V2.Parser
 
-  def eval(binary, binding \\ [], callback_module \\ Expression.V2.Callbacks) do
+  def eval(binary, vars \\ %{}, callback_module \\ Expression.V2.Callbacks) do
     {:ok, ast, "", _, _, _} = Parser.expression(binary)
-    Eval.eval(ast, binding, callback_module)
+    context = Context.new(vars)
+
+    case Eval.compile(ast, callback_module) do
+      result when is_function(result) -> result.(context)
+      result -> result
+    end
   end
 
   describe "eval" do
     test "vars" do
-      assert "bar" == eval("foo", foo: "bar")
+      assert "bar" == eval("foo", %{"foo" => "bar"})
     end
 
     test "properties" do
-      assert "baz" == eval("foo.bar", foo: %{"bar" => "baz"})
+      assert "baz" == eval("foo.bar", %{"foo" => %{"bar" => "baz"}})
     end
 
-    test "attributes" do
-      assert "baz" == eval("foo[\"bar\"]", foo: %{"bar" => "baz"})
+    test "attributes as vars" do
+      assert "qux" == eval("foo[bar]", %{"foo" => %{"baz" => "qux"}, "bar" => "baz"})
+    end
+
+    test "attributes as literals" do
+      assert "qux" == eval("foo[\"baz\"]", %{"foo" => %{"baz" => "qux"}})
+    end
+
+    test "indices on lists" do
+      assert "qux" == eval("foo[2]", %{"foo" => [1, 2, "qux"]})
     end
 
     test "function calls" do
@@ -44,7 +59,7 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "functions vars & properties" do
-      assert 10 == eval("echo(foo.bar).baz", foo: %{"bar" => %{"baz" => 10}})
+      assert 10 == eval("echo(foo.bar).baz", %{"foo" => %{"bar" => %{"baz" => 10}}})
     end
 
     test "ints & floats" do
@@ -56,7 +71,13 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "if" do
-      assert 1 == eval("if(true, 1, contact)")
+      assert 1 == eval("if(something.true, 1, 0)", %{"something" => %{"true" => true}})
+
+      assert nil ==
+               eval(
+                 "if(something.false, 1, contact.bar)",
+                 %{"something" => %{"false" => false}, "contact" => %{}}
+               )
     end
 
     test "complex values" do
@@ -68,10 +89,10 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "lambda & map" do
-      assert [1, 2, 3] == eval("map(foo, &(&1))", foo: [1, 2, 3])
+      assert [1, 2, 3] == eval("map(foo, &(&1))", %{"foo" => [1, 2, 3]})
 
       assert [[1, "Button"], [2, "Button"], [3, "Button"]] =
-               eval("map(foo, &([&1, \"Button\"]))", foo: [1, 2, 3])
+               eval("map(foo, &([&1, \"Button\"]))", %{"foo" => [1, 2, 3]})
 
       assert [~D[2022-05-01], ~D[2022-05-02], ~D[2022-05-03]] =
                eval("map(1..3, &date(2022, 5, &1))")

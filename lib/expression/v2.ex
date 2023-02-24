@@ -36,7 +36,10 @@ defmodule Expression.V2 do
       ["the answer is ", true]
       iex> V2.eval("22 divided by 7 is @(22 / 7)")
       ["22 divided by 7 is ", 3.142857142857143]
-      iex> V2.eval("Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", %{contact: %{"name" => "mary"}})
+      iex> V2.eval(
+      ...>   "Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", 
+      ...>   %{"contact" => %{"name" => "mary"}}
+      ...> )
       ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
       iex> V2.eval("@map(1..3, &date(2023, 1, &1))")
       [[~D[2023-01-01], ~D[2023-01-02], ~D[2023-01-03]]]
@@ -62,16 +65,44 @@ defmodule Expression.V2 do
   @spec eval(String.t() | [term], context :: map, callback_module :: atom) :: [term]
   def eval(expression_or_ast, context \\ %{}, callback_module \\ Expression.V2.Callbacks)
 
-  def eval(expression, context, callback_module) when is_binary(expression) do
+  def eval(expression, vars, callback_module) when is_binary(expression) do
+    context = Expression.V2.Context.new(vars)
+
     with {:ok, parts} <- parse(expression) do
-      Enum.map(parts, fn
-        part when is_list(part) -> eval([part], context, callback_module) |> hd()
+      parts
+      |> Enum.map(fn
+        parts when is_list(parts) -> eval_block(parts, context, callback_module) |> hd()
         other -> other
       end)
     end
   end
 
-  def eval(ast, context, callback_module) when is_list(ast) do
-    Eval.eval(ast, Enum.into(context, []), callback_module)
+  def eval_block([function_name, arguments], context, callback_module)
+      when is_binary(function_name) and is_list(arguments) do
+    [[function_name, arguments]]
+    |> Eval.compile(callback_module)
+    |> eval_block(context, callback_module)
+  end
+
+  def eval_block(callable, context, callback_module) when is_function(callable) do
+    callable.(context) |> eval_block(context, callback_module)
+  end
+
+  def eval_block(list, context, callback_module) when is_list(list),
+    do: Enum.map(list, &eval_block(&1, context, callback_module))
+
+  def eval_block(final, _context, _callback_module), do: final
+
+  def debug(expression_or_ast, callback_module \\ Expression.V2.Callbacks)
+
+  def debug(expression, callback_module) when is_binary(expression) do
+    with {:ok, ast, "", _, _, _} <- Parser.expression(expression) do
+      debug(ast, callback_module)
+    end
+  end
+
+  def debug(ast, callback_module) do
+    Eval.wrap_in_context(Eval.to_quoted(ast, callback_module))
+    |> Macro.to_string()
   end
 end
