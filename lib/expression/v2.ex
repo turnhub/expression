@@ -46,6 +46,7 @@ defmodule Expression.V2 do
 
   """
 
+  alias Expression.V2.Context
   alias Expression.V2.Eval
   alias Expression.V2.Parser
 
@@ -66,7 +67,7 @@ defmodule Expression.V2 do
   def eval(expression_or_ast, context \\ %{}, callback_module \\ Expression.V2.Callbacks)
 
   def eval(expression, vars, callback_module) when is_binary(expression) do
-    context = Expression.V2.Context.new(vars)
+    context = Context.new(vars)
 
     with {:ok, parts} <- parse(expression) do
       parts
@@ -95,6 +96,11 @@ defmodule Expression.V2 do
 
   def debug(expression_or_ast, callback_module \\ Expression.V2.Callbacks)
 
+  @doc """
+  Return the code generated for the Abstract Syntax tree or 
+  Expression string provided.
+  """
+  @spec debug(String.t() | [term], module) :: String.t()
   def debug(expression, callback_module) when is_binary(expression) do
     with {:ok, ast, "", _, _, _} <- Parser.expression(expression) do
       debug(ast, callback_module)
@@ -102,7 +108,9 @@ defmodule Expression.V2 do
   end
 
   def debug(ast, callback_module) do
-    Eval.wrap_in_context(Eval.to_quoted(ast, callback_module))
+    ast
+    |> Eval.to_quoted(callback_module)
+    |> Eval.wrap_in_context()
     |> Macro.to_string()
   end
 end

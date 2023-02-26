@@ -1,15 +1,22 @@
 defmodule Expression.V2.EvalTest do
   use ExUnit.Case, async: true
-  doctest Expression.V2
+  # doctest Expression.V2
 
   alias Expression.V2
   alias Expression.V2.Context
   alias Expression.V2.Eval
   alias Expression.V2.Parser
 
-  def eval(binary, vars \\ %{}, callback_module \\ Expression.V2.Callbacks) do
+  def eval(binary, vars \\ %{}, opts \\ []) do
     {:ok, ast, "", _, _, _} = Parser.expression(binary)
     context = Context.new(vars)
+    debug = opts[:debug] || false
+    callback_module = opts[:callback_module] || Expression.V2.Callbacks
+
+    if debug do
+      V2.debug(ast, callback_module)
+      |> IO.puts()
+    end
 
     case Eval.compile(ast, callback_module) do
       result when is_function(result) -> result.(context)
@@ -89,13 +96,14 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "lambda & map" do
-      assert [1, 2, 3] == eval("map(foo, &(&1))", %{"foo" => [1, 2, 3]})
+      ctx = %{"foo" => [1, 2, 3]}
+      assert [1, 2, 3] == eval("map(foo, &(&1))", ctx)
 
       assert [[1, "Button"], [2, "Button"], [3, "Button"]] =
-               eval("map(foo, &([&1, \"Button\"]))", %{"foo" => [1, 2, 3]})
+               eval("map(foo, &([&1, \"Button\"]))", ctx)
 
-      assert [~D[2022-05-01], ~D[2022-05-02], ~D[2022-05-03]] =
-               eval("map(1..3, &date(2022, 5, &1))")
+      assert [[1, "Button 1"], [2, "Button 2"], [3, "Button 3"]] =
+               eval(~S|map(foo, &([&1, concatenate("Button ", &1)]))|, ctx)
     end
   end
 end

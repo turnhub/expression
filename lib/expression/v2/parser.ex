@@ -171,7 +171,7 @@ defmodule Expression.V2.Parser do
   function =
     atom
     |> concat(function_arguments)
-    |> reduce(:ensure_list)
+    |> reduce(:as_function_tuple)
 
   lambda_capture =
     string("&")
@@ -186,11 +186,13 @@ defmodule Expression.V2.Parser do
       # or we refer to a function directly
       wrap(parsec(:term_operator))
     ])
-    |> reduce(:ensure_list)
+    |> reduce(:as_function_tuple)
 
   @doc false
-  def ensure_list([binary]) when is_binary(binary), do: [binary, []]
-  def ensure_list([binary, args]) when is_binary(binary) and is_list(args), do: [binary, args]
+  def as_function_tuple([binary]) when is_binary(binary), do: {binary, []}
+
+  def as_function_tuple([binary, args]) when is_binary(binary) and is_list(args),
+    do: {binary, args}
 
   range =
     integer(min: 1)
@@ -357,7 +359,7 @@ defmodule Expression.V2.Parser do
     |> Enum.chunk_every(2)
     |> List.foldr([], fn
       [l], [] -> l
-      [r, op], l -> [op, [l, r]]
+      [r, op], l -> {op, [l, r]}
     end)
   end
 
@@ -367,7 +369,7 @@ defmodule Expression.V2.Parser do
   ## Example
       
       iex> Expression.V2.Parser.expression("contact.age + 1")
-      {:ok, [["+", [[:__property__, ["contact", "age"]], 1]]], "", %{}, {1, 0}, 15}
+      {:ok,  [{"+", [{:__property__, ["contact", "age"]}, 1]}], "", %{}, {1, 0}, 15}
 
   """
   defparsec(:expression, parsec(:term_operator))
@@ -378,7 +380,7 @@ defmodule Expression.V2.Parser do
   ## Example
       
       iex> Expression.V2.Parser.parse("hello @world the time is @now()")
-      {:ok, ["hello ", ["world"], " the time is ", [["now", []]]], "", %{}, {1, 0}, 31}
+      {:ok, ["hello ", ["world"], " the time is ", [{"now", []}]], "", %{}, {1, 0}, 31}
 
   """
   defparsec(
