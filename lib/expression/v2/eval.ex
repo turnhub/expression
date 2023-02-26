@@ -3,17 +3,13 @@ defmodule Expression.V2.Eval do
   An evaluator for AST returned by Expression.V2.Parser.
 
   This reads the AST output returned by `Expression.V2.parse/1` and
-  evaluates it according to the given variable bindings and functions
-  available in the callback module specified.
+  compiles it to Elixir code. 
 
   It does this by emitting valid Elixir AST, mimicking what `quote/2` does.
 
   The Elixir AST is then supplied to `Code.eval_quoted_with_env/3` without any
-  binding Elixir evaluates it for us, reducing the need for us to ensure that our 
-  eval is correct and instead relying on us to generate correct AST instead.
-
-  What is returned is an anonymous function that accepts an Expression.V2.Context.t
-  struct and evaluates the code against that context.
+  variable binding. What is returned is an anonymous function that accepts an 
+  `Expression.V2.Context.t` struct and evaluates the code against that context.
 
   The callback module referenced is inserted as the module for any function
   that is called. So if an expression uses a function called `foo(1, 2, 3)`
@@ -23,16 +19,24 @@ defmodule Expression.V2.Eval do
   MyProject.Callbacks.callback(context, "foo", [1, 2, 3])
   ```
 
-  There is some special handling of some functions that either requires lazy
-  loading or have specific Elixir AST syntax requirements.
+  There is some special handling of some functions have specific Elixir AST 
+  syntax requirements.
 
   These are documented in the `to_quoted/2` function.
+
+  All variables referenced by the expression are scoped to `context.vars`.
+  However the full context is supplied to any function calls, giving
+  functions the privilege of doing more than the `context.vars` scope alone
+  would allow them to do.
   """
 
   @doc """
-  Accepts AST as emitted by `Expression.V2.parse/1` and returns an anonymous
-  & pure function that accepts a Context.t as an argument and returns the result 
-  of the expression against the given Context.
+  Accepts AST as emitted by `Expression.V2.parse/1` and returns an anonymous function
+  that accepts a Context.t as an argument and returns the result  of the expression 
+  against the given Context.
+
+  If the callback functions defined in the callback module are pure then this function
+  is also pure and is suitable for caching.
   """
   @spec compile([any], callback_module :: module) ::
           (Expression.V2.Context.t() -> [any])
