@@ -26,15 +26,30 @@ defmodule Expression.V2.Parser do
   ["+", [1, 1]]
   ```
 
-  Similarly, functions are expressed as:
+  Functions are expressed as:
 
   ```
-  ["function name", [arg1, arg2]]
+  {"function name", [arg1, arg2]}
   ```
 
-  Variable references are single value lists.
+  Until we have a fixed scope of allowed functions, or if we can dynamically look up whether an
+  `atom` is a function or a variable reference, we will need to rely on tuples to represent functions
+  as otherwise the system has no means to distinguish the following AST as being a function call
+  or a list as a variable:
 
-  ["contact"]
+  ```
+  ["echo", [1, 2, 3]]
+  ```
+
+  Without being able to say _ahead_ of time whether or not `echo/1` is a known function, the
+  system cannot reliable determine whether the result of this AST should be `["echo", [1, 2, 3]]`
+  or the result of `echo(1, 2, 3)`.
+
+  Variable references are single values.
+
+  ```
+  "contact"
+  ```
 
   This module provides two functions for parsing. `parse/2` which will parse a full FLOIP expression
   including text and blocks, and `expression/2` which will parse expression blocks.
