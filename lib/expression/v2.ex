@@ -38,7 +38,7 @@ defmodule Expression.V2 do
       ["22 divided by 7 is ", 3.142857142857143]
       iex> V2.eval(
       ...>   "Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", 
-      ...>   %{"contact" => %{"name" => "mary"}}
+      ...>   V2.Context.new(%{"contact" => %{"name" => "mary"}})
       ...> )
       ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
       iex> V2.eval("@map(1..3, &date(2023, 1, &1))")
