@@ -43,6 +43,16 @@ defmodule Expression.V2 do
       ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
       iex> V2.eval("@map(1..3, &date(2023, 1, &1))")
       [[~D[2023-01-01], ~D[2023-01-02], ~D[2023-01-03]]]
+      iex> V2.eval(
+      ...>   "Here is the multiplication table of @number: @(map(1..10, &(&1 * number)))",
+      ...>   V2.Context.new(%{"number" => 5})
+      ...> )
+      [
+        "Here is the multiplication table of ",
+        5,
+        ": ",
+        [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+      ]
 
   """
 
@@ -80,6 +90,10 @@ defmodule Expression.V2 do
 
   @spec eval_part((Context.t() -> term) | term, Context.t()) :: term
   def eval_part(function, context) when is_function(function), do: function.(context)
+
+  def eval_part(atom, context) when is_binary(atom),
+    do: Map.get(context.vars, atom, atom)
+
   def eval_part(literal, _context), do: literal
 
   @spec compile(expression :: String.t()) :: [term]
