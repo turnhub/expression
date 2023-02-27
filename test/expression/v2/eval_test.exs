@@ -4,21 +4,20 @@ defmodule Expression.V2.EvalTest do
 
   alias Expression.V2
   alias Expression.V2.Context
-  alias Expression.V2.Eval
+  alias Expression.V2.Compile
   alias Expression.V2.Parser
 
   def eval(binary, vars \\ %{}, opts \\ []) do
     {:ok, ast, "", _, _, _} = Parser.expression(binary)
     context = Context.new(vars)
     debug = opts[:debug] || false
-    callback_module = opts[:callback_module] || Expression.V2.Callbacks
 
     if debug do
-      V2.debug(ast, callback_module)
+      V2.debug(ast)
       |> IO.puts()
     end
 
-    case Eval.compile(ast, callback_module) do
+    case Compile.compile(ast) do
       result when is_function(result) -> result.(context)
       result -> result
     end

@@ -6,9 +6,10 @@ defmodule Expression.V2Test do
     test "code gen variables" do
       assert String.trim("""
              fn context ->
-               Expression.V2.Callbacks.callback(context, "+", [
-                 Map.get(context.vars, "foo"),
-                 Map.get(context.vars, "bar")
+               apply(context.callback_module, :callback, [
+                 context,
+                 "+",
+                 [Map.get(context.vars, "foo"), Map.get(context.vars, "bar")]
                ])
              end
              """) == V2.debug("foo + bar")

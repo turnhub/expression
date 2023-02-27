@@ -1,6 +1,6 @@
-defmodule Expression.V2.Eval do
+defmodule Expression.V2.Compile do
   @moduledoc """
-  An evaluator for AST returned by Expression.V2.Parser.
+  An compiler for AST returned by Expression.V2.Parser.
 
   This reads the AST output returned by `Expression.V2.parse/1` and
   compiles it to Elixir code. 
@@ -11,12 +11,12 @@ defmodule Expression.V2.Eval do
   variable binding. What is returned is an anonymous function that accepts an 
   `Expression.V2.Context.t` struct and evaluates the code against that context.
 
-  The callback module referenced is inserted as the module for any function
-  that is called. So if an expression uses a function called `foo(1, 2, 3)`
-  then the callback's `callback/3` function will be called as follows:
+  Any function calls are applied to the callback module referenced in the context.
+  So if an expression uses a function called `foo(1, 2, 3)` then the callback's 
+  `callback/3` function will be called as follows:
 
   ```elixir
-  MyProject.Callbacks.callback(context, "foo", [1, 2, 3])
+  apply(context.callback_module, :callback, ["foo", [1, 2, 3]])
   ```
 
   There is some special handling of some functions have specific Elixir AST 
@@ -38,11 +38,11 @@ defmodule Expression.V2.Eval do
   If the callback functions defined in the callback module are pure then this function
   is also pure and is suitable for caching.
   """
-  @spec compile([any], callback_module :: module) ::
+  @spec compile([any]) ::
           (Expression.V2.Context.t() -> [any])
-  def compile(ast, callback_module) do
+  def compile(ast) do
     # convert to valid Elixir AST
-    quoted = wrap_in_context(to_quoted(ast, callback_module))
+    quoted = wrap_in_context(to_quoted(ast))
     {term, _binding, _env} = Code.eval_quoted_with_env(quoted, [], Code.env_for_eval([]))
 
     term
@@ -89,44 +89,44 @@ defmodule Expression.V2.Eval do
   6. `&` and `&1` captures are generated into valid Elixir AST captures.
   7. Any functions are generated as being function calls for the given callback module.
   """
-  @spec to_quoted([term] | term, callback_module :: atom) :: Macro.t()
-  def to_quoted(ast, callback_module) when is_list(ast) do
+  @spec to_quoted([term] | term) :: Macro.t()
+  def to_quoted(ast) when is_list(ast) do
     quoted_block =
       Enum.reduce(ast, [], fn element, acc ->
-        [quoted(element, callback_module) | acc]
+        [quoted(element) | acc]
       end)
 
     {:__block__, [], quoted_block}
   end
 
-  defp quoted("\"" <> _ = binary, _callback_module) when is_binary(binary),
+  defp quoted("\"" <> _ = binary) when is_binary(binary),
     do: String.replace(binary, "\"", "")
 
-  defp quoted(number, _callback_module) when is_number(number), do: number
-  defp quoted(boolean, _callback_module) when is_boolean(boolean), do: boolean
+  defp quoted(number) when is_number(number), do: number
+  defp quoted(boolean) when is_boolean(boolean), do: boolean
 
-  defp quoted({:__property__, [a, b]}, callback_module) when is_binary(b) do
+  defp quoted({:__property__, [a, b]}) when is_binary(b) do
     # When the property we're trying to read is a binary then we're doing
     # `foo.bar` in an expression and we convert this to a `Map.get(foo, "bar")`
     {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
      [
-       quoted(a, callback_module),
+       quoted(a),
        b
      ]}
   end
 
-  defp quoted({:__attribute__, [a, b]}, callback_module) when is_integer(b) do
+  defp quoted({:__attribute__, [a, b]}) when is_integer(b) do
     # When the attribute we're trying to read is an integer then we're
     # trying to read an index off of a list.
     # `foo[1]` becomes `Enum.at(foo, 1)`
     {{:., [], [Enum, :at]}, [],
      [
-       quoted(a, callback_module),
-       quoted(b, callback_module)
+       quoted(a),
+       quoted(b)
      ]}
   end
 
-  defp quoted({:__attribute__, [a, b]}, callback_module) do
+  defp quoted({:__attribute__, [a, b]}) do
     # For any other attributes, we're assuming we just want to read
     # a property off of a Map so
     # `foo[bar]` becomes `Map.get(foo, bar)`
@@ -138,51 +138,46 @@ defmodule Expression.V2.Eval do
           context_dot_vars(),
           a
         ]},
-       quoted(b, callback_module)
+       quoted(b)
      ]}
   end
 
-  defp quoted({"if", [test, yes, no]}, callback_module) do
+  defp quoted({"if", [test, yes, no]}) do
     # This is not handled as a callback function in the callback module
     # because the arguments need to be evaluated lazily.
     {:if, [],
      [
-       quoted(test, callback_module),
+       quoted(test),
        [
-         do: quoted(yes, callback_module),
-         else: quoted(no, callback_module)
+         do: quoted(yes),
+         else: quoted(no)
        ]
      ]}
   end
 
-  defp quoted({"&", args}, callback_module) do
-    {:&, [], Enum.map(args, &quoted(&1, callback_module))}
+  defp quoted({"&", args}) do
+    {:&, [], Enum.map(args, &quoted(&1))}
   end
 
-  defp quoted("&" <> index, _callback_module) do
+  defp quoted("&" <> index) do
     {:&, [], [String.to_integer(index)]}
   end
 
-  defp quoted({function_name, arguments}, callback_module)
+  defp quoted({function_name, arguments})
        when is_binary(function_name) and is_list(arguments) do
-    module_as_atoms =
-      callback_module
-      |> Module.split()
-      |> Enum.map(&String.to_existing_atom/1)
-
-    {{:., [], [{:__aliases__, [alias: false], module_as_atoms}, :callback]}, [],
+    {:apply, [],
      [
-       {:context, [], nil},
-       function_name,
-       {:__block__, [], [Enum.map(arguments, &quoted(&1, callback_module))]}
+       context_dot_callback_module(),
+       :callback,
+       [{:context, [], nil}, function_name, Enum.map(arguments, &quoted(&1))]
      ]}
   end
 
-  defp quoted(list, callback_module) when is_list(list) do
-    Enum.map(list, &quoted(&1, callback_module))
+  defp quoted(list) when is_list(list) do
+    Enum.map(list, &quoted(&1))
   end
 
-  defp quoted(atom, _callback_module) when is_binary(atom) do
+  defp quoted(atom) when is_binary(atom) do
     {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
      [
        {{:., [], [{:context, [], nil}, :vars]}, [no_parens: true], []},
@@ -190,7 +185,7 @@ defmodule Expression.V2.Eval do
      ]}
   end
 
-  defp quoted(%Range{first: first, last: last, step: step}, _callback_module) do
+  defp quoted(%Range{first: first, last: last, step: step}) do
     {:%, [],
      [
        {:__aliases__, [], [:Range]},
@@ -198,8 +193,13 @@ defmodule Expression.V2.Eval do
      ]}
   end
 
+  defp context_dot_callback_module do
+    # Short hand function to generate `context.callback_module`
+    {{:., [], [{:context, [], nil}, :callback_module]}, [no_parens: true], []}
+  end
+
   defp context_dot_vars do
-    # Short hand function to generate `context.vars` :)
+    # Short hand function to generate `context.vars`
     {{:., [], [{:context, [], nil}, :vars]}, [no_parens: true], []}
   end
 end

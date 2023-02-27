@@ -3,10 +3,10 @@ defmodule Expression.V2 do
   A second attempt at the parser, hopefully a little easier to read & maintain.
 
   `parse/1` parsed an Expression into AST.
-  `eval/3` evaluates the given AST using the context and the callback module.
+  `eval/3` evaluates the given AST using the context supplied.
 
   For details on how this is done please read `Expression.V2.Parser` and
-  `Expression.V2.Eval`.
+  `Expression.V2.Compile`.
 
   This parser & evaluator supports the following:
 
@@ -46,8 +46,7 @@ defmodule Expression.V2 do
 
   """
 
-  alias Expression.V2.Context
-  alias Expression.V2.Eval
+  alias Expression.V2.Compile
   alias Expression.V2.Parser
 
   @spec parse(String.t()) ::
@@ -63,54 +62,52 @@ defmodule Expression.V2 do
     end
   end
 
-  @spec eval(String.t() | [term], context :: map, callback_module :: atom) :: [term]
-  def eval(expression_or_ast, context \\ %{}, callback_module \\ Expression.V2.Callbacks)
+  @spec eval(String.t() | [term]) :: [term]
+  def eval(expression_or_ast)
 
-  def eval(expression, vars, callback_module) when is_binary(expression) do
-    context = Context.new(vars)
-
+  def eval(expression) when is_binary(expression) do
     with {:ok, parts} <- parse(expression) do
       parts
       |> Enum.map(fn
-        parts when is_list(parts) -> eval_block(parts, context, callback_module) |> hd()
+        parts when is_list(parts) -> compile_block(parts) |> hd()
         other -> other
       end)
     end
   end
 
-  def eval_block([function_name, arguments], context, callback_module)
+  def compile_block([function_name, arguments])
       when is_binary(function_name) and is_list(arguments) do
     [[function_name, arguments]]
-    |> Eval.compile(callback_module)
-    |> eval_block(context, callback_module)
+    |> Compile.compile()
+    |> compile_block()
   end
 
-  def eval_block(callable, context, callback_module) when is_function(callable) do
-    callable.(context) |> eval_block(context, callback_module)
-  end
+  # def compile_block(callable) when is_function(callable) do
+  #   callable
+  # end
 
-  def eval_block(list, context, callback_module) when is_list(list),
-    do: Enum.map(list, &eval_block(&1, context, callback_module))
+  def compile_block(list) when is_list(list),
+    do: Enum.map(list, &compile_block(&1))
 
-  def eval_block(final, _context, _callback_module), do: final
+  def compile_block(final), do: final
 
-  def debug(expression_or_ast, callback_module \\ Expression.V2.Callbacks)
+  def debug(expression_or_ast)
 
   @doc """
   Return the code generated for the Abstract Syntax tree or 
   Expression string provided.
   """
-  @spec debug(String.t() | [term], module) :: String.t()
-  def debug(expression, callback_module) when is_binary(expression) do
+  @spec debug(String.t() | [term]) :: String.t()
+  def debug(expression) when is_binary(expression) do
     with {:ok, ast, "", _, _, _} <- Parser.expression(expression) do
-      debug(ast, callback_module)
+      debug(ast)
     end
   end
 
-  def debug(ast, callback_module) do
+  def debug(ast) do
     ast
-    |> Eval.to_quoted(callback_module)
-    |> Eval.wrap_in_context()
+    |> Compile.to_quoted()
+    |> Compile.wrap_in_context()
     |> Macro.to_string()
   end
 end
