@@ -78,9 +78,11 @@ defmodule Expression.V2 do
     end)
   end
 
+  @spec eval_part((Context.t() -> term) | term, Context.t()) :: term
   def eval_part(function, context) when is_function(function), do: function.(context)
   def eval_part(literal, _context), do: literal
 
+  @spec compile(expression :: String.t()) :: [term]
   def compile(expression) when is_binary(expression) do
     with {:ok, parts} <- parse(expression),
          parts <- Enum.map([parts], &compile_block/1) do
@@ -99,8 +101,6 @@ defmodule Expression.V2 do
     do: Enum.map(list, &compile_block(&1))
 
   def compile_block(final), do: final
-
-  def debug(expression_or_ast)
 
   @doc """
   Return the code generated for the Abstract Syntax tree or 
