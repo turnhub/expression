@@ -46,6 +46,7 @@ defmodule Expression.V2 do
 
   """
 
+  alias Expression.V2.Context
   alias Expression.V2.Compile
   alias Expression.V2.Parser
 
@@ -62,29 +63,37 @@ defmodule Expression.V2 do
     end
   end
 
-  @spec eval(String.t() | [term]) :: [term]
-  def eval(expression_or_ast)
+  @spec eval(String.t(), context :: Context.t()) :: [term]
+  def eval(expression, context \\ Context.new()) do
+    parts = compile(expression)
 
-  def eval(expression) when is_binary(expression) do
-    with {:ok, parts} <- parse(expression) do
-      parts
-      |> Enum.map(fn
-        parts when is_list(parts) -> compile_block(parts) |> hd()
-        other -> other
-      end)
+    Enum.map(parts, fn
+      part when is_list(part) ->
+        part
+        |> Enum.map(&eval_part(&1, context))
+        |> hd()
+
+      other ->
+        other
+    end)
+  end
+
+  def eval_part(function, context) when is_function(function), do: function.(context)
+  def eval_part(literal, _context), do: literal
+
+  def compile(expression) when is_binary(expression) do
+    with {:ok, parts} <- parse(expression),
+         parts <- Enum.map([parts], &compile_block/1) do
+      hd(parts)
     end
   end
 
-  def compile_block([function_name, arguments])
+  def compile_block({function_name, arguments})
       when is_binary(function_name) and is_list(arguments) do
-    [[function_name, arguments]]
+    [{function_name, arguments}]
     |> Compile.compile()
     |> compile_block()
   end
-
-  # def compile_block(callable) when is_function(callable) do
-  #   callable
-  # end
 
   def compile_block(list) when is_list(list),
     do: Enum.map(list, &compile_block(&1))

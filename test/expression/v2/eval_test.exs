@@ -1,10 +1,10 @@
 defmodule Expression.V2.EvalTest do
   use ExUnit.Case, async: true
-  # doctest Expression.V2
+  doctest Expression.V2
 
   alias Expression.V2
-  alias Expression.V2.Context
   alias Expression.V2.Compile
+  alias Expression.V2.Context
   alias Expression.V2.Parser
 
   def eval(binary, vars \\ %{}, opts \\ []) do
