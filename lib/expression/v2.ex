@@ -46,8 +46,8 @@ defmodule Expression.V2 do
 
   """
 
-  alias Expression.V2.Context
   alias Expression.V2.Compile
+  alias Expression.V2.Context
   alias Expression.V2.Parser
 
   @spec parse(String.t()) ::
