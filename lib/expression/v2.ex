@@ -99,7 +99,7 @@ defmodule Expression.V2 do
   end
 
   @doc """
-  Evaluate a string with expressions against a give context
+  Evaluate a string with expressions against a given context
   """
   @spec eval(String.t(), context :: Context.t()) :: [term]
   def eval(expression, context \\ Context.new()) when is_binary(expression) do
