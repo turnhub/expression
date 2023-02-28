@@ -1203,7 +1203,7 @@ defmodule Expression.V2.Callbacks.Standard do
   end
 
   @doc """
-  Tests whether `expresssion` contains a phone number.
+  Tests whether `expression` contains a phone number.
   The optional country_code argument specifies the country to use for parsing.
   """
   @expression_doc expression: "has_phone(\"my number is +12067799294 thanks\")", result: true
