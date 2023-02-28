@@ -317,7 +317,7 @@ defmodule Expression.V2.Parser do
     |> reduce(:fold_infixl)
   )
 
-  # Second operator precendence parser
+  # Second operator precedence parser
   defparsecp(
     :multiplication_division,
     parsec(:exponentiation)
