@@ -130,7 +130,7 @@ defmodule Expression.V2.Compile do
     # For any other attributes, we're assuming we just want to read
     # a property off of a Map so
     # `foo[bar]` becomes `Map.get(foo, bar)`
-    # `foo["bar"]` becomse `Map.get(foo, "bar")` etc
+    # `foo["bar"]` becomes `Map.get(foo, "bar")` etc
     {{:., [], [Access, :get]}, [],
      [
        {{:., [], [Access, :get]}, [],
