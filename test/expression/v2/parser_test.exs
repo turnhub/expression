@@ -39,7 +39,7 @@ defmodule Expression.V2.ParserTest do
   end
 
   describe "functions" do
-    test "expresssion/1" do
+    test "expression/1" do
       assert {:ok, ["hi ", [{"now", []}]], "", _, _, _} = Parser.parse("hi @now()")
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @now(1, 2)")
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @(now(1, 2))")
