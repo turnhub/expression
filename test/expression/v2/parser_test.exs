@@ -39,13 +39,13 @@ defmodule Expression.V2.ParserTest do
   end
 
   describe "functions" do
-    test "expresssion/1" do
+    test "expression/1" do
       assert {:ok, ["hi ", [{"now", []}]], "", _, _, _} = Parser.parse("hi @now()")
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @now(1, 2)")
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @(now(1, 2))")
     end
 
-    test "expresssion/1 nested" do
+    test "expression/1 nested" do
       assert {:ok, [[{"now", [1, 2, {"foo", [1, 2, 3]}]}]], "", _, _, _} =
                Parser.parse("@(now(1, 2, foo(1, 2, 3)))")
     end
@@ -61,7 +61,7 @@ defmodule Expression.V2.ParserTest do
                Parser.parse("@(foo() + 1 + 1)")
     end
 
-    test "operator precendence" do
+    test "operator precedence" do
       assert {:ok, [[{"+", [1, {"*", [2, 3]}]}]], "", _, _, _} = Parser.parse("@(1 + 2 * 3)")
     end
 
@@ -86,20 +86,20 @@ defmodule Expression.V2.ParserTest do
 
   describe "properties" do
     test "direct" do
-      assert {:ok, [[{:__property__, ["foo", "bar"]}]], "", _, _, _} = Parser.parse("@(foo.bar)")
+      assert {:ok, [[{"__property__", ["foo", "bar"]}]], "", _, _, _} = Parser.parse("@(foo.bar)")
     end
 
     test "nested" do
       assert {:ok,
               [
                 [
-                  {:__property__, [{:__property__, ["foo", "bar"]}, "baz"]}
+                  {"__property__", [{"__property__", ["foo", "bar"]}, "baz"]}
                 ]
               ], "", _, _, _} = Parser.parse("@(foo.bar.baz)")
     end
 
     test "when called on function results" do
-      assert {:ok, [[{:__property__, [{"function", []}, "bar"]}]], "", _, _, _} =
+      assert {:ok, [[{"__property__", [{"function", []}, "bar"]}]], "", _, _, _} =
                Parser.parse("@(function().bar)")
     end
   end
@@ -137,27 +137,27 @@ defmodule Expression.V2.ParserTest do
       assert {:ok,
               [
                 [
-                  {:__attribute__, [{:__attribute__, ["foo", "bar"]}, "baz"]}
+                  {"__attribute__", [{"__attribute__", ["foo", "bar"]}, "baz"]}
                 ]
               ], "", _, _, _} = Parser.parse("@(foo[bar][baz])")
     end
 
     test "when indexed" do
-      assert {:ok, [[{:__attribute__, ["foo", 1]}]], "", _, _, _} = Parser.parse("@(foo[1])")
+      assert {:ok, [[{"__attribute__", ["foo", 1]}]], "", _, _, _} = Parser.parse("@(foo[1])")
     end
 
     test "when string keys" do
-      assert {:ok, [[{:__attribute__, ["foo", "\"bar\""]}]], "", _, _, _} =
+      assert {:ok, [[{"__attribute__", ["foo", "\"bar\""]}]], "", _, _, _} =
                Parser.parse("@(foo[\"bar\"])")
     end
 
     test "when function values" do
-      assert {:ok, [[{:__attribute__, ["foo", {"today", []}]}]], "", _, _, _} =
+      assert {:ok, [[{"__attribute__", ["foo", {"today", []}]}]], "", _, _, _} =
                Parser.parse("@(foo[today()])")
     end
 
     test "when called on function results" do
-      assert {:ok, [[{:__attribute__, [{"function", []}, 0]}]], "", _, _, _} =
+      assert {:ok, [[{"__attribute__", [{"function", []}, 0]}]], "", _, _, _} =
                Parser.parse("@(function()[0])")
     end
 
@@ -165,7 +165,8 @@ defmodule Expression.V2.ParserTest do
       assert {:ok,
               [
                 [
-                  {:__attribute__, [{:__property__, [{:__property__, ["foo", "bar"]}, "baz"]}, 0]}
+                  {"__attribute__",
+                   [{"__property__", [{"__property__", ["foo", "bar"]}, "baz"]}, 0]}
                 ]
               ], "", _, _, _} = Parser.parse("@(foo.bar.baz[0])")
     end
@@ -190,11 +191,11 @@ defmodule Expression.V2.ParserTest do
     end
 
     test "short hand properties" do
-      assert {:ok, [[{:__property__, ["bar", "com"]}]], "", _, _, _} = Parser.parse("@bar.com")
+      assert {:ok, [[{"__property__", ["bar", "com"]}]], "", _, _, _} = Parser.parse("@bar.com")
     end
 
     test "short hand attributes" do
-      assert {:ok, [[{:__attribute__, ["bar", "com"]}]], "", _, _, _} = Parser.parse("@bar[com]")
+      assert {:ok, [[{"__attribute__", ["bar", "com"]}]], "", _, _, _} = Parser.parse("@bar[com]")
     end
   end
 

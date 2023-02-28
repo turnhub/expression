@@ -48,7 +48,7 @@ defmodule Expression.V2.EvalTest do
       assert "Hi" == eval("proper(\"hi\")")
     end
 
-    test "arithmatic" do
+    test "arithmetic" do
       assert 5 == eval("1 * 5")
     end
 
