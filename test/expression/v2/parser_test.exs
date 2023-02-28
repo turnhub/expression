@@ -61,7 +61,7 @@ defmodule Expression.V2.ParserTest do
                Parser.parse("@(foo() + 1 + 1)")
     end
 
-    test "operator precendence" do
+    test "operator precedence" do
       assert {:ok, [[{"+", [1, {"*", [2, 3]}]}]], "", _, _, _} = Parser.parse("@(1 + 2 * 3)")
     end
 
