@@ -113,8 +113,7 @@ defmodule Expression.V2 do
   def eval_as_string(expression, context \\ Context.new()) do
     eval(expression, context)
     |> Enum.map(&default_value(&1, context))
-    |> Enum.map(&stringify/1)
-    |> Enum.join("")
+    |> Enum.map_join("", &stringify/1)
   end
 
   @doc """

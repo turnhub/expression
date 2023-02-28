@@ -137,12 +137,23 @@ defmodule Expression.V2.Autodoc do
 
   def generate_ex_doc(prompt \\ "iex", module, expression, context, result) do
     """
+        #{prompt}> # Evaluate a string with expressions
         #{prompt}> import ExUnit.Assertions
+        #{prompt}> result = Expression.V2.eval(
+        ...>   #{inspect("chat for @" <> expression <> " impact")},
+        ...>   Expression.V2.Context.new(#{inspect(context || %{})}, #{inspect(module)})
+        ...> )
+        #{generate_assert(prompt, ["chat for ", result, " impact"])}
+        #{prompt}> 
+        #{prompt}> # Evaluate a standalone expression block
         #{prompt}> result = Expression.V2.eval_block(
         ...>   #{inspect(expression)},
         ...>   Expression.V2.Context.new(#{inspect(context || %{})}, #{inspect(module)})
         ...> )
+        #{prompt}> 
         #{generate_assert(prompt, result)}
+        #{prompt}> 
+        #{prompt}> # Evaluate a string with expressions into a single string
         #{prompt}> Expression.V2.eval_as_string(
         ...>   #{inspect("@" <> expression)},
         ...>   Expression.V2.Context.new(#{inspect(context || %{})}, #{inspect(module)})
