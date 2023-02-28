@@ -105,7 +105,7 @@ defmodule Expression.V2.Compile do
   defp quoted(number) when is_number(number), do: number
   defp quoted(boolean) when is_boolean(boolean), do: boolean
 
-  defp quoted({:__property__, [a, b]}) when is_binary(b) do
+  defp quoted({"__property__", [a, b]}) when is_binary(b) do
     # When the property we're trying to read is a binary then we're doing
     # `foo.bar` in an expression and we convert this to a `Map.get(foo, "bar")`
     {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
@@ -115,7 +115,7 @@ defmodule Expression.V2.Compile do
      ]}
   end
 
-  defp quoted({:__attribute__, [a, b]}) when is_integer(b) do
+  defp quoted({"__attribute__", [a, b]}) when is_integer(b) do
     # When the attribute we're trying to read is an integer then we're
     # trying to read an index off of a list.
     # `foo[1]` becomes `Enum.at(foo, 1)`
@@ -126,7 +126,7 @@ defmodule Expression.V2.Compile do
      ]}
   end
 
-  defp quoted({:__attribute__, [a, b]}) do
+  defp quoted({"__attribute__", [a, b]}) do
     # For any other attributes, we're assuming we just want to read
     # a property off of a Map so
     # `foo[bar]` becomes `Map.get(foo, bar)`
