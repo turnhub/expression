@@ -81,11 +81,18 @@ defmodule Expression.V2.Parser do
       boolean_false
     ])
 
+  int =
+    optional(string("-"))
+    |> concat(ascii_string([?0..?9], min: 1))
+    |> reduce({Enum, :join, [""]})
+    |> map({String, :to_integer, []})
+
   # These are just regular floats, previous iteration used the
   # Decimal library but that just made some simple arithmatic
   # and comparisons more complicated than needed to be.
   float =
-    integer(min: 1)
+    optional(string("-"))
+    |> integer(min: 1)
     |> string(".")
     # Using ascii string here instead of integer/2 to prevent us chopping
     # off leading zeros after the period.
@@ -285,7 +292,7 @@ defmodule Expression.V2.Parser do
         label(range, "a range"),
         label(list, "a list"),
         label(float, "a float"),
-        label(integer(min: 1), "an integer"),
+        label(int, "an integer"),
         label(string_with_quotes, "a quoted string"),
         label(boolean, "a boolean"),
         label(attribute, "an attribute"),

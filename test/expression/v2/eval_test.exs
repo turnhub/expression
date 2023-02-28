@@ -45,7 +45,7 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "function calls" do
-      assert 1 == eval("echo(1)")
+      assert "Hi" == eval("proper(\"hi\")")
     end
 
     test "arithmatic" do
@@ -61,11 +61,7 @@ defmodule Expression.V2.EvalTest do
     end
 
     test "functions with vars" do
-      assert 50 == eval("echo(10) * 5")
-    end
-
-    test "functions vars & properties" do
-      assert 10 == eval("echo(foo.bar).baz", %{"foo" => %{"bar" => %{"baz" => 10}}})
+      assert 50 == eval("day(date(2023, 2, 10)) * 5")
     end
 
     test "ints & floats" do

@@ -73,27 +73,73 @@ defmodule Expression.V2 do
     end
   end
 
-  @spec eval(String.t(), context :: Context.t()) :: [term]
-  def eval(expression, context \\ Context.new()) do
-    parts = compile(expression)
-
-    Enum.map(parts, fn
-      part when is_list(part) ->
-        part
-        |> Enum.map(&eval_part(&1, context))
-        |> hd()
-
-      other ->
-        other
-    end)
+  def parse_block(expression_block) do
+    case Parser.expression(expression_block) do
+      {:ok, ast, "", _, _, _} -> {:ok, ast}
+      {:error, _ast, remaining, _, _, _} -> {:error, "Unable to parse remainder", remaining}
+    end
   end
 
+  @spec eval_block(String.t(), context :: Context.t()) :: term
+  def eval_block(expression_block, context \\ Context.new()) do
+    {:ok, ast} = parse_block(expression_block)
+    function = Compile.compile(ast)
+    function.(context)
+  end
+
+  @spec eval(String.t() | [term], context :: Context.t()) :: [term]
+  def eval(expression_or_ast, context \\ Context.new())
+
+  def eval(expression, context) when is_binary(expression) do
+    ast = compile(expression)
+    eval(ast, context)
+  end
+
+  def eval(ast, context) when is_list(ast) do
+    Enum.map(ast, &eval(&1, context))
+  end
+
+  def eval(function, context) when is_function(function), do: function.(context)
+
+  def eval(atom, context) when is_binary(atom),
+    do: Map.get(context.vars, atom, atom)
+
+  def eval(item, _context), do: item
+
+  def eval_as_string(expression, context \\ Context.new()) do
+    eval(expression, context)
+    |> Enum.map(&default_value(&1, context))
+    |> Enum.map(&stringify/1)
+    |> Enum.join("")
+  end
+
+  @doc """
+  Return the default value for a potentially complex value.
+
+  Complex values can be Maps that have a `__value__` key, if that's
+  returned then we can to use the `__value__` value when eval'ing against
+  operators or functions.
+  """
+  def default_value(val, context \\ nil)
+  def default_value(%{"__value__" => default_value}, _context), do: default_value
+  def default_value(value, _context), do: value
+
+  @spec stringify(term) :: String.t()
+  def stringify(items) when is_list(items), do: Enum.map_join(items, "", &stringify/1)
+  def stringify(binary) when is_binary(binary), do: binary
+  def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
+  def stringify(%Date{} = date), do: Date.to_iso8601(date)
+  def stringify(map) when is_map(map), do: "#{inspect(map)}"
+  def stringify(other), do: to_string(other)
+
   @spec eval_part((Context.t() -> term) | term, Context.t()) :: term
-  def eval_part(function, context) when is_function(function), do: function.(context)
+  def eval_part(function, context) when is_function(function),
+    do: function.(context)
 
   def eval_part(atom, context) when is_binary(atom),
     do: Map.get(context.vars, atom, atom)
 
+  def eval_part(list, context) when is_list(list), do: Enum.map(list, &eval_part(&1, context))
   def eval_part(literal, _context), do: literal
 
   @spec compile(expression :: String.t()) :: [term]
