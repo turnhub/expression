@@ -60,6 +60,9 @@ defmodule Expression.V2 do
   alias Expression.V2.Context
   alias Expression.V2.Parser
 
+  @doc """
+  Parse a string with expressions into AST for the compile step
+  """
   @spec parse(String.t()) ::
           {:ok, [term]}
           | {:error, reason :: String.t(), bad_parts :: String.t()}
@@ -73,6 +76,11 @@ defmodule Expression.V2 do
     end
   end
 
+  @doc """
+  Parse a string with an expression block into AST for the compile step
+  """
+  @spec parse_block(String.t()) ::
+          {:ok, [term]} | {:error, reason :: String.t(), bad_parts :: String.t()}
   def parse_block(expression_block) do
     case Parser.expression(expression_block) do
       {:ok, ast, "", _, _, _} -> {:ok, ast}
@@ -80,6 +88,9 @@ defmodule Expression.V2 do
     end
   end
 
+  @doc """
+  Evaluate a string with an expression block against a context
+  """
   @spec eval_block(String.t(), context :: Context.t()) :: term
   def eval_block(expression_block, context \\ Context.new()) do
     {:ok, ast} = parse_block(expression_block)
@@ -87,28 +98,33 @@ defmodule Expression.V2 do
     function.(context)
   end
 
-  @spec eval(String.t() | [term], context :: Context.t()) :: [term]
-  def eval(expression_or_ast, context \\ Context.new())
-
-  def eval(expression, context) when is_binary(expression) do
+  @doc """
+  Evaluate a string with expressions against a give context
+  """
+  @spec eval(String.t(), context :: Context.t()) :: [term]
+  def eval(expression, context \\ Context.new()) when is_binary(expression) do
     ast = compile(expression)
 
     Enum.map(ast, fn
-      part when is_list(part) -> Enum.map(part, &eval_ast(&1, context)) |> hd()
+      part when is_list(part) -> Enum.map(part, &eval_in_context(&1, context)) |> hd()
       other -> other
     end)
   end
 
-  def eval_ast(ast, context) when is_list(ast) do
-    Enum.map(ast, &eval_ast(&1, context))
+  @doc """
+  Evaluate the results returned by the compile step against the context
+  """
+  @spec eval_in_context(literal :: [term] | term | function, Context.t()) :: [term]
+  def eval_in_context(list, context) when is_list(list) do
+    Enum.map(list, &eval_in_context(&1, context))
   end
 
-  def eval_ast(function, context) when is_function(function), do: function.(context)
+  def eval_in_context(function, context) when is_function(function), do: function.(context)
 
-  def eval_ast(atom, context) when is_binary(atom),
+  def eval_in_context(atom, context) when is_binary(atom),
     do: Map.get(context.vars, atom, atom)
 
-  def eval_ast(item, _context), do: item
+  def eval_in_context(item, _context), do: item
 
   def eval_as_string(expression, context \\ Context.new()) do
     eval(expression, context)
@@ -134,16 +150,6 @@ defmodule Expression.V2 do
   def stringify(%Date{} = date), do: Date.to_iso8601(date)
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
-
-  @spec eval_part((Context.t() -> term) | term, Context.t()) :: term
-  def eval_part(function, context) when is_function(function),
-    do: function.(context)
-
-  def eval_part(atom, context) when is_binary(atom),
-    do: Map.get(context.vars, atom, atom)
-
-  def eval_part(list, context) when is_list(list), do: Enum.map(list, &eval_part(&1, context))
-  def eval_part(literal, _context), do: literal
 
   @spec compile(expression :: String.t()) :: [term]
   def compile(expression) when is_binary(expression) do
