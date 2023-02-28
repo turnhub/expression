@@ -45,7 +45,7 @@ defmodule Expression.V2.ParserTest do
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @(now(1, 2))")
     end
 
-    test "expresssion/1 nested" do
+    test "expression/1 nested" do
       assert {:ok, [[{"now", [1, 2, {"foo", [1, 2, 3]}]}]], "", _, _, _} =
                Parser.parse("@(now(1, 2, foo(1, 2, 3)))")
     end
