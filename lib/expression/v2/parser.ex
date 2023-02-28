@@ -82,7 +82,7 @@ defmodule Expression.V2.Parser do
     ])
 
   # These are just regular floats, previous iteration used the
-  # Decimal library but that just made some simple arithmatic
+  # Decimal library but that just made some simple arithmetic
   # and comparisons more complicated than needed to be.
   float =
     integer(min: 1)
