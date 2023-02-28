@@ -248,7 +248,7 @@ defmodule Expression.V2.Parser do
   # This has higher precedence.
   exponentiation_operator = string("^")
 
-  # Multiplation & division is second
+  # Multiplication & division is second
   multiplication_division_operator =
     choice([
       string("*"),
