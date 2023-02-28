@@ -19,7 +19,7 @@ defmodule Expression.V2.Compile do
   apply(context.callback_module, :callback, ["foo", [1, 2, 3]])
   ```
 
-  There is some special handling of some functions have specific Elixir AST 
+  There is some special handling of some functions that have specific Elixir AST 
   syntax requirements.
 
   These are documented in the `to_quoted/2` function.
@@ -130,7 +130,7 @@ defmodule Expression.V2.Compile do
     # For any other attributes, we're assuming we just want to read
     # a property off of a Map so
     # `foo[bar]` becomes `Map.get(foo, bar)`
-    # `foo["bar"]` becomse `Map.get(foo, "bar")` etc
+    # `foo["bar"]` becomes `Map.get(foo, "bar")` etc
     {{:., [], [Access, :get]}, [],
      [
        {{:., [], [Access, :get]}, [],

@@ -39,13 +39,13 @@ defmodule Expression.V2.ParserTest do
   end
 
   describe "functions" do
-    test "expresssion/1" do
+    test "expression/1" do
       assert {:ok, ["hi ", [{"now", []}]], "", _, _, _} = Parser.parse("hi @now()")
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @now(1, 2)")
       assert {:ok, ["hi ", [{"now", [1, 2]}]], "", _, _, _} = Parser.parse("hi @(now(1, 2))")
     end
 
-    test "expresssion/1 nested" do
+    test "expression/1 nested" do
       assert {:ok, [[{"now", [1, 2, {"foo", [1, 2, 3]}]}]], "", _, _, _} =
                Parser.parse("@(now(1, 2, foo(1, 2, 3)))")
     end
@@ -61,7 +61,7 @@ defmodule Expression.V2.ParserTest do
                Parser.parse("@(foo() + 1 + 1)")
     end
 
-    test "operator precendence" do
+    test "operator precedence" do
       assert {:ok, [[{"+", [1, {"*", [2, 3]}]}]], "", _, _, _} = Parser.parse("@(1 + 2 * 3)")
     end
 

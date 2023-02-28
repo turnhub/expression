@@ -88,7 +88,7 @@ defmodule Expression.V2.Parser do
     |> map({String, :to_integer, []})
 
   # These are just regular floats, previous iteration used the
-  # Decimal library but that just made some simple arithmatic
+  # Decimal library but that just made some simple arithmetic
   # and comparisons more complicated than needed to be.
   float =
     optional(string("-"))
@@ -252,10 +252,10 @@ defmodule Expression.V2.Parser do
 
   # Normally this would also have root but we don't have a shorthand for that
   # and so rather than a list of options, this is just the exponent operator.
-  # This has higher precendence.
+  # This has higher precedence.
   exponentiation_operator = string("^")
 
-  # Multiplation & division is second
+  # Multiplication & division is second
   multiplication_division_operator =
     choice([
       string("*"),
@@ -306,11 +306,11 @@ defmodule Expression.V2.Parser do
       min: 1
     )
 
-  # Below are the precendence parsers, each gives the higher precendence
+  # Below are the precedence parsers, each gives the higher precedence
   # a change to parse its things _before_ it itself attempts to do so.
-  # This is how the precendence is guaranteed.
+  # This is how the precedence is guaranteed.
 
-  # First operator precendence parser
+  # First operator precedence parser
   defparsecp(
     :exponentiation,
     term
@@ -324,7 +324,7 @@ defmodule Expression.V2.Parser do
     |> reduce(:fold_infixl)
   )
 
-  # Second operator precendence parser
+  # Second operator precedence parser
   defparsecp(
     :multiplication_division,
     parsec(:exponentiation)
@@ -336,7 +336,7 @@ defmodule Expression.V2.Parser do
     |> reduce(:fold_infixl)
   )
 
-  # Third operator precendence parser
+  # Third operator precedence parser
   defparsecp(
     :term_operator,
     parsec(:multiplication_division)

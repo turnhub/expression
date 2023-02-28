@@ -48,7 +48,7 @@ defmodule Expression.V2.EvalTest do
       assert 1 == eval("echo(1)")
     end
 
-    test "arithmatic" do
+    test "arithmetic" do
       assert 5 == eval("1 * 5")
     end
 
