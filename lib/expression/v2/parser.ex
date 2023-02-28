@@ -299,11 +299,11 @@ defmodule Expression.V2.Parser do
       min: 1
     )
 
-  # Below are the precendence parsers, each gives the higher precendence
+  # Below are the precedence parsers, each gives the higher precedence
   # a change to parse its things _before_ it itself attempts to do so.
-  # This is how the precendence is guaranteed.
+  # This is how the precedence is guaranteed.
 
-  # First operator precendence parser
+  # First operator precedence parser
   defparsecp(
     :exponentiation,
     term
