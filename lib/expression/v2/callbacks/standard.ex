@@ -131,7 +131,9 @@ defmodule Expression.V2.Callbacks.Standard do
   """
   @expression_doc doc: "Move the date in a date object by 1 month",
                   expression: "edate(right_now, 1)",
-                  context: %{right_now: DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0))},
+                  context: %{
+                    "right_now" => DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0))
+                  },
                   result:
                     Timex.shift(DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0)),
                       months: 1

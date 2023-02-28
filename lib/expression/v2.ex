@@ -92,19 +92,23 @@ defmodule Expression.V2 do
 
   def eval(expression, context) when is_binary(expression) do
     ast = compile(expression)
-    eval(ast, context)
+
+    Enum.map(ast, fn
+      part when is_list(part) -> Enum.map(part, &eval_ast(&1, context)) |> hd()
+      other -> other
+    end)
   end
 
-  def eval(ast, context) when is_list(ast) do
-    Enum.map(ast, &eval(&1, context))
+  def eval_ast(ast, context) when is_list(ast) do
+    Enum.map(ast, &eval_ast(&1, context))
   end
 
-  def eval(function, context) when is_function(function), do: function.(context)
+  def eval_ast(function, context) when is_function(function), do: function.(context)
 
-  def eval(atom, context) when is_binary(atom),
+  def eval_ast(atom, context) when is_binary(atom),
     do: Map.get(context.vars, atom, atom)
 
-  def eval(item, _context), do: item
+  def eval_ast(item, _context), do: item
 
   def eval_as_string(expression, context \\ Context.new()) do
     eval(expression, context)
