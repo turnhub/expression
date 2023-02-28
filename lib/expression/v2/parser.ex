@@ -329,7 +329,7 @@ defmodule Expression.V2.Parser do
     |> reduce(:fold_infixl)
   )
 
-  # Third operator precendence parser
+  # Third operator precedence parser
   defparsecp(
     :term_operator,
     parsec(:multiplication_division)
