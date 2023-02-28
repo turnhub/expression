@@ -245,7 +245,7 @@ defmodule Expression.V2.Parser do
 
   # Normally this would also have root but we don't have a shorthand for that
   # and so rather than a list of options, this is just the exponent operator.
-  # This has higher precendence.
+  # This has higher precedence.
   exponentiation_operator = string("^")
 
   # Multiplation & division is second
