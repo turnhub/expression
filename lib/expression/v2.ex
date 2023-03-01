@@ -105,10 +105,10 @@ defmodule Expression.V2 do
   """
   @spec eval(String.t(), context :: Context.t()) :: [term]
   def eval(expression, context \\ Context.new()) when is_binary(expression) do
-    ast = compile(expression)
-
-    Enum.map(ast, fn
-      part when is_list(part) -> Enum.map(part, &eval_in_context(&1, context)) |> hd()
+    expression
+    |> compile()
+    |> Enum.map(fn
+      part when is_list(part) -> Enum.map(part, &eval_in_context(&1, context)) |> List.first()
       other -> other
     end)
   end
