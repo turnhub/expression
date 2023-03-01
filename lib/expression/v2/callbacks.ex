@@ -54,10 +54,17 @@ defmodule Expression.V2.Callbacks do
   def callback(module \\ Standard, context, function_name, arguments) do
     case implements(module, function_name, arguments) do
       {:exact, module, function_name, _arity} ->
-        apply(module, function_name, [context] ++ arguments)
+        apply(
+          module,
+          function_name,
+          [context] ++ Enum.map(arguments, &Expression.V2.default_value(&1, context))
+        )
 
       {:vargs, module, function_name, _arity} ->
-        apply(module, function_name, [context, arguments])
+        apply(module, function_name, [
+          context,
+          Enum.map(arguments, &Expression.V2.default_value(&1, context))
+        ])
 
       {:error, reason} ->
         reason
@@ -97,9 +104,14 @@ defmodule Expression.V2.Callbacks do
     quote do
       def callback(module \\ __MODULE__, context, function_name, args)
 
-      def callback(module, _context, built_in, args)
+      def callback(module, context, built_in, args)
           when built_in in ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="],
-          do: apply(Kernel, String.to_existing_atom(built_in), args)
+          do:
+            apply(
+              Kernel,
+              String.to_existing_atom(built_in),
+              Enum.map(args, &Expression.V2.default_value(&1, context))
+            )
 
       defdelegate callback(module, context, function_name, arguments),
         to: Expression.V2.Callbacks

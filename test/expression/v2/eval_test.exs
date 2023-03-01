@@ -52,6 +52,19 @@ defmodule Expression.V2.EvalTest do
       assert 5 == eval("1 * 5")
     end
 
+    test "arithmetic against default values" do
+      assert 50 ==
+               eval(
+                 "5 * foo",
+                 %{
+                   "foo" => %{
+                     "__value__" => 10,
+                     "other_attributes" => "ignored"
+                   }
+                 }
+               )
+    end
+
     test "precedence" do
       assert 12 == eval("2 * 5 + 2")
     end
@@ -62,6 +75,10 @@ defmodule Expression.V2.EvalTest do
 
     test "functions with vars" do
       assert 50 == eval("day(date(2023, 2, 10)) * 5")
+    end
+
+    test "functions with default values" do
+      assert 50 = eval("day(foo) * 5", %{"foo" => %{"__value__" => Date.new!(2023, 2, 10)}})
     end
 
     test "ints & floats" do
