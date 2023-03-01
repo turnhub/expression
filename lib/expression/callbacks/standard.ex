@@ -142,7 +142,7 @@ defmodule Expression.Callbacks.Standard do
                   result: 10
   @expression_doc doc: "Getting today's day of the month",
                   expression: "day(now())",
-                  result: DateTime.utc_now().day
+                  fake_result: DateTime.utc_now().day
   def day(ctx, date) do
     %{day: day} = eval!(date, ctx)
     day
@@ -171,7 +171,7 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc doc: "Get the current hour",
                   expression: "hour(now())",
-                  result: DateTime.utc_now().hour
+                  fake_result: DateTime.utc_now().hour
   def hour(ctx, date) do
     %{hour: hour} = eval!(date, ctx)
     hour
@@ -182,7 +182,7 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc doc: "Get the current minute",
                   expression: "minute(now())",
-                  result: DateTime.utc_now().minute
+                  fake_result: DateTime.utc_now().minute
   def minute(ctx, date) do
     %{minute: minute} = DateHelpers.extract_datetimeish(eval!(date, ctx))
     minute
@@ -193,7 +193,7 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc doc: "Get the current month",
                   expression: "month(now())",
-                  result: DateTime.utc_now().month
+                  fake_result: DateTime.utc_now().month
   def month(ctx, date) do
     %{month: month} = eval!(date, ctx)
     month
@@ -224,7 +224,7 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc expression: "second(now)",
                   context: %{"now" => DateTime.utc_now()},
-                  result: DateTime.utc_now().second
+                  fake_result: DateTime.utc_now().second
   def second(ctx, date) do
     %{second: second} = eval!(date, ctx)
     second
@@ -272,7 +272,7 @@ defmodule Expression.Callbacks.Standard do
   Returns the current date
   """
   @expression_doc expression: "today()",
-                  result: Date.utc_today()
+                  fake_result: Date.utc_today()
   def today(_ctx) do
     Date.utc_today()
   end
@@ -301,7 +301,7 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc expression: "year(now)",
                   context: %{"now" => DateTime.utc_now()},
-                  result: DateTime.utc_now().year
+                  fake_result: DateTime.utc_now().year
   def year(ctx, date) do
     %{year: year} = DateHelpers.extract_dateish(eval!(date, ctx))
     year
