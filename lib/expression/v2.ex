@@ -128,6 +128,14 @@ defmodule Expression.V2 do
 
   def eval_in_context(item, _context), do: item
 
+  @doc """
+  Evaluate an expression and cast all items to strings before joining
+  the full result into a single string value to be returned.
+
+  This calls `eval/2` internally, maps the results with `default_value/2`
+  followed by `stringify/1` and then joins them.
+  """
+  @spec eval_as_string(String.t(), Context.t()) :: String.t()
   def eval_as_string(expression, context \\ Context.new()) do
     eval(expression, context)
     |> Enum.map(&default_value(&1, context))
@@ -141,6 +149,7 @@ defmodule Expression.V2 do
   returned then we can to use the `__value__` value when eval'ing against
   operators or functions.
   """
+  @spec default_value(term) :: term
   def default_value(val, context \\ nil)
   def default_value(%{"__value__" => default_value}, _context), do: default_value
   def default_value(value, _context), do: value
