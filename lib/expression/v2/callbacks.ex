@@ -53,17 +53,28 @@ defmodule Expression.V2.Callbacks do
         ) :: any
   def callback(module \\ Standard, context, function_name, arguments) do
     case implements(module, function_name, arguments) do
-      {:exact, module, function_name, _arity} ->
-        apply(module, function_name, [context] ++ arguments)
+      {:exact, module, function_name} ->
+        apply(
+          module,
+          function_name,
+          [context] ++ Enum.map(arguments, &Expression.V2.default_value(&1, context))
+        )
 
-      {:vargs, module, function_name, _arity} ->
-        apply(module, function_name, [context, arguments])
+      {:vargs, module, function_name} ->
+        apply(module, function_name, [
+          context,
+          Enum.map(arguments, &Expression.V2.default_value(&1, context))
+        ])
 
       {:error, reason} ->
         reason
     end
   end
 
+  @spec implements(module, function_name :: String.t(), arguments :: [any]) ::
+          {:exact, module, function_name :: atom}
+          | {:vargs, module, function_name :: atom}
+          | {:error, reason :: String.t()}
   def implements(module \\ Standard, function_name, arguments) do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
@@ -73,19 +84,19 @@ defmodule Expression.V2.Callbacks do
     cond do
       # Check if the exact function signature has been implemented
       function_exported?(module, exact_function_name, length(arguments) + 1) ->
-        {:exact, module, exact_function_name, length(arguments) + 1}
+        {:exact, module, exact_function_name}
 
       # Check if it's been implemented to accept a variable amount of arguments
       function_exported?(module, vargs_function_name, 2) ->
-        {:vargs, module, vargs_function_name, 2}
+        {:vargs, module, vargs_function_name}
 
       # Check if the exact function signature has been implemented
       function_exported?(Standard, exact_function_name, length(arguments) + 1) ->
-        {:exact, Standard, exact_function_name, length(arguments) + 1}
+        {:exact, Standard, exact_function_name}
 
       # Check if it's been implemented to accept a variable amount of arguments
       function_exported?(Standard, vargs_function_name, 2) ->
-        {:vargs, Standard, vargs_function_name, 2}
+        {:vargs, Standard, vargs_function_name}
 
       # Otherwise fail
       true ->
@@ -97,9 +108,14 @@ defmodule Expression.V2.Callbacks do
     quote do
       def callback(module \\ __MODULE__, context, function_name, args)
 
-      def callback(module, _context, built_in, args)
+      def callback(module, context, built_in, args)
           when built_in in ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="],
-          do: apply(Kernel, String.to_existing_atom(built_in), args)
+          do:
+            apply(
+              Kernel,
+              String.to_existing_atom(built_in),
+              Enum.map(args, &Expression.V2.default_value(&1, context))
+            )
 
       defdelegate callback(module, context, function_name, arguments),
         to: Expression.V2.Callbacks

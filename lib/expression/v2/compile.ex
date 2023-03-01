@@ -39,7 +39,7 @@ defmodule Expression.V2.Compile do
   is also pure and is suitable for caching.
   """
   @spec compile([any]) ::
-          (Expression.V2.Context.t() -> [any])
+          (Expression.V2.Context.t() -> any)
   def compile(ast) do
     # convert to valid Elixir AST
     quoted = wrap_in_context(to_quoted(ast))
