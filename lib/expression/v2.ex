@@ -60,6 +60,9 @@ defmodule Expression.V2 do
   alias Expression.V2.Context
   alias Expression.V2.Parser
 
+  @doc """
+  Parse a string with expressions into AST for the compile step
+  """
   @spec parse(String.t()) ::
           {:ok, [term]}
           | {:error, reason :: String.t(), bad_parts :: String.t()}
@@ -73,28 +76,91 @@ defmodule Expression.V2 do
     end
   end
 
+  @doc """
+  Parse a string with an expression block into AST for the compile step
+  """
+  @spec parse_block(String.t()) ::
+          {:ok, [term]} | {:error, reason :: String.t(), bad_parts :: String.t()}
+  def parse_block(expression_block) do
+    case Parser.expression(expression_block) do
+      {:ok, ast, "", _, _, _} -> {:ok, ast}
+      {:error, _ast, remaining, _, _, _} -> {:error, "Unable to parse remainder", remaining}
+    end
+  end
+
+  @doc """
+  Evaluate a string with an expression block against a context
+  """
+  @spec eval_block(String.t(), context :: Context.t()) ::
+          term | {:error, reason :: String.t(), bad_parts :: String.t()}
+  def eval_block(expression_block, context \\ Context.new()) do
+    with {:ok, ast} <- parse_block(expression_block) do
+      function = Compile.compile(ast)
+      function.(context)
+    end
+  end
+
+  @doc """
+  Evaluate a string with expressions against a given context
+  """
   @spec eval(String.t(), context :: Context.t()) :: [term]
-  def eval(expression, context \\ Context.new()) do
-    parts = compile(expression)
-
-    Enum.map(parts, fn
-      part when is_list(part) ->
-        part
-        |> Enum.map(&eval_part(&1, context))
-        |> hd()
-
-      other ->
-        other
+  def eval(expression, context \\ Context.new()) when is_binary(expression) do
+    expression
+    |> compile()
+    |> Enum.map(fn
+      part when is_list(part) -> Enum.map(part, &eval_in_context(&1, context)) |> List.first()
+      other -> other
     end)
   end
 
-  @spec eval_part((Context.t() -> term) | term, Context.t()) :: term
-  def eval_part(function, context) when is_function(function), do: function.(context)
+  @doc """
+  Evaluate the results returned by the compile step against the context
+  """
+  @spec eval_in_context(literal :: [term] | term | function, Context.t()) :: [term]
+  def eval_in_context(list, context) when is_list(list) do
+    Enum.map(list, &eval_in_context(&1, context))
+  end
 
-  def eval_part(atom, context) when is_binary(atom),
+  def eval_in_context(function, context) when is_function(function), do: function.(context)
+
+  def eval_in_context(atom, context) when is_binary(atom),
     do: Map.get(context.vars, atom, atom)
 
-  def eval_part(literal, _context), do: literal
+  def eval_in_context(item, _context), do: item
+
+  @doc """
+  Evaluate an expression and cast all items to strings before joining
+  the full result into a single string value to be returned.
+
+  This calls `eval/2` internally, maps the results with `default_value/2`
+  followed by `stringify/1` and then joins them.
+  """
+  @spec eval_as_string(String.t(), Context.t()) :: String.t()
+  def eval_as_string(expression, context \\ Context.new()) do
+    eval(expression, context)
+    |> Enum.map(&default_value(&1, context))
+    |> Enum.map_join("", &stringify/1)
+  end
+
+  @doc """
+  Return the default value for a potentially complex value.
+
+  Complex values can be Maps that have a `__value__` key, if that's
+  returned then we can to use the `__value__` value when eval'ing against
+  operators or functions.
+  """
+  @spec default_value(term) :: term
+  def default_value(val, context \\ nil)
+  def default_value(%{"__value__" => default_value}, _context), do: default_value
+  def default_value(value, _context), do: value
+
+  @spec stringify(term) :: String.t()
+  def stringify(items) when is_list(items), do: Enum.map_join(items, "", &stringify/1)
+  def stringify(binary) when is_binary(binary), do: binary
+  def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
+  def stringify(%Date{} = date), do: Date.to_iso8601(date)
+  def stringify(map) when is_map(map), do: "#{inspect(map)}"
+  def stringify(other), do: to_string(other)
 
   @spec compile(expression :: String.t()) :: [term]
   def compile(expression) when is_binary(expression) do

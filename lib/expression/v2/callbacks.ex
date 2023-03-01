@@ -1,52 +1,108 @@
 defmodule Expression.V2.Callbacks do
   @moduledoc """
-  Callback functions to be used in Expressions.
+  Use this module to implement one's own callbacks.
+  The standard callbacks available are implemented in `Expression.V2.Callbacks.Standard`.
 
-  This is the same idea as `Expression.Callbacks.Standard` but 
-  it's in a rough shape, mostly to just prove that this all works.
+  ```elixir
+  defmodule MyCallbacks do
+    use Expression.V2.Callbacks
+
+    @doc \"\"\"
+    Roll a dice and randomly return a number between 1 and 6.
+    \"\"\"
+    def dice_roll(ctx) do
+      Enum.random(1..6)
+    end
+
+  end
+  ```
   """
-  @built_ins ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="]
 
-  def eval_function(function, context) when is_function(function), do: function.(context)
-  def eval_function(other, _), do: other
+  alias Expression.V2.Callbacks.Standard
 
-  def callback(context, built_in, args) when built_in in @built_ins do
-    apply(Kernel, String.to_existing_atom(built_in), Enum.map(args, &eval_function(&1, context)))
+  @reserved_words ~w[and if or not]
+
+  @doc """
+  Convert a string function name into an atom meant to handle
+  that function
+
+  Reserved words such as `and`, `if`, and `or` are automatically suffixed
+  with an `_` underscore.
+  """
+  def atom_function_name(function_name) when function_name in @reserved_words,
+    do: atom_function_name("#{function_name}_")
+
+  def atom_function_name(function_name) do
+    String.to_atom(function_name)
   end
 
-  def callback(_context, "map", [enumerable, mapper]), do: Enum.map(enumerable, mapper)
-  def callback(_context, "date", [year, month, day]), do: Date.new!(year, month, day)
-  def callback(_context, "echo", [a]), do: a
-  def callback(_context, "year", [date]), do: date.year
-  def callback(_context, "today", []), do: Date.utc_today()
-  def callback(_context, "concatenate", args), do: Enum.join(args, "")
+  @doc """
+  Callback a function while evaluating the context against an expression.
 
-  def callback(_context, "proper", [string]),
-    do:
-      string
-      |> String.split(" ")
-      |> Enum.map_join(" ", &String.capitalize/1)
+  Callback functions in this module are either:
 
-  def callback(_context, "has_any_word", [haystack, words]) do
-    haystack_words = String.split(haystack)
-    haystacks_lowercase = Enum.map(haystack_words, &String.downcase/1)
-    words_lowercase = String.split(words) |> Enum.map(&String.downcase/1)
+  1. The function name as is
+  2. The function name with an underscore suffix if the function name is a reserved word
+  3. The function name suffixed with `_vargs` if the takes a variable set of arguments
+  """
+  @spec callback(
+          module :: module,
+          context :: map,
+          function_name :: binary,
+          arguments :: [any]
+        ) :: any
+  def callback(module \\ Standard, context, function_name, arguments) do
+    case implements(module, function_name, arguments) do
+      {:exact, module, function_name, _arity} ->
+        apply(module, function_name, [context] ++ arguments)
 
-    matched_indices =
-      haystacks_lowercase
-      |> Enum.with_index()
-      |> Enum.filter(fn {haystack_word, _index} ->
-        Enum.member?(words_lowercase, haystack_word)
-      end)
-      |> Enum.map(fn {_haystack_word, index} -> index end)
+      {:vargs, module, function_name, _arity} ->
+        apply(module, function_name, [context, arguments])
 
-    matched_haystack_words = Enum.map(matched_indices, &Enum.at(haystack_words, &1))
+      {:error, reason} ->
+        reason
+    end
+  end
 
-    match? = Enum.any?(matched_haystack_words)
+  def implements(module \\ Standard, function_name, arguments) do
+    exact_function_name = atom_function_name(function_name)
+    vargs_function_name = atom_function_name("#{function_name}_vargs")
 
-    %{
-      "__value__" => match?,
-      "match" => if(match?, do: Enum.join(matched_haystack_words, " "), else: nil)
-    }
+    Code.ensure_loaded!(Standard)
+
+    cond do
+      # Check if the exact function signature has been implemented
+      function_exported?(module, exact_function_name, length(arguments) + 1) ->
+        {:exact, module, exact_function_name, length(arguments) + 1}
+
+      # Check if it's been implemented to accept a variable amount of arguments
+      function_exported?(module, vargs_function_name, 2) ->
+        {:vargs, module, vargs_function_name, 2}
+
+      # Check if the exact function signature has been implemented
+      function_exported?(Standard, exact_function_name, length(arguments) + 1) ->
+        {:exact, Standard, exact_function_name, length(arguments) + 1}
+
+      # Check if it's been implemented to accept a variable amount of arguments
+      function_exported?(Standard, vargs_function_name, 2) ->
+        {:vargs, Standard, vargs_function_name, 2}
+
+      # Otherwise fail
+      true ->
+        {:error, "#{function_name} is not implemented."}
+    end
+  end
+
+  defmacro __using__(_opts) do
+    quote do
+      def callback(module \\ __MODULE__, context, function_name, args)
+
+      def callback(module, _context, built_in, args)
+          when built_in in ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="],
+          do: apply(Kernel, String.to_existing_atom(built_in), args)
+
+      defdelegate callback(module, context, function_name, arguments),
+        to: Expression.V2.Callbacks
+    end
   end
 end
