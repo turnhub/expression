@@ -53,14 +53,14 @@ defmodule Expression.V2.Callbacks do
         ) :: any
   def callback(module \\ Standard, context, function_name, arguments) do
     case implements(module, function_name, arguments) do
-      {:exact, module, function_name, _arity} ->
+      {:exact, module, function_name} ->
         apply(
           module,
           function_name,
           [context] ++ Enum.map(arguments, &Expression.V2.default_value(&1, context))
         )
 
-      {:vargs, module, function_name, _arity} ->
+      {:vargs, module, function_name} ->
         apply(module, function_name, [
           context,
           Enum.map(arguments, &Expression.V2.default_value(&1, context))
@@ -71,6 +71,10 @@ defmodule Expression.V2.Callbacks do
     end
   end
 
+  @spec implements(module, function_name :: String.t(), arguments :: [any]) ::
+          {:exact, module, function_name :: atom}
+          | {:vargs, module, function_name :: atom}
+          | {:error, reason :: String.t()}
   def implements(module \\ Standard, function_name, arguments) do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
@@ -80,19 +84,19 @@ defmodule Expression.V2.Callbacks do
     cond do
       # Check if the exact function signature has been implemented
       function_exported?(module, exact_function_name, length(arguments) + 1) ->
-        {:exact, module, exact_function_name, length(arguments) + 1}
+        {:exact, module, exact_function_name}
 
       # Check if it's been implemented to accept a variable amount of arguments
       function_exported?(module, vargs_function_name, 2) ->
-        {:vargs, module, vargs_function_name, 2}
+        {:vargs, module, vargs_function_name}
 
       # Check if the exact function signature has been implemented
       function_exported?(Standard, exact_function_name, length(arguments) + 1) ->
-        {:exact, Standard, exact_function_name, length(arguments) + 1}
+        {:exact, Standard, exact_function_name}
 
       # Check if it's been implemented to accept a variable amount of arguments
       function_exported?(Standard, vargs_function_name, 2) ->
-        {:vargs, Standard, vargs_function_name, 2}
+        {:vargs, Standard, vargs_function_name}
 
       # Otherwise fail
       true ->
