@@ -91,11 +91,13 @@ defmodule Expression.V2 do
   @doc """
   Evaluate a string with an expression block against a context
   """
-  @spec eval_block(String.t(), context :: Context.t()) :: term
+  @spec eval_block(String.t(), context :: Context.t()) ::
+          term | {:error, reason :: String.t(), bad_parts :: String.t()}
   def eval_block(expression_block, context \\ Context.new()) do
-    {:ok, ast} = parse_block(expression_block)
-    function = Compile.compile(ast)
-    function.(context)
+    with {:ok, ast} <- parse_block(expression_block) do
+      function = Compile.compile(ast)
+      function.(context)
+    end
   end
 
   @doc """
