@@ -1090,7 +1090,7 @@ defmodule Expression.Callbacks.Standard do
 
   defp extract_numberish(expression) do
     with [match] <-
-           Regex.run(~r/([0-9]+\.?[0-9]+)/u, replace_arabic_numerals(expression), capture: :first),
+           Regex.run(~r/([0-9]+\.?[0-9]*)/u, replace_arabic_numerals(expression), capture: :first),
          float <- parse_float(match) do
       float
     else
@@ -1249,6 +1249,9 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lte(\"the number is 42.0\", \"40\")", result: false
   @expression_doc expression: "has_number_lte(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_lte(\"four hundred\", \"foo\")", result: false
+  @expression_doc expression: "has_number_lte(\"@response\", 5)",
+                  context: %{"response" => 3},
+                  result: true
   def has_number_lte(ctx, expression, float) do
     [expression, float] = eval_args!([expression, float], ctx)
 
