@@ -76,6 +76,19 @@ defmodule Expression.V2 do
     end
   end
 
+  @spec escape(String.t()) :: String.t()
+  def escape(expression) when is_binary(expression) do
+    String.replace(expression, ~r/@([a-z]+)(\(|\.)/i, "@@\\g{1}\\g{2}")
+  end
+
+  @doc """
+  This function is referenced by `Expression.V2.Compile` to 
+  make access to values in Maps or Lists easier
+  """
+  @spec read_attribute(map | list, binary | integer) :: term
+  def read_attribute(map, item) when is_map(map), do: Map.get(map, item)
+  def read_attribute(list, index) when is_list(list), do: Enum.at(list, index)
+
   @doc """
   Parse a string with an expression block into AST for the compile step
   """
@@ -84,6 +97,7 @@ defmodule Expression.V2 do
   def parse_block(expression_block) do
     case Parser.expression(expression_block) do
       {:ok, ast, "", _, _, _} -> {:ok, ast}
+      {:ok, _ast, _remainder, _, _, _} -> {:error, "Unable to parse", expression_block}
       {:error, _ast, remaining, _, _, _} -> {:error, "Unable to parse remainder", remaining}
     end
   end

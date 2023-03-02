@@ -109,7 +109,7 @@ defmodule Expression.V2.Callbacks do
       def callback(module \\ __MODULE__, context, function_name, args)
 
       def callback(module, context, built_in, args)
-          when built_in in ["*", "+", "-", ">", ">=", "<", "<=", "/", "^", "=="],
+          when built_in in ["*", "+", "-", "<>", ">", ">=", "<", "<=", "/", "^", "=="],
           do:
             apply(
               Kernel,
