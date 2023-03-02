@@ -273,8 +273,8 @@ defmodule Expression.V2.Parser do
       min: 1
     )
 
-  # We allow parsec operators here to allow expressions 
-  # to be evaluated and their result to be used as a key 
+  # We allow parsec operators here to allow expressions
+  # to be evaluated and their result to be used as a key
   # to lookup an attribute value
   attribute =
     times(

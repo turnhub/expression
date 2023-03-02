@@ -13,8 +13,9 @@ defmodule Expression.V2.EvalTest do
     debug = opts[:debug] || false
 
     if debug do
+      IO.puts("ast: #{inspect(ast)}")
+
       ast
-      |> IO.inspect(label: "ast")
       |> V2.debug()
       |> IO.puts()
     end
