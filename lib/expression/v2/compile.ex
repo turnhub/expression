@@ -62,11 +62,24 @@ defmodule Expression.V2.Compile do
   """
   @spec wrap_in_context(Macro.t()) :: Macro.t()
   def wrap_in_context(quoted) do
+    # Check to see if the generated AST makes a reference to the context.
+    # If that is the case then generate an AST that makes it available.
+    # If there are no references to the context then prefix the variable
+    # with an underscore to keep the compiler happy and not emit warnings
+    # at runtime
+    {quoted, uses_context?} =
+      Macro.prewalk(quoted, false, fn
+        {:context, _, _} = node, _acc -> {node, true}
+        other, acc -> {other, acc}
+      end)
+
+    context_var = if uses_context?, do: :context, else: :_context
+
     {:fn, [],
      [
        {:->, [],
         [
-          [{:context, [], nil}],
+          [{context_var, [], nil}],
           {:__block__, [],
            [
              quoted
@@ -107,39 +120,17 @@ defmodule Expression.V2.Compile do
 
   defp quoted({"__property__", [a, b]}) when is_binary(b) do
     # When the property we're trying to read is a binary then we're doing
-    # `foo.bar` in an expression and we convert this to a `Map.get(foo, "bar")`
-    {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
-     [
-       quoted(a),
-       b
-     ]}
-  end
-
-  defp quoted({"__attribute__", [a, b]}) when is_integer(b) do
-    # When the attribute we're trying to read is an integer then we're
-    # trying to read an index off of a list.
-    # `foo[1]` becomes `Enum.at(foo, 1)`
-    {{:., [], [Enum, :at]}, [],
-     [
-       quoted(a),
-       quoted(b)
-     ]}
+    # `foo.bar` in an expression and we convert this to a `foo["bar"]`
+    {{:., [], [Access, :get]}, [], [quoted(a), b]}
   end
 
   defp quoted({"__attribute__", [a, b]}) do
-    # For any other attributes, we're assuming we just want to read
-    # a property off of a Map so
-    # `foo[bar]` becomes `Map.get(foo, bar)`
-    # `foo["bar"]` becomes `Map.get(foo, "bar")` etc
-    {{:., [], [Access, :get]}, [],
-     [
-       {{:., [], [Access, :get]}, [],
-        [
-          context_dot_vars(),
-          a
-        ]},
-       quoted(b)
-     ]}
+    # Since Map keys in Expressions can either be integers or strings
+    # we use the helper in Expression.V2.read_attribute to read
+    # the correct value using Elixir function guards in compiled
+    # code rather than attempting to generate the AST for that here.
+    {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :read_attribute]}, [],
+     [quoted(a), quoted(b)]}
   end
 
   defp quoted({"if", [test, yes, no]}) do
@@ -178,11 +169,7 @@ defmodule Expression.V2.Compile do
   end
 
   defp quoted(atom) when is_binary(atom) do
-    {{:., [], [{:__aliases__, [alias: false], [:Map]}, :get]}, [],
-     [
-       {{:., [], [{:context, [], nil}, :vars]}, [no_parens: true], []},
-       atom
-     ]}
+    {{:., [], [Access, :get]}, [], [context_dot_vars(), atom]}
   end
 
   defp quoted(%Range{first: first, last: last, step: step}) do

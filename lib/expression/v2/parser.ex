@@ -131,8 +131,13 @@ defmodule Expression.V2.Parser do
       {:not_single_quote, []}
     )
     |> ignore(ascii_char([?']))
-    |> reduce({List, :to_string, []})
+    |> reduce(:to_double_quoted_string)
   )
+
+  # Helper to convert a 'hello' parsed by parsec(:single_quoted_string) into
+  # a "hello"
+  def to_double_quoted_string(charlist) when is_list(charlist),
+    do: inspect(to_string(charlist))
 
   @doc false
   def not_single_quote(<<?', _::binary>>, context, _, _), do: {:halt, context}
@@ -230,22 +235,69 @@ defmodule Expression.V2.Parser do
   def ensure_range([first, last, step]), do: Range.new(first, last, step)
   def ensure_range([first, last]), do: Range.new(first, last)
 
-  property =
-    choice([function, atom])
-    |> times(
-      replace(string("."), "__property__")
-      |> concat(choice([function, atom])),
+  # A block is a expression that can be parsed and is surrounded
+  # by opening & closing brackets
+  block =
+    ignore(string("("))
+    |> parsec(:term_operator)
+    |> ignore(string(")"))
+
+  # A term is the lowest level types in an Expression
+  term =
+    times(
+      choice([
+        label(datetime(), "a datetime"),
+        label(date(), "a date"),
+        label(time(), "a time"),
+        label(range, "a range"),
+        label(float, "a float"),
+        label(int, "an integer"),
+        label(string_with_quotes, "a quoted string"),
+        label(lambda_capture, "a capture"),
+        label(lambda, "an anonymous function"),
+        label(function, "a function"),
+        label(boolean, "a boolean"),
+        label(atom, "an atom")
+      ]),
       min: 1
     )
 
+  # Properties are only allowed to be atoms
+  # So if we have a foo.bar, `bar` is property the atom
+  # If we allow more complicated types here it causes confusion
+  # because in `foo.false`, `false` would be parsed as a boolean type
+  property =
+    times(
+      replace(string("."), "__property__")
+      |> concat(atom),
+      min: 1
+    )
+
+  # We allow parsec operators here to allow expressions 
+  # to be evaluated and their result to be used as a key 
+  # to lookup an attribute value
   attribute =
-    choice([function, property, atom])
-    |> times(
+    times(
       replace(string("["), "__attribute__")
       |> concat(parsec(:term_operator))
       |> ignore(string("]")),
       min: 1
     )
+
+  property_or_attribute = repeat(choice([property, attribute]))
+
+  # A compound term is either a term or a term made up of terms
+  # using a list or a block which may or may not have a property
+  # or an attribute
+  #
+  # As an example `foo.bar` calls the property `bar` on term `foo`.
+  compound_term_with_property_or_attribute =
+    choice([
+      label(list, "a list"),
+      label(block, "a group"),
+      term
+    ])
+    |> optional(property_or_attribute)
 
   # The following operators determine the order of operations, as per
   # https://en.wikipedia.org/wiki/Order_of_operations
@@ -267,6 +319,7 @@ defmodule Expression.V2.Parser do
     choice([
       string("+"),
       string("-"),
+      string("<>"),
       string(">="),
       string(">"),
       string("!="),
@@ -276,36 +329,6 @@ defmodule Expression.V2.Parser do
       replace(string("="), "==")
     ])
 
-  # A block is a expression that can be parsed and is surrounded
-  # by opening & closing brackets
-  block =
-    ignore(string("("))
-    |> parsec(:term_operator)
-    |> ignore(string(")"))
-
-  term =
-    times(
-      choice([
-        label(datetime(), "a datetime"),
-        label(date(), "a date"),
-        label(time(), "a time"),
-        label(range, "a range"),
-        label(list, "a list"),
-        label(float, "a float"),
-        label(int, "an integer"),
-        label(string_with_quotes, "a quoted string"),
-        label(boolean, "a boolean"),
-        label(attribute, "an attribute"),
-        label(property, "a property"),
-        label(lambda_capture, "a capture"),
-        label(lambda, "an anonymous function"),
-        label(function, "a function"),
-        label(block, "a group"),
-        label(atom, "an atom")
-      ]),
-      min: 1
-    )
-
   # Below are the precedence parsers, each gives the higher precedence
   # a change to parse its things _before_ it itself attempts to do so.
   # This is how the precedence is guaranteed.
@@ -313,13 +336,13 @@ defmodule Expression.V2.Parser do
   # First operator precedence parser
   defparsecp(
     :exponentiation,
-    term
+    compound_term_with_property_or_attribute
     |> label("an expression")
     |> repeat(
       exponentiation_operator
       |> label("an operator")
       |> ignore_surrounding_whitespace.()
-      |> concat(term)
+      |> concat(compound_term_with_property_or_attribute)
     )
     |> reduce(:fold_infixl)
   )

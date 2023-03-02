@@ -13,7 +13,9 @@ defmodule Expression.V2.EvalTest do
     debug = opts[:debug] || false
 
     if debug do
-      V2.debug(ast)
+      ast
+      |> IO.inspect(label: "ast")
+      |> V2.debug()
       |> IO.puts()
     end
 
@@ -38,6 +40,17 @@ defmodule Expression.V2.EvalTest do
 
     test "attributes as literals" do
       assert "qux" == eval("foo[\"baz\"]", %{"foo" => %{"baz" => "qux"}})
+    end
+
+    test "attribute and property combination" do
+      assert "hi" ==
+               eval(
+                 "after_hours.rows[random_row].label.bar",
+                 %{
+                   "after_hours" => %{"rows" => [%{"label" => %{"bar" => "hi"}}]},
+                   "random_row" => 0
+                 }
+               )
     end
 
     test "indices on lists" do
@@ -116,6 +129,22 @@ defmodule Expression.V2.EvalTest do
 
       assert [[1, "Button 1"], [2, "Button 2"], [3, "Button 3"]] =
                eval(~S|map(foo, &([&1, concatenate("Button ", &1)]))|, ctx)
+    end
+
+    test "lambda & map with single quoted strings" do
+      assert [
+               ["one", "Button One"],
+               ["two", "Button Two"],
+               ["three", "Button Three"],
+               ["four", "Button Four"],
+               ["five", "Button Five"]
+             ] ==
+               eval(
+                 ~S|map(options, &([&1, concatenate('Button ', proper(&1))]))|,
+                 %{
+                   "options" => ["one", "two", "three", "four", "five"]
+                 }
+               )
     end
   end
 end

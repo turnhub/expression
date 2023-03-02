@@ -1,9 +1,11 @@
-# Run with `mix run benchmark.exs` in the console
+# Run with `mix run benchmark/expressions.exs` in the console
 
 Benchee.run(
   %{
     "v1" => fn {expression, context} -> Expression.evaluate(expression, context) end,
-    "v2" => fn {expression, context} -> Expression.V2.eval(expression, Expression.V2.Context.new(context)) end
+    "v2" => fn {expression, context} ->
+      Expression.V2.eval(expression, Expression.V2.Context.new(context))
+    end
   },
   inputs: %{
     "simple" => {
