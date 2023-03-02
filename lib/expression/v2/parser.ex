@@ -379,7 +379,7 @@ defmodule Expression.V2.Parser do
   # Parsed a short hand such as `@now()`
   expression_shorthand =
     ignore(string("@"))
-    |> concat(wrap(parsec(:term_operator)))
+    |> concat(wrap(reduce(compound_term_with_property_or_attribute, :fold_infixl)))
 
   single_at = string("@")
 
