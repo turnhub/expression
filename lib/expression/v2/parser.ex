@@ -207,6 +207,7 @@ defmodule Expression.V2.Parser do
 
   lambda =
     string("&")
+    |> optional(ignore(string(" ")))
     |> choice([
       # either we get a block as a function
       function_arguments,
