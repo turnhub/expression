@@ -209,4 +209,16 @@ defmodule Expression.V2.ParserTest do
                Parser.expression("?")
     end
   end
+
+  describe "failing examples" do
+    test "*BOLD*" do
+      assert {:ok,
+              [
+                "\nHi there ",
+                [{"__property__", ["contact", "whatsapp_profile_name"]}],
+                "\n\n*HANGMAN*)\n)\n"
+              ], "", _, _,
+              _} = Parser.parse("\nHi there @contact.whatsapp_profile_name\n\n*HANGMAN*)\n)\n")
+    end
+  end
 end
