@@ -151,9 +151,10 @@ defmodule Expression.DateHelpers do
     Date.new!(values[:year], values[:month], values[:day])
   end
 
-  @spec extract_dateish(DateTime.t() | Date.t() | String.t()) :: Date.t() | nil
+  @spec extract_dateish(DateTime.t() | Date.t() | String.t() | nil) :: Date.t() | nil
   def extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
   def extract_dateish(date) when is_struct(date, Date), do: date
+  def extract_dateish(nil), do: nil
 
   def extract_dateish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
@@ -170,7 +171,8 @@ defmodule Expression.DateHelpers do
     end
   end
 
-  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t()) :: DateTime.t() | nil
+  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t() | nil) :: DateTime.t() | nil
+  def extract_datetimeish(nil), do: nil
   def extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
 
   def extract_datetimeish(date) when is_struct(date, Date),

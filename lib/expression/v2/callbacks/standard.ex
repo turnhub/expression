@@ -99,18 +99,11 @@ defmodule Expression.V2.Callbacks.Standard do
   @expression_doc doc: "Convert a date value and read the date field",
                   expression: "datevalue(date(2022, 1, 3)).date",
                   result: ~D[2022-01-03]
-  def datevalue(_ctx, date, format) do
-    date = DateHelpers.extract_dateish(date)
-    %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
-  end
-
-  def datevalue(_ctx, date) do
-    date = DateHelpers.extract_dateish(date)
-
-    %{
-      "__value__" => Timex.format!(date, "%Y-%m-%d %H:%M:%S", :strftime),
-      "date" => date
-    }
+  def datevalue(_ctx, date, format \\ "%Y-%m-%d %H:%M:%S") do
+    case DateHelpers.extract_dateish(date) do
+      nil -> %{"__value__" => "", "date" => nil}
+      date -> %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
+    end
   end
 
   @doc """
