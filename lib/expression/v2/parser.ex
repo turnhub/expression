@@ -187,10 +187,14 @@ defmodule Expression.V2.Parser do
 
   function_arguments =
     ignore(string("("))
-    |> wrap(
-      repeat(
-        parsec(:term_operator)
-        |> optional(ignore(ignore_surrounding_whitespace.(string(","))))
+    |> concat(
+      ignore_surrounding_whitespace.(
+        wrap(
+          repeat(
+            parsec(:term_operator)
+            |> optional(ignore(ignore_surrounding_whitespace.(string(","))))
+          )
+        )
       )
     )
     |> ignore(string(")"))
@@ -207,6 +211,7 @@ defmodule Expression.V2.Parser do
 
   lambda =
     string("&")
+    |> optional(ignore(string(" ")))
     |> choice([
       # either we get a block as a function
       function_arguments,
