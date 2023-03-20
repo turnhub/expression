@@ -116,8 +116,8 @@ defmodule Expression.V2.Compile do
     binary
     # Chop off the outer quoting
     |> String.slice(1..-2)
-    # Remove the innner quoting
-    |> String.replace(~S|\\\\|, ~S|\\|)
+    # Remove the double quoting
+    |> String.replace("\\\"", "\"")
   end
 
   defp quoted(number) when is_number(number), do: number
