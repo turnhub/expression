@@ -12,8 +12,8 @@ defmodule Expression.V2.Compat do
   * It compares the output of V1 to V2, if those aren't equal it will raise an error.
   * If there is no error it will return the value from V2.
 
-  **NOTE**: This module does *twice* the work because it runs V1 and V2 sequentially
-            and then compares the result before returning a value.
+  > **NOTE**: This module does *twice* the work because it runs V1 and V2 sequentially
+    and then compares the result before returning a value.
   """
   require Logger
   alias Expression.V2
