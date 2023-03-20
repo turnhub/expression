@@ -1,4 +1,7 @@
 defmodule Expression.V2.Compat do
+  @moduledoc """
+  Compatibility module to make the transition from V1 to V2 a bit easier, hopefully.
+  """
   require Logger
 
   def evaluate_as_string!(
@@ -102,8 +105,6 @@ defmodule Expression.V2.Compat do
 
   def return_or_raise(expression, context, "2023" <> _ = v1_resp, "2023" <> _ = v2_resp)
       when byte_size(v1_resp) == 10 do
-    IO.inspect(v1_resp, label: "v1_resp")
-    IO.inspect(v2_resp, label: "v2_resp")
     {:ok, v1_resp} = Date.from_iso8601(v1_resp)
     {:ok, v2_resp} = Date.from_iso8601(v2_resp)
     return_or_raise(expression, context, v1_resp, v2_resp)

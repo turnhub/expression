@@ -114,7 +114,7 @@ defmodule Expression.V2 do
           term | {:error, reason :: String.t(), bad_parts :: String.t()}
   def eval_block(expression_block, context \\ Context.new()) do
     with {:ok, ast} <- parse_block(expression_block) do
-      hd(eval_block_ast(ast, context) |> IO.inspect(label: "ret?"))
+      hd(eval_block_ast(ast, context))
     end
   end
 
@@ -187,7 +187,7 @@ defmodule Expression.V2 do
   def stringify(binary) when is_binary(binary), do: binary
   def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
   def stringify(%Date{} = date), do: Date.to_iso8601(date)
-  def stringify(%Context.ContextVars{} = ctx_vars), do: to_string(ctx_vars)
+  def stringify(%Expression.V2.ContextVars{} = ctx_vars), do: to_string(ctx_vars)
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 
