@@ -4,13 +4,13 @@ defmodule Expression.V2.Compat do
 
   It does a few things:
 
-  1. It swaps out V2 callbacks for V1 callbacks when evaluating expressions with V1.
-  2. It does some patching of the context to match V1's assumptions:
-    * case insensitive context keys
-    * casting of integers
-    * casting of datetimes
-  3. It compares the output of V1 to V2, if those aren't equal it will raise an error.
-  4. If there is no error it will return the value from V2.
+  * It swaps out V2 callbacks for V1 callbacks when evaluating expressions with V1.
+  * It does some patching of the context to match V1's assumptions:
+      * case insensitive context keys
+      * casting of integers
+      * casting of datetimes
+  * It compares the output of V1 to V2, if those aren't equal it will raise an error.
+  * If there is no error it will return the value from V2.
 
   **NOTE**: This module does *twice* the work because it runs V1 and V2 sequentially
             and then compares the result before returning a value.
