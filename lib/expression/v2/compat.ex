@@ -1,28 +1,29 @@
-defmodule Expression.V2.Compat do
+defmodule V2.Compat do
   @moduledoc """
   Compatibility module to make the transition from V1 to V2 a bit easier, hopefully.
   """
   require Logger
+  alias Expression.V2
 
   def evaluate_as_string!(
         expression,
         context,
-        callback_module \\ Expression.V2.Callbacks.Standard
+        callback_module \\ V2.Callbacks.Standard
       )
 
   def evaluate_as_string!(expression, context, callback_module) do
     v1_resp = Expression.evaluate_as_string!(expression, context, v1_module(callback_module))
 
     v2_resp =
-      Expression.V2.eval_as_string(
+      V2.eval_as_string(
         expression,
-        Expression.V2.Context.new(patch_v1_context(context), callback_module)
+        V2.Context.new(patch_v1_context(context), callback_module)
       )
 
     return_or_raise(expression, context, v1_resp, v2_resp)
   end
 
-  def v1_module(Expression.V2.Callbacks.Standard), do: Expression.Callbacks.Standard
+  def v1_module(V2.Callbacks.Standard), do: Expression.Callbacks.Standard
   def v1_module(Turn.Build.Callbacks), do: Turn.Build.CallbacksV1
 
   def patch_v1_key(key),
@@ -57,15 +58,15 @@ defmodule Expression.V2.Compat do
 
   def patch_v1_context(other), do: other
 
-  def evaluate!(expression, context \\ %{}, callback_module \\ Expression.V2.Callbacks.Standard)
+  def evaluate!(expression, context \\ %{}, callback_module \\ V2.Callbacks.Standard)
 
   def evaluate!(expression, context, callback_module) do
     v1_resp = Expression.evaluate!(expression, context, v1_module(callback_module))
 
     v2_resp =
-      Expression.V2.eval(
+      V2.eval(
         expression,
-        Expression.V2.Context.new(patch_v1_context(context), callback_module)
+        V2.Context.new(patch_v1_context(context), callback_module)
       )
       |> hd
 
@@ -75,16 +76,16 @@ defmodule Expression.V2.Compat do
   def evaluate_block!(
         expression,
         context \\ %{},
-        callback_module \\ Expression.V2.Callbacks.Standard
+        callback_module \\ V2.Callbacks.Standard
       )
 
   def evaluate_block!(expression, context, callback_module) do
     v1_resp = Expression.evaluate_block(expression, context, v1_module(callback_module))
 
     v2_resp =
-      case Expression.V2.eval_block(
+      case V2.eval_block(
              expression,
-             Expression.V2.Context.new(patch_v1_context(context), callback_module)
+             V2.Context.new(patch_v1_context(context), callback_module)
            ) do
         {:error, error, reason} -> {:error, error <> " " <> reason}
         value -> {:ok, value}

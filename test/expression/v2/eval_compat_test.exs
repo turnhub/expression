@@ -1,9 +1,9 @@
 defmodule Expression.V2.EvalCompatTest do
   use ExUnit.Case, async: true
-  alias Expression.V2
-  alias Expression.V2.Parser
-  alias Expression.V2.Compat
   alias Expression.Eval
+  alias Expression.V2
+  alias Expression.V2.Compat
+  alias Expression.V2.Parser
 
   test "substitution" do
     assert "bar" == Compat.evaluate_as_string!("@foo", %{"foo" => "bar"})
