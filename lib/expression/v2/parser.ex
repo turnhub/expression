@@ -5,7 +5,7 @@ defmodule Expression.V2.Parser do
   FLOIP Expressions consist of plain text and of blocks. Plain text is returned untouched
   but blocks are evaluated.
 
-  Blocks are prefixed with an `@` sign. Blocks can either have expressions between brackets or 
+  Blocks are prefixed with an `@` sign. Blocks can either have expressions between brackets or
   be used in a shorthand form when wanting to use a single function or variable substitution.
 
   As an example, the following are identical:
@@ -17,8 +17,8 @@ defmodule Expression.V2.Parser do
 
   `Tomorrow's is @(today().day + 1)`
 
-  This parses it into an Abstract Syntax Tree (AST) which follows a style much like a Lisp would. 
-  It parses expressions in [Infix notation](https://en.wikipedia.org/wiki/Infix_notation) such as 
+  This parses it into an Abstract Syntax Tree (AST) which follows a style much like a Lisp would.
+  It parses expressions in [Infix notation](https://en.wikipedia.org/wiki/Infix_notation) such as
   `1 + 1` and parses it into lists where the operator is the first element and the second element
   is the list of arguments for the operator.
 
@@ -100,14 +100,14 @@ defmodule Expression.V2.Parser do
     |> reduce({Enum, :join, [""]})
     |> map({String, :to_float, []})
 
-  # This is yanked wholesale from the NimbleParsec docs
+  # This is inspired  by the NimbleParsec docs
   # https://hexdocs.pm/nimble_parsec/NimbleParsec.html#repeat_while/4
   defparsecp(
     :double_quoted_string,
     ascii_char([?"])
     |> repeat_while(
       choice([
-        ~S(\") |> string() |> replace(?"),
+        string(~S(\")) |> replace("\\\""),
         utf8_char([])
       ]),
       {:not_double_quote, []}
@@ -125,7 +125,7 @@ defmodule Expression.V2.Parser do
     ignore(ascii_char([?']))
     |> repeat_while(
       choice([
-        string(~S(\')) |> replace(?'),
+        string(~S(\')) |> replace("'"),
         utf8_char([])
       ]),
       {:not_single_quote, []}
@@ -331,6 +331,7 @@ defmodule Expression.V2.Parser do
       string("<="),
       string("<"),
       string("=="),
+      string("&"),
       replace(string("="), "==")
     ])
 
@@ -415,9 +416,9 @@ defmodule Expression.V2.Parser do
 
   @doc """
   Parse a block and return the AST
-    
+
   ## Example
-      
+
       iex> Expression.V2.Parser.expression("contact.age + 1")
       {:ok,  [{"+", [{"__property__", ["contact", "age"]}, 1]}], "", %{}, {1, 0}, 15}
 
@@ -428,7 +429,7 @@ defmodule Expression.V2.Parser do
   Parse an expression and return the AST
 
   ## Example
-      
+
       iex> Expression.V2.Parser.parse("hello @world the time is @now()")
       {:ok, ["hello ", ["world"], " the time is ", [{"now", []}]], "", %{}, {1, 0}, 31}
 
