@@ -1,4 +1,17 @@
 defmodule Expression.V2.EvalCompatTest do
+  @moduledoc """
+  This test module is copied from `Expression.EvalTest` and the function calls
+  have been updated to use the `Expression.V2.Compat` module to test backwards
+  compatibility.
+
+  The biggest changes are in the ones calling `V2.eval_ast/1` as the return from
+  that in V2 is a list. The `Compat` function handles that return type difference
+  for us though.
+
+  Also, V1 did some weird stuff with escaping strings and comparisons between them.
+  I think I'm coming to the conclusion that that may have been a bad idea and so
+  I'm not retrofitting that particular use case.
+  """
   use ExUnit.Case, async: true
   alias Expression.V2
   alias Expression.V2.Compat
