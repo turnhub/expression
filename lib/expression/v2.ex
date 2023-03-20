@@ -206,9 +206,6 @@ defmodule Expression.V2 do
     |> compile_block()
   end
 
-  # def compile_block(list) when is_list(list),
-  #   do: Enum.map(list, &compile_block(&1))
-
   def compile_block(final), do: final
 
   @doc """
