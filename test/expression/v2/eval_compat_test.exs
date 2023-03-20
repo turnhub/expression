@@ -1,6 +1,5 @@
 defmodule Expression.V2.EvalCompatTest do
   use ExUnit.Case, async: true
-  alias Expression.Eval
   alias Expression.V2
   alias Expression.V2.Compat
   alias Expression.V2.Parser

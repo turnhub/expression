@@ -36,7 +36,7 @@ defmodule Expression.V2.ContextVars do
   end
 end
 
-defimpl String.Chars, for: ContextVars do
+defimpl String.Chars, for: Expression.V2.ContextVars do
   def to_string(ctx_vars),
     do:
       "@" <>

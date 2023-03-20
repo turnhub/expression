@@ -1,4 +1,4 @@
-defmodule V2.Compat do
+defmodule Expression.V2.Compat do
   @moduledoc """
   Compatibility module to make the transition from V1 to V2 a bit easier, hopefully.
   """

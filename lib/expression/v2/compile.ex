@@ -117,7 +117,7 @@ defmodule Expression.V2.Compile do
     # Chop off the outer quoting
     |> String.slice(1..-2)
     # Remove the innner quoting
-    |> String.replace(~s(\\), "")
+    |> String.replace(~S|\\\\|, ~S|\\|)
   end
 
   defp quoted(number) when is_number(number), do: number
