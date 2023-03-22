@@ -155,6 +155,7 @@ defmodule Expression.DateHelpers do
   def extract_dateish(date_time) when is_struct(date_time, DateTime), do: date_time
   def extract_dateish(date) when is_struct(date, Date), do: date
   def extract_dateish(nil), do: nil
+  def extract_dateish({:not_found, _}), do: nil
 
   def extract_dateish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")

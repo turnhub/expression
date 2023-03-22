@@ -95,6 +95,13 @@ defmodule Expression.V2 do
     do: Enum.slice(list, range)
 
   @doc """
+  Helper function to allow conditionals treat `Expression.V2.ContextVars`
+  as a false
+  """
+  def truthy(%Expression.V2.ContextVars{missing?: true}), do: nil
+  def truthy(other), do: other
+
+  @doc """
   Parse a string with an expression block into AST for the compile step
   """
   @spec parse_block(String.t()) ::
@@ -150,7 +157,9 @@ defmodule Expression.V2 do
     resp = function.(context)
 
     if is_binary(resp) do
-      eval(resp, context)
+      # NOTE: if the response was a binary, the user is expecting a
+      #       a string to be returned so make sure we do that.
+      [eval_as_string(resp, context)]
     else
       [resp]
     end

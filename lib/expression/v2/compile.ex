@@ -143,7 +143,8 @@ defmodule Expression.V2.Compile do
     # because the arguments need to be evaluated lazily.
     {:if, [],
      [
-       quoted(test),
+       {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :truthy]}, [],
+        [quoted(test)]},
        [
          do: quoted(yes),
          else: quoted(no)

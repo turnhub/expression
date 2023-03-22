@@ -22,7 +22,6 @@ defmodule Expression.V2.ContextVars do
 
   def fetch(ctx_vars, key) do
     updated_path = [key | ctx_vars.path]
-
     {:ok, Map.get(ctx_vars.vars, key, %__MODULE__{path: updated_path, vars: %{}, missing?: true})}
   end
 
@@ -36,11 +35,16 @@ defmodule Expression.V2.ContextVars do
   end
 end
 
-defimpl String.Chars, for: Expression.V2.ContextVars do
-  def to_string(ctx_vars),
-    do:
-      "@" <>
-        (ctx_vars.path
-         |> Enum.reverse()
-         |> Enum.join("."))
+defimpl Jason.Encoder, for: Expression.V2.ContextVars do
+  def encode(%{missing?: true}, opts), do: Jason.Encode.value(nil, opts)
+  def encode(%{vars: vars}, opts), do: Jason.Encode.map(vars, opts)
 end
+
+# defimpl String.Chars, for: Expression.V2.ContextVars do
+#   def to_string(%{missing?: true, path: path}),
+#     do:
+#       "@" <>
+#         (path
+#          |> Enum.reverse()
+#          |> Enum.join("."))
+# end
