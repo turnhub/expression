@@ -92,7 +92,7 @@ defmodule Expression.V2.Compat do
   # Leading plus is still parsed as an integer, which we don't want
   def attempt_integer("+" <> _), do: :nope
   # Leading zero likely means a string code, not an integer
-  def attempt_integer("0" <> _), do: :nope
+  def attempt_integer("0" <> binary) when byte_size(binary) > 0, do: :nope
 
   def attempt_integer(binary) do
     String.to_integer(binary)
