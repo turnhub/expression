@@ -224,12 +224,10 @@ defmodule Expression.V2.Compat do
   end
 
   def return_or_raise_binaries(expression, context, v1_resp, v2_resp) do
-    cond do
-      String.jaro_distance(v1_resp, v2_resp) < 0.9 ->
-        v2_resp
-
-      true ->
-        raise_error(expression, context, v1_resp, v2_resp)
+    if String.jaro_distance(v1_resp, v2_resp) > 0.9 do
+      v2_resp
+    else
+      raise_error(expression, context, v1_resp, v2_resp)
     end
   end
 
