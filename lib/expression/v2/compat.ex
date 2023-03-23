@@ -25,7 +25,6 @@ defmodule Expression.V2.Compat do
       )
 
   def evaluate_as_string!(expression, context, callback_module) do
-    Logger.warn(expression)
     v1_resp = Expression.evaluate_as_string!(expression, context, v1_module(callback_module))
 
     v2_resp =
@@ -227,7 +226,6 @@ defmodule Expression.V2.Compat do
   def return_or_raise_binaries(expression, context, v1_resp, v2_resp) do
     cond do
       String.jaro_distance(v1_resp, v2_resp) < 0.9 ->
-        Logger.warn("Jaro distance good enough for #{inspect(v1_resp)} vs #{inspect(v2_resp)}")
         v2_resp
 
       true ->

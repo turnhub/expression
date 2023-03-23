@@ -35,16 +35,11 @@ defmodule Expression.V2.ContextVars do
   end
 end
 
-defimpl Jason.Encoder, for: Expression.V2.ContextVars do
-  def encode(%{missing?: true}, opts), do: Jason.Encode.value(nil, opts)
-  def encode(%{vars: vars}, opts), do: Jason.Encode.map(vars, opts)
+defimpl String.Chars, for: Expression.V2.ContextVars do
+  def to_string(%{missing?: true, path: path}),
+    do:
+      "@" <>
+        (path
+         |> Enum.reverse()
+         |> Enum.join("."))
 end
-
-# defimpl String.Chars, for: Expression.V2.ContextVars do
-#   def to_string(%{missing?: true, path: path}),
-#     do:
-#       "@" <>
-#         (path
-#          |> Enum.reverse()
-#          |> Enum.join("."))
-# end
