@@ -3,23 +3,23 @@ defmodule Expression.V2.Compile do
   An compiler for AST returned by Expression.V2.Parser.
 
   This reads the AST output returned by `Expression.V2.parse/1` and
-  compiles it to Elixir code. 
+  compiles it to Elixir code.
 
   It does this by emitting valid Elixir AST, mimicking what `quote/2` does.
 
   The Elixir AST is then supplied to `Code.eval_quoted_with_env/3` without any
-  variable binding. What is returned is an anonymous function that accepts an 
+  variable binding. What is returned is an anonymous function that accepts an
   `Expression.V2.Context.t` struct and evaluates the code against that context.
 
   Any function calls are applied to the callback module referenced in the context.
-  So if an expression uses a function called `foo(1, 2, 3)` then the callback's 
+  So if an expression uses a function called `foo(1, 2, 3)` then the callback's
   `callback/3` function will be called as follows:
 
   ```elixir
   apply(context.callback_module, :callback, ["foo", [1, 2, 3]])
   ```
 
-  There is some special handling of some functions that have specific Elixir AST 
+  There is some special handling of some functions that have specific Elixir AST
   syntax requirements.
 
   These are documented in the `to_quoted/2` function.
@@ -32,7 +32,7 @@ defmodule Expression.V2.Compile do
 
   @doc """
   Accepts AST as emitted by `Expression.V2.parse/1` and returns an anonymous function
-  that accepts a Context.t as an argument and returns the result  of the expression 
+  that accepts a Context.t as an argument and returns the result  of the expression
   against the given Context.
 
   If the callback functions defined in the callback module are pure then this function
@@ -112,8 +112,13 @@ defmodule Expression.V2.Compile do
     {:__block__, [], quoted_block}
   end
 
-  defp quoted("\"" <> _ = binary) when is_binary(binary),
-    do: String.replace(binary, "\"", "")
+  defp quoted("\"" <> _ = binary) when is_binary(binary) do
+    binary
+    # Chop off the outer quoting
+    |> String.slice(1..-2)
+    # Remove the double quoting
+    |> String.replace("\\\"", "\"")
+  end
 
   defp quoted(number) when is_number(number), do: number
   defp quoted(boolean) when is_boolean(boolean), do: boolean
@@ -138,7 +143,8 @@ defmodule Expression.V2.Compile do
     # because the arguments need to be evaluated lazily.
     {:if, [],
      [
-       quoted(test),
+       {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :truthy]}, [],
+        [quoted(test)]},
        [
          do: quoted(yes),
          else: quoted(no)

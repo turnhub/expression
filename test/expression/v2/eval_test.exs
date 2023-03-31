@@ -26,7 +26,18 @@ defmodule Expression.V2.EvalTest do
     end
   end
 
+  describe "eval_as_string" do
+    test "with missing vars" do
+      assert "hello @one.two.three" == Expression.V2.eval_as_string("hello @one.two.three")
+    end
+  end
+
   describe "eval" do
+    test "with missing vars" do
+      assert %Expression.V2.ContextVars{path: ["three", "two", "one"], vars: %{}, missing?: true} ==
+               Expression.V2.eval_block("one.two.three")
+    end
+
     test "vars" do
       assert "bar" == eval("foo", %{"foo" => "bar"})
     end

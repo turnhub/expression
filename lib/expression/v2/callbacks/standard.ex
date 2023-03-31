@@ -2,7 +2,7 @@ defmodule Expression.V2.Callbacks.Standard do
   @moduledoc """
   Callback functions to be used in Expressions.
 
-  This is the same idea as `Expression.Callbacks.Standard` but 
+  This is the same idea as `Expression.Callbacks.Standard` but
   it's in a rough shape, mostly to just prove that this all works.
   """
 

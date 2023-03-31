@@ -37,7 +37,7 @@ defmodule Expression.V2 do
       iex> V2.eval("22 divided by 7 is @(22 / 7)")
       ["22 divided by 7 is ", 3.142857142857143]
       iex> V2.eval(
-      ...>   "Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)", 
+      ...>   "Hello @proper(contact.name)! Looking forward to meet you @date(2023, 2, 20)",
       ...>   V2.Context.new(%{"contact" => %{"name" => "mary"}})
       ...> )
       ["Hello ", "Mary", "! Looking forward to meet you ", ~D[2023-02-20]]
@@ -82,12 +82,24 @@ defmodule Expression.V2 do
   end
 
   @doc """
-  This function is referenced by `Expression.V2.Compile` to 
+  This function is referenced by `Expression.V2.Compile` to
   make access to values in Maps or Lists easier
   """
   @spec read_attribute(map | list, binary | integer) :: term
   def read_attribute(map, item) when is_map(map), do: Map.get(map, item)
-  def read_attribute(list, index) when is_list(list), do: Enum.at(list, index)
+
+  def read_attribute(list, index) when is_list(list) and is_integer(index),
+    do: Enum.at(list, index)
+
+  def read_attribute(list, range) when is_list(list) and is_struct(range, Range),
+    do: Enum.slice(list, range)
+
+  @doc """
+  Helper function to allow conditionals treat `Expression.V2.ContextVars`
+  as a false
+  """
+  def truthy(%Expression.V2.ContextVars{missing?: true}), do: nil
+  def truthy(other), do: other
 
   @doc """
   Parse a string with an expression block into AST for the compile step
@@ -109,38 +121,49 @@ defmodule Expression.V2 do
           term | {:error, reason :: String.t(), bad_parts :: String.t()}
   def eval_block(expression_block, context \\ Context.new()) do
     with {:ok, ast} <- parse_block(expression_block) do
-      function = Compile.compile(ast)
-      function.(context)
+      hd(eval_block_ast(ast, context))
     end
   end
 
   @doc """
   Evaluate a string with expressions against a given context
   """
-  @spec eval(String.t(), context :: Context.t()) :: [term]
-  def eval(expression, context \\ Context.new()) when is_binary(expression) do
-    expression
-    |> compile()
-    |> Enum.map(fn
-      part when is_list(part) -> Enum.map(part, &eval_in_context(&1, context)) |> List.first()
-      other -> other
+  @spec eval(expression :: String.t(), context :: Context.t()) :: [term]
+  def eval(expression, context \\ Context.new())
+
+  def eval(expression, context) when is_binary(expression) do
+    with {:ok, parsed_parts} <- parse(expression) do
+      eval_ast(parsed_parts, context)
+    end
+  end
+
+  @doc """
+  Evaluate a parsed Expression against a given context
+  """
+  @spec eval_ast([term], context :: Context.t()) :: [term()]
+  def eval_ast(parsed_parts, context \\ Context.new()) do
+    Enum.flat_map(parsed_parts, fn
+      binary when is_binary(binary) -> [binary]
+      ast when is_list(ast) -> eval_block_ast(ast, context)
     end)
   end
 
   @doc """
-  Evaluate the results returned by the compile step against the context
+  Evaluate the given AST against a given context
   """
-  @spec eval_in_context(literal :: [term] | term | function, Context.t()) :: [term]
-  def eval_in_context(list, context) when is_list(list) do
-    Enum.map(list, &eval_in_context(&1, context))
+  @spec eval_block_ast([term], context :: Context.t()) :: [term]
+  def eval_block_ast(ast, context) when is_list(ast) do
+    function = Compile.compile(ast)
+    resp = function.(context)
+
+    if is_binary(resp) do
+      # NOTE: if the response was a binary, the user is expecting a
+      #       a string to be returned so make sure we do that.
+      [eval_as_string(resp, context)]
+    else
+      [resp]
+    end
   end
-
-  def eval_in_context(function, context) when is_function(function), do: function.(context)
-
-  def eval_in_context(atom, context) when is_binary(atom),
-    do: Map.get(context.vars, atom, atom)
-
-  def eval_in_context(item, _context), do: item
 
   @doc """
   Evaluate an expression and cast all items to strings before joining
@@ -173,6 +196,7 @@ defmodule Expression.V2 do
   def stringify(binary) when is_binary(binary), do: binary
   def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
   def stringify(%Date{} = date), do: Date.to_iso8601(date)
+  def stringify(%Expression.V2.ContextVars{} = ctx_vars), do: to_string(ctx_vars)
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 
@@ -191,13 +215,10 @@ defmodule Expression.V2 do
     |> compile_block()
   end
 
-  def compile_block(list) when is_list(list),
-    do: Enum.map(list, &compile_block(&1))
-
   def compile_block(final), do: final
 
   @doc """
-  Return the code generated for the Abstract Syntax tree or 
+  Return the code generated for the Abstract Syntax tree or
   Expression string provided.
   """
   @spec debug(String.t() | [term]) :: String.t()
