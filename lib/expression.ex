@@ -55,10 +55,12 @@ defmodule Expression do
         {:ok, ast}
 
       {:ok, _ast, remainder, _, _, _} ->
-        {:error, "Unable to parse: #{inspect(remainder)}"}
+        {:error,
+         "Unable to parse block: #{inspect(expression_block)}, remainder: #{inspect(remainder)}"}
 
       {:error, reason, problematic, _, _, _} ->
-        {:error, "#{reason} in #{inspect(problematic)}"}
+        {:error,
+         "Unable to parse block: #{inspect(expression_block)}, reason: #{reason} in #{inspect(problematic)}"}
     end
   end
 
@@ -69,10 +71,10 @@ defmodule Expression do
         ast
 
       {:ok, _ast, remainder, _, _, _} ->
-        raise "Unable to parse: #{inspect(remainder)}"
+        raise "Unable to parse block: #{inspect(expression_block)}, remainder: #{inspect(remainder)}"
 
       {:error, reason, problematic, _, _, _} ->
-        raise "#{reason} in #{inspect(problematic)}"
+        raise "Unable to parse block: #{inspect(expression_block)}, reason: #{reason} in #{inspect(problematic)}"
     end
   end
 
@@ -88,7 +90,7 @@ defmodule Expression do
         ast
 
       {:ok, _ast, remainder, _, _, _} ->
-        raise "Unable to parse: #{inspect(remainder)}"
+        raise "Unable to parse expression: #{expression}, remainder: #{inspect(remainder)}"
     end
   end
 
