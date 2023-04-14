@@ -183,19 +183,19 @@ defmodule Expression.V2 do
     end)
   end
 
-  def unwrap_property({"__property__", parts}) do
+  defp unwrap_property({"__property__", parts}) do
     parts
     |> Enum.map(&unwrap_property/1)
     |> Enum.join(".")
   end
 
-  def unwrap_property(parts) when is_list(parts),
+  defp unwrap_property(parts) when is_list(parts),
     do:
       parts
       |> Enum.map(&unwrap_property/1)
       |> Enum.join(".")
 
-  def unwrap_property(part), do: part
+  defp unwrap_property(part), do: part
 
   @doc """
   Return the default value for a potentially complex value.
