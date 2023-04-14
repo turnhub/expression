@@ -167,20 +167,20 @@ defmodule Expression.V2 do
   """
   @spec eval_as_string(String.t(), Context.t()) :: String.t()
   def eval_as_string(expression, context \\ Context.new()) do
-    with {:ok, ast} <- parse(expression) do
-      ast
-      |> eval_ast(context)
-      |> Enum.zip(ast)
-      |> Enum.map_join("", fn
-        {nil, [{"__property__", _parts} = property]} ->
-          "@" <> unwrap_property(property)
+    {:ok, ast} = parse(expression)
 
-        {value, _ast} ->
-          value
-          |> default_value(context)
-          |> stringify()
-      end)
-    end
+    ast
+    |> eval_ast(context)
+    |> Enum.zip(ast)
+    |> Enum.map_join("", fn
+      {nil, [{"__property__", _parts} = property]} ->
+        "@" <> unwrap_property(property)
+
+      {value, _ast} ->
+        value
+        |> default_value(context)
+        |> stringify()
+    end)
   end
 
   def unwrap_property({"__property__", parts}) do
