@@ -183,17 +183,11 @@ defmodule Expression.V2 do
     end)
   end
 
-  defp unwrap_property({"__property__", parts}) do
-    parts
-    |> Enum.map(&unwrap_property/1)
-    |> Enum.join(".")
-  end
+  defp unwrap_property({"__property__", parts}),
+    do: Enum.map_join(parts, ".", &unwrap_property/1)
 
   defp unwrap_property(parts) when is_list(parts),
-    do:
-      parts
-      |> Enum.map(&unwrap_property/1)
-      |> Enum.join(".")
+    do: Enum.map_join(parts, ".", &unwrap_property/1)
 
   defp unwrap_property(part), do: part
 
