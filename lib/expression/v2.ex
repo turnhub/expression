@@ -95,13 +95,6 @@ defmodule Expression.V2 do
     do: Enum.slice(list, range)
 
   @doc """
-  Helper function to allow conditionals treat `Expression.V2.ContextVars`
-  as a false
-  """
-  def truthy(%Expression.V2.ContextVars{missing?: true}), do: nil
-  def truthy(other), do: other
-
-  @doc """
   Parse a string with an expression block into AST for the compile step
   """
   @spec parse_block(String.t()) ::
@@ -174,10 +167,35 @@ defmodule Expression.V2 do
   """
   @spec eval_as_string(String.t(), Context.t()) :: String.t()
   def eval_as_string(expression, context \\ Context.new()) do
-    eval(expression, context)
-    |> Enum.map(&default_value(&1, context))
-    |> Enum.map_join("", &stringify/1)
+    with {:ok, ast} <- parse(expression) do
+      ast
+      |> eval_ast(context)
+      |> Enum.zip(ast)
+      |> Enum.map_join("", fn
+        {nil, [{"__property__", _parts} = property]} ->
+          "@" <> unwrap_property(property)
+
+        {value, _ast} ->
+          value
+          |> default_value(context)
+          |> stringify()
+      end)
+    end
   end
+
+  def unwrap_property({"__property__", parts}) do
+    parts
+    |> Enum.map(&unwrap_property/1)
+    |> Enum.join(".")
+  end
+
+  def unwrap_property(parts) when is_list(parts),
+    do:
+      parts
+      |> Enum.map(&unwrap_property/1)
+      |> Enum.join(".")
+
+  def unwrap_property(part), do: part
 
   @doc """
   Return the default value for a potentially complex value.
@@ -196,7 +214,6 @@ defmodule Expression.V2 do
   def stringify(binary) when is_binary(binary), do: binary
   def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
   def stringify(%Date{} = date), do: Date.to_iso8601(date)
-  def stringify(%Expression.V2.ContextVars{} = ctx_vars), do: to_string(ctx_vars)
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 

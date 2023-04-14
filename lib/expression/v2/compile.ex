@@ -30,6 +30,8 @@ defmodule Expression.V2.Compile do
   would allow them to do.
   """
 
+  @built_ins ["*", "+", "-", "<>", ">", ">=", "<", "<=", "/", "^", "=="]
+
   @doc """
   Accepts AST as emitted by `Expression.V2.parse/1` and returns an anonymous function
   that accepts a Context.t as an argument and returns the result  of the expression
@@ -143,8 +145,7 @@ defmodule Expression.V2.Compile do
     # because the arguments need to be evaluated lazily.
     {:if, [],
      [
-       {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :truthy]}, [],
-        [quoted(test)]},
+       quoted(test),
        [
          do: quoted(yes),
          else: quoted(no)
@@ -158,6 +159,19 @@ defmodule Expression.V2.Compile do
 
   defp quoted("&" <> index) do
     {:&, [], [String.to_integer(index)]}
+  end
+
+  defp quoted({function_name, arguments})
+       when is_binary(function_name) and
+              function_name in @built_ins and
+              is_list(arguments) do
+    default_values =
+      Enum.map(arguments, fn argument ->
+        {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :default_value]}, [],
+         [quoted(argument), {:context, [], nil}]}
+      end)
+
+    {String.to_existing_atom(function_name), [], default_values}
   end
 
   defp quoted({function_name, arguments})

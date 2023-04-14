@@ -34,8 +34,7 @@ defmodule Expression.V2.EvalTest do
 
   describe "eval" do
     test "with missing vars" do
-      assert %Expression.V2.ContextVars{path: ["three", "two", "one"], vars: %{}, missing?: true} ==
-               Expression.V2.eval_block("one.two.three")
+      assert nil == Expression.V2.eval_block("one.two.three")
     end
 
     test "vars" do

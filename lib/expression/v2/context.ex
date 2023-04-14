@@ -5,7 +5,6 @@ defmodule Expression.V2.Context do
   This will be expanded with support for more attributes that a callback function
   can access but normal Expression evaluation can not.
   """
-  alias Expression.V2.ContextVars
   defstruct vars: %{}, private: %{}, callback_module: Expression.V2.Callbacks.Standard
 
   @type t :: %__MODULE__{
@@ -15,7 +14,7 @@ defmodule Expression.V2.Context do
         }
 
   def new(vars \\ %{}, callback_module \\ Expression.V2.Callbacks.Standard),
-    do: %__MODULE__{vars: ContextVars.new(vars), callback_module: callback_module}
+    do: %__MODULE__{vars: vars, callback_module: callback_module}
 
   def private(ctx, key, value), do: %{ctx | private: Map.put(ctx.private, key, value)}
 end
