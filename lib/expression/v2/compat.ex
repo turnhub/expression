@@ -47,9 +47,6 @@ defmodule Expression.V2.Compat do
 
   def patch_v1_context(datetime) when is_struct(datetime, DateTime), do: datetime
 
-  def patch_v1_context(ctx_vars) when is_struct(ctx_vars, Expression.V2.ContextVars),
-    do: Expression.V2.default_value(ctx_vars)
-
   def patch_v1_context(date) when is_struct(date, Date), do: date
 
   def patch_v1_context(struct) when is_struct(struct) do
@@ -166,16 +163,12 @@ defmodule Expression.V2.Compat do
   end
 
   def return_or_raise(
-        expression,
-        context,
-        {:not_found, v1_path} = v1_resp,
-        %Expression.V2.ContextVars{path: v2_path, missing?: true} = v2_resp
+        _expression,
+        _context,
+        {:not_found, _v1_path} = _v1_resp,
+        nil = _v2_resp
       ) do
-    if Enum.reverse(v1_path) == v2_path do
-      v2_resp
-    else
-      raise_error(expression, context, v1_resp, v2_resp)
-    end
+    nil
   end
 
   def return_or_raise(expression, context, {:ok, val1}, {:ok, val2}) do

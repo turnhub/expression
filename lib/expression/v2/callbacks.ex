@@ -18,8 +18,6 @@ defmodule Expression.V2.Callbacks do
   ```
   """
 
-  @built_ins ["*", "+", "-", "<>", ">", ">=", "<", "<=", "/", "^", "=="]
-
   alias Expression.V2.Callbacks.Standard
 
   @reserved_words ~w[and if or not]
@@ -84,10 +82,6 @@ defmodule Expression.V2.Callbacks do
     Code.ensure_loaded!(Standard)
 
     cond do
-      # Check if the exact function signature has been implemented
-      function_name in @built_ins ->
-        {:exact, module, atom_function_name(function_name)}
-
       function_exported?(module, exact_function_name, length(arguments) + 1) ->
         {:exact, module, exact_function_name}
 
@@ -112,15 +106,6 @@ defmodule Expression.V2.Callbacks do
   defmacro __using__(_opts) do
     quote do
       def callback(module \\ __MODULE__, context, function_name, args)
-
-      def callback(module, context, built_in, args)
-          when built_in in unquote(@built_ins),
-          do:
-            apply(
-              Kernel,
-              String.to_existing_atom(built_in),
-              Enum.map(args, &Expression.V2.default_value(&1, context))
-            )
 
       defdelegate callback(module, context, function_name, arguments),
         to: Expression.V2.Callbacks

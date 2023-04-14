@@ -6,11 +6,8 @@ defmodule Expression.V2Test do
     test "code gen using context" do
       assert String.trim("""
              fn context ->
-               apply(context.callback_module, :callback, [
-                 context,
-                 "+",
-                 [context.vars["foo"], context.vars["bar"]]
-               ])
+               Expression.V2.default_value(context.vars["foo"], context) +
+                 Expression.V2.default_value(context.vars["bar"], context)
              end
              """) == V2.debug("foo + bar")
     end
