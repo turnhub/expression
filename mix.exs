@@ -50,7 +50,7 @@ defmodule Expression.MixProject do
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},
-      {:ex_phone_number, "~> 0.3.0"},
+      {:ex_phone_number, "~> 0.4.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 1.1"},
       {:number, "~> 1.0"},
