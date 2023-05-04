@@ -109,13 +109,17 @@ defmodule Expression.DateHelpers do
 
           {microseconds, values} = Keyword.pop(values, :microsecond, 0)
 
-          microsecond_entry =
-            {microseconds,
-             microseconds
-             |> to_string()
-             |> String.length()}
+          # Elixir's DateTime only supports microseconds up to precision 6
+          microseconds_string = to_string(microseconds)
 
-          Keyword.put(values, :microsecond, microsecond_entry)
+          microseconds_precision = min(String.length(microseconds_string), 6)
+
+          microseconds =
+            microseconds_string
+            |> String.slice(0, microseconds_precision)
+            |> String.to_integer()
+
+          Keyword.put(values, :microsecond, {microseconds, microseconds_precision})
 
         [us_format: parsed_value] ->
           [:day, :month, :year, :hour, :minute, :second]
