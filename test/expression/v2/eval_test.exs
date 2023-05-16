@@ -26,6 +26,19 @@ defmodule Expression.V2.EvalTest do
     end
   end
 
+  describe "map as context" do
+    test "eval_block accepts a map" do
+      assert V2.eval_block("contact.name", %{"contact" => %{"name" => "Mary"}}) == "Mary"
+    end
+
+    test "eval accepts a map" do
+      assert V2.eval("hello @contact.name", %{"contact" => %{"name" => "Mary"}}) == [
+               "hello ",
+               "Mary"
+             ]
+    end
+  end
+
   describe "eval_as_string" do
     test "with missing vars" do
       assert "hello @one.two.three" == Expression.V2.eval_as_string("hello @one.two.three")

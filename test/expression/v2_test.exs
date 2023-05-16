@@ -17,5 +17,22 @@ defmodule Expression.V2Test do
              fn _context -> ["one", "two"] end
              """) == V2.debug(~S|["one", "two"]|)
     end
+
+    test "default values not used for integers and builtins" do
+      assert "fn _context -> 1 + 1 end" == V2.debug("1 + 1")
+    end
+
+    test "default values not used for strings and builtins" do
+      assert "fn _context -> \"hello\" > \"bye\" end" == V2.debug("\"hello\" > \"bye\"")
+    end
+
+    test "default values used for variables and builtins" do
+      assert String.trim("""
+             fn context ->
+               Expression.V2.default_value(context.vars["a"], context) *
+                 Expression.V2.default_value(context.vars["b"], context)
+             end
+             """) == V2.debug("a * b")
+    end
   end
 end
