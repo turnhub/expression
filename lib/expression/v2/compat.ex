@@ -194,27 +194,40 @@ defmodule Expression.V2.Compat do
     return_or_raise(expression, context, v1_resp, v2_resp)
   end
 
-  def return_or_raise(expression, context, v1_resp, v2_resp)
-      when is_struct(v1_resp, DateTime) and is_struct(v2_resp, DateTime) do
-    if DateTime.diff(v1_resp, v2_resp, :second) < 1 do
-      v2_resp
-    else
-      raise_error(expression, context, v1_resp, v2_resp)
-    end
-  end
-
   def return_or_raise(expression, context, v1_resp, v2_resp) do
     cond do
-      v1_resp == v2_resp ->
-        v2_resp
-
       is_binary(v1_resp) and is_binary(v2_resp) ->
         return_or_raise_binaries(expression, context, v1_resp, v2_resp)
+
+      is_struct(v1_resp, DateTime) and is_struct(v2_resp, DateTime) ->
+        if DateTime.diff(v1_resp, v2_resp) <= :timer.seconds(1) do
+          v2_resp
+        else
+          raise_error(expression, context, v1_resp, v2_resp)
+        end
+
+      normalize_value(v1_resp) == normalize_value(v2_resp) ->
+        v2_resp
 
       true ->
         raise_error(expression, context, v1_resp, v2_resp)
     end
   end
+
+  # To minimize random errors due to the V1 & V2 expressions being evaluated at different
+  # times we're truncating DateTime structs to the second to give the CPU some grace
+  # In the `return_or_raise` we confirm that it's still within a second though and return
+  # the original (non truncated) value
+  def normalize_value(%DateTime{} = datetime), do: DateTime.truncate(datetime, :second)
+  def normalize_value(list) when is_list(list), do: Enum.map(list, &normalize_value/1)
+
+  def normalize_value(map) when is_map(map) do
+    map
+    |> Enum.map(fn {key, value} -> {key, normalize_value(value)} end)
+    |> Enum.into(%{})
+  end
+
+  def normalize_value(other), do: other
 
   def return_or_raise_binaries(expression, context, v1_resp, v2_resp) do
     if String.jaro_distance(v1_resp, v2_resp) > 0.9 do
