@@ -23,7 +23,7 @@ defmodule Expression.V2Test do
     end
 
     test "default values not used for strings and builtins" do
-      assert "fn _context -> \"hello\" > \"bye\" end" == V2.debug("\"hello\" > \"bye\"")
+      assert "fn _context -> \"hello\" == \"bye\" end" == V2.debug("\"hello\" == \"bye\"")
     end
 
     test "default values used for variables and builtins" do
