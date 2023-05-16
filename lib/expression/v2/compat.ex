@@ -221,7 +221,7 @@ defmodule Expression.V2.Compat do
   def normalize_value(%DateTime{} = datetime), do: DateTime.truncate(datetime, :second)
   def normalize_value(list) when is_list(list), do: Enum.map(list, &normalize_value/1)
 
-  def normalize_value(map) when is_map(map) do
+  def normalize_value(map) when is_map(map) and not is_struct(map) do
     map
     |> Enum.map(fn {key, value} -> {key, normalize_value(value)} end)
     |> Enum.into(%{})
