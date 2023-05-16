@@ -25,7 +25,8 @@ defmodule Expression.V2Test do
     test "default values not used for strings and builtins" do
       assert String.trim("""
              fn _context -> "hello" == "bye" end
-             """) == V2.debug("\"hello\" == \"bye\"")
+             """) ==
+               V2.debug(~S|"hello" == "bye"|)
     end
 
     test "default values used for variables and builtins" do
