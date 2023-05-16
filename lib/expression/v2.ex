@@ -112,7 +112,14 @@ defmodule Expression.V2 do
   """
   @spec eval_block(String.t(), context :: Context.t()) ::
           term | {:error, reason :: String.t(), bad_parts :: String.t()}
-  def eval_block(expression_block, context \\ Context.new()) do
+  def eval_block(expression_block, context \\ Context.new())
+
+  def eval_block(expression_block, map_context)
+      when is_map(map_context) and not is_struct(map_context, Context) do
+    eval_block(expression_block, Context.new(map_context))
+  end
+
+  def eval_block(expression_block, context) do
     with {:ok, ast} <- parse_block(expression_block) do
       hd(eval_block_ast(ast, context))
     end
@@ -123,6 +130,11 @@ defmodule Expression.V2 do
   """
   @spec eval(expression :: String.t(), context :: Context.t()) :: [term]
   def eval(expression, context \\ Context.new())
+
+  def eval(expression, map_context)
+      when is_map(map_context) and not is_struct(map_context, Context) do
+    eval(expression, Context.new(map_context))
+  end
 
   def eval(expression, context) when is_binary(expression) do
     with {:ok, parsed_parts} <- parse(expression) do

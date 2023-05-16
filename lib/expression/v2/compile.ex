@@ -166,9 +166,16 @@ defmodule Expression.V2.Compile do
               function_name in @built_ins and
               is_list(arguments) do
     default_values =
-      Enum.map(arguments, fn argument ->
-        {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :default_value]}, [],
-         [quoted(argument), {:context, [], nil}]}
+      Enum.map(arguments, fn
+        argument when is_integer(argument) ->
+          quoted(argument)
+
+        "\"" <> _string = argument ->
+          quoted(argument)
+
+        argument ->
+          {{:., [], [{:__aliases__, [alias: false], [:Expression, :V2]}, :default_value]}, [],
+           [quoted(argument), {:context, [], nil}]}
       end)
 
     {String.to_existing_atom(function_name), [], default_values}
