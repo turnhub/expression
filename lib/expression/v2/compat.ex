@@ -9,7 +9,7 @@ defmodule Expression.V2.Compat do
       * case insensitive context keys
       * casting of integers
       * casting of datetimes
-  * It compares the output of V1 to V2, if those aren't equal it will raise an error.
+  * It compares the output of V1 to V2, if those aren't equal it will log an error and return the V1 response.
   * If there is no error it will return the value from V2.
 
   > **NOTE**: This module does *twice* the work because it runs V1 and V2 sequentially
@@ -203,14 +203,14 @@ defmodule Expression.V2.Compat do
         if DateTime.diff(v1_resp, v2_resp) <= :timer.seconds(1) do
           v2_resp
         else
-          raise_error(expression, context, v1_resp, v2_resp)
+          log_error(expression, context, v1_resp, v2_resp)
         end
 
       normalize_value(v1_resp) == normalize_value(v2_resp) ->
         v2_resp
 
       true ->
-        raise_error(expression, context, v1_resp, v2_resp)
+        log_error(expression, context, v1_resp, v2_resp)
     end
   end
 
@@ -233,11 +233,11 @@ defmodule Expression.V2.Compat do
     if String.jaro_distance(v1_resp, v2_resp) > 0.9 do
       v2_resp
     else
-      raise_error(expression, context, v1_resp, v2_resp)
+      log_error(expression, context, v1_resp, v2_resp)
     end
   end
 
-  def raise_error(expression, context, v1_resp, v2_resp) do
+  def log_error(expression, context, v1_resp, v2_resp) do
     Logger.error("""
 
     ** Compatibility Error **
@@ -249,6 +249,6 @@ defmodule Expression.V2.Compat do
     V2: #{inspect(v2_resp)}
     """)
 
-    raise "eep"
+    v1_resp
   end
 end
