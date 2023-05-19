@@ -79,7 +79,7 @@ defmodule Expression.V2.Callbacks do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 
-    Code.ensure_loaded!(Standard)
+    Code.ensure_loaded!(module)
 
     cond do
       function_exported?(module, exact_function_name, length(arguments) + 1) ->
