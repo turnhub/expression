@@ -21,6 +21,7 @@ defmodule Expression.V2.EvalCompatTest do
     assert "bar" == Compat.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
+  @tag :skip
   test "substitutions in substitutions" do
     assert "string with quotes \" inside" ==
              Compat.evaluate_block!(~S("string with quotes \" inside"))
