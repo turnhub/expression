@@ -905,7 +905,7 @@ defmodule Expression.Callbacks.Standard do
 
     results =
       patterns
-      |> Enum.map(&Regex.run(&1, haystack))
+      |> Enum.map(&Regex.run(&1, to_string(haystack)))
       |> Enum.map(fn
         [match] -> match
         nil -> nil
