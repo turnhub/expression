@@ -68,13 +68,15 @@ defmodule Expression.Eval do
     args = opts[:args] || []
 
     arguments =
-      Enum.map(args, fn
-        {type, _args} = function when type in @allowed_nested_function_arguments ->
+      Enum.reduce_while(args, [], fn {type, _args} = function, acc ->
+        if type in @allowed_nested_function_arguments do
           value = eval!(function, context, mod)
-          [literal: value]
+          flag = if value == true && name == "or", do: :halt, else: :cont
 
-        arguments ->
-          arguments
+          {flag, acc ++ [[literal: value]]}
+        else
+          {:cont, acc ++ [function]}
+        end
       end)
 
     case mod.handle(name, arguments, context) do
