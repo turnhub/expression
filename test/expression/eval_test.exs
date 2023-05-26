@@ -45,6 +45,14 @@ defmodule Expression.EvalTest do
                  "deny" => "unsuccessful"
                }
              )
+
+    assert "true" ==
+             Expression.evaluate_as_string!(
+               ~s|@or(answer == 1, has_all_words(answer, "red fox"))|,
+               %{
+                 "answer" => "1"
+               }
+             )
   end
 
   test "attributes on substitutions" do
@@ -68,6 +76,10 @@ defmodule Expression.EvalTest do
     {:ok, ast, "", _, _, _} = Parser.parse(~s[@has_any_word("The Quick Brown Fox", "red fox")])
 
     assert %{"__value__" => true, "match" => "Fox"} == Eval.eval!(ast, %{})
+
+    {:ok, ast, "", _, _, _} = Parser.parse(~s[@or(1 == 1, has_all_words("Red Fox", "red fox"))])
+
+    assert true == Eval.eval!(ast, %{})
   end
 
   test "if" do
