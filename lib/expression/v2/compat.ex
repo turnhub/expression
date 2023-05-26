@@ -18,7 +18,6 @@ defmodule Expression.V2.Compat do
   > **NOTE**: This was throwing more errors in prod than anticipated, hacking in a revert temporarily
   """
   require Logger
-  alias Expression.V2
 
   def evaluate_as_string!(
         expression,
