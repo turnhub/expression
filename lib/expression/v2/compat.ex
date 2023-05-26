@@ -135,7 +135,7 @@ defmodule Expression.V2.Compat do
   def evaluate_block!(
         expression,
         context \\ %{},
-        callback_module \\ V2.Callbacks.Standard
+        callback_module \\ Callbacks.Standard
       )
 
   def evaluate_block!(expression, context, callback_module) do
