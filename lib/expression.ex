@@ -80,7 +80,7 @@ defmodule Expression do
 
   @spec escape(String.t()) :: String.t()
   def escape(expression) when is_binary(expression) do
-    String.replace(expression, ~r/@([a-z]+)(\(|\.)/i, "@@\\g{1}\\g{2}")
+    String.replace(expression, ~r/@([a-z]+)(\(|\.)?/i, "@@\\g{1}\\g{2}")
   end
 
   @spec parse!(String.t()) :: Keyword.t()
