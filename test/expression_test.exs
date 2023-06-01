@@ -33,6 +33,8 @@ defmodule ExpressionTest do
       assert "1.23" == Expression.evaluate_as_string!("@(1.23)")
       assert "2022-06-28" == Expression.evaluate_as_string!("@date(2022, 6, 28)")
       assert "123" == Expression.evaluate_as_string!("@([1,2,3])")
+      assert "1" == Expression.evaluate_as_string!(1)
+      assert "1.5" == Expression.evaluate_as_string!(1.5)
     end
 
     test "list with attribute" do
