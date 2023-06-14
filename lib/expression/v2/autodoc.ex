@@ -80,12 +80,7 @@ defmodule Expression.V2.Autodoc do
       |> Enum.map_join("\n", fn {expression_doc, index} ->
         doc = expression_doc[:doc]
 
-        {fake_expression?, expression} =
-          if is_nil(expression_doc[:fake_expression]) and true do
-            {false, expression_doc[:expression]}
-          else
-            {true, expression_doc[:fake_expression]}
-          end
+        {fake_expression?, expression} = get_expression(expression_doc)
 
         code_expression = expression_doc[:code_expression] || expression_doc[:expression]
         context = expression_doc[:context]
@@ -141,6 +136,14 @@ defmodule Expression.V2.Autodoc do
        format_docs(expression_docs)}
       | existing_expression_docs
     ])
+  end
+
+  def get_expression(expression_doc) do
+    if is_nil(expression_doc[:fake_expression]) do
+      {false, expression_doc[:expression]}
+    else
+      {true, expression_doc[:fake_expression]}
+    end
   end
 
   def generate_ex_doc(prompt \\ "iex", module, expression, context, result) do
