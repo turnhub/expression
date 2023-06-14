@@ -20,6 +20,7 @@ defmodule Expression.V2.Autodoc do
 
   * `doc` is the explanatory text added to the doctest.
   * `expression` is the expression we want to test
+  * `fake_expression` can optionally be the expression we want to display but not test
   * `context` is the context the expression is tested against
   * `result` is the result we're expecting to get and are asserting against
   * `fake_result` can be optionally supplied when the returning result varies
@@ -78,7 +79,14 @@ defmodule Expression.V2.Autodoc do
       |> Enum.with_index(1)
       |> Enum.map_join("\n", fn {expression_doc, index} ->
         doc = expression_doc[:doc]
-        expression = expression_doc[:expression]
+
+        {fake_expression?, expression} =
+          if is_nil(expression_doc[:fake_expression]) and true do
+            {false, expression_doc[:expression]}
+          else
+            {true, expression_doc[:fake_expression]}
+          end
+
         code_expression = expression_doc[:code_expression] || expression_doc[:expression]
         context = expression_doc[:context]
 
@@ -107,7 +115,7 @@ defmodule Expression.V2.Autodoc do
         "#{stringify(result)}"
         ```
 
-        #{generate_ex_doc(doctest_prompt, module, expression, context || %{}, result)}
+        #{unless(fake_expression?, do: generate_ex_doc(doctest_prompt, module, expression, context || %{}, result))}
 
         ---
 
@@ -144,15 +152,15 @@ defmodule Expression.V2.Autodoc do
         ...>   Expression.V2.Context.new(#{inspect(context || %{})}, #{inspect(module)})
         ...> )
         #{generate_assert(prompt, ["chat for ", result, " impact"])}
-        #{prompt}> 
+        #{prompt}>
         #{prompt}> # Evaluate a standalone expression block
         #{prompt}> result = Expression.V2.eval_block(
         ...>   #{inspect(expression)},
         ...>   Expression.V2.Context.new(#{inspect(context || %{})}, #{inspect(module)})
         ...> )
-        #{prompt}> 
+        #{prompt}>
         #{generate_assert(prompt, result)}
-        #{prompt}> 
+        #{prompt}>
         #{prompt}> # Evaluate a string with expressions into a single string
         #{prompt}> Expression.V2.eval_as_string(
         ...>   #{inspect("@" <> expression)},
