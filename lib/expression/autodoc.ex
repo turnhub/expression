@@ -78,7 +78,11 @@ defmodule Expression.Autodoc do
 
         {fake_expression?, expression} = get_expression(expression_doc)
 
-        code_expression = expression_doc[:code_expression] || expression_doc[:expression]
+        code_expression =
+          expression_doc[:code_expression] ||
+            expression_doc[:fake_expression] ||
+            expression_doc[:expression]
+
         context = expression_doc[:context]
 
         {doctest_prompt, result} =
@@ -207,14 +211,15 @@ defmodule Expression.Autodoc do
 
     """
     complex **#{type_of(value)}** type of default value:
-    ```elixir
-    #{inspect(value)}
+    ```
+    #{Jason.encode!(value, pretty: true)}
     ```
     with the following fields:\n\n#{Enum.join(other_fields, "\n")}
     """
   end
 
-  def format_result(result), do: " value of type **#{type_of(result)}**: `#{inspect(result)}`"
+  def format_result(result),
+    do: " value of type **#{type_of(result)}**: `#{Jason.encode!(result, pretty: true)}`"
 
   def format_context(nil), do: "."
 
