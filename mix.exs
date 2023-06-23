@@ -51,6 +51,7 @@ defmodule Expression.MixProject do
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},
       {:ex_phone_number, "~> 0.4.1"},
+      {:jason, "~> 1.0"},
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 1.1"},
       {:number, "~> 1.0"},
