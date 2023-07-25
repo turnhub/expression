@@ -64,7 +64,11 @@ defmodule Expression.Callbacks do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 
-    Code.ensure_loaded!(Standard)
+    # Make sure the module supplied is compiled & loaded before
+    # attempting to find out what functions it may support as part of
+    # validation / implementation checks
+    Code.ensure_compiled!(module)
+    Code.ensure_loaded!(module)
 
     cond do
       # Check if the exact function signature has been implemented
