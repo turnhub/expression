@@ -64,11 +64,13 @@ defmodule Expression.Callbacks do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
 
-    # Make sure the module supplied is compiled & loaded before
-    # attempting to find out what functions it may support as part of
-    # validation / implementation checks
-    Code.ensure_compiled!(module)
-    Code.ensure_loaded!(module)
+    # Make sure the module supplied and the default module are compiled
+    # & loaded before attempting to find out what functions it may
+    # support as part of validation / implementation checks
+    [Standard, module]
+    |> Enum.uniq()
+    |> Enum.map(&Code.ensure_compiled!/1)
+    |> Enum.each(&Code.ensure_loaded!/1)
 
     cond do
       # Check if the exact function signature has been implemented
