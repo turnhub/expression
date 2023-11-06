@@ -92,6 +92,8 @@ defmodule Expression.Eval do
   def eval!({:range, [first, last, step]}, _context, _mod),
     do: Range.new(first, last, step)
 
+  def eval!({:list, []}, _context, _mod), do: []
+
   def eval!({:list, [{:args, ast}]}, context, mod) do
     ast
     |> Enum.reduce([], &[eval!(&1, context, mod) | &2])
