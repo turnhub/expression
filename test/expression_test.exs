@@ -49,6 +49,14 @@ defmodule ExpressionTest do
       assert nil == Expression.evaluate!("@foo[100]", %{"foo" => ["baz", "bar"]})
     end
 
+    test "append lists" do
+      assert {:ok, ["A", "B", "C", "D", "E"]} ==
+               Expression.evaluate("@append(first_list, second_list)", %{
+                 "first_list" => ["A", "B", "C"],
+                 "second_list" => ["D", "E"]
+               })
+    end
+
     test "calculation with explicit precedence" do
       assert {:ok, 8} = Expression.evaluate("@(2 + (2 * 3))")
     end
@@ -83,6 +91,24 @@ defmodule ExpressionTest do
                  "map" => %{
                    "__value__" => "foo",
                    "bar" => "bar"
+                 }
+               })
+    end
+
+    test "delete an element from a map" do
+      assert {:ok, %{"age" => 32}} ==
+               Expression.evaluate("@delete(contact, \"gender\")", %{
+                 "contact" => %{
+                   "gender" => "?",
+                   "age" => 32
+                 }
+               })
+
+      assert {:ok, %{"gender" => "?", "age" => 32}} ==
+               Expression.evaluate("@delete(contact, \"unknown\")", %{
+                 "contact" => %{
+                   "gender" => "?",
+                   "age" => 32
                  }
                })
     end

@@ -1434,4 +1434,32 @@ defmodule Expression.Callbacks.Standard do
 
     rem(integer1, integer2)
   end
+
+  @doc """
+  Appends items from one list to another list.
+  """
+  @expression_doc expression: "append([\"A\", \"B\"], [\"C\", \"B\"])",
+                  result: ["A", "B", "C", "B"]
+  def append(ctx, first_list, second_list) do
+    [first_list, second_list] = eval_args!([first_list, second_list], ctx)
+
+    Enum.concat(first_list, second_list)
+  end
+
+  @doc """
+  Deletes an element from a map by the given key.
+  """
+  @expression_doc expression: "delete(contact, \"gender\")",
+                  context: %{
+                    "contact" => %{
+                      "gender" => "?",
+                      "age" => 32
+                    }
+                  },
+                  result: %{"age" => 32}
+  def delete(ctx, map, key) do
+    [map, key] = eval_args!([map, key], ctx)
+
+    Map.delete(map, key)
+  end
 end

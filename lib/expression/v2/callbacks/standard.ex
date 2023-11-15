@@ -1255,8 +1255,7 @@ defmodule Expression.V2.Callbacks.Standard do
   @expression_doc expression: "has_text(\" \n\")", result: false
   @expression_doc expression: "has_text(123)", result: true
   def has_text(_ctx, expression) do
-    expression = to_string(expression)
-    String.trim(expression) != ""
+    expression |> to_string() |> String.trim() != ""
   end
 
   @doc """
@@ -1305,5 +1304,29 @@ defmodule Expression.V2.Callbacks.Standard do
                   result: 1
   def rem(_ctx, integer1, integer2) do
     rem(integer1, integer2)
+  end
+
+  @doc """
+  Appends items from one list to another list.
+  """
+  @expression_doc expression: "append([\"A\", \"B\"], [\"C\", \"B\"])",
+                  result: ["A", "B", "C", "B"]
+  def append(_ctx, first_list, second_list) do
+    Enum.concat(first_list, second_list)
+  end
+
+  @doc """
+  Deletes an element from a map by the given key.
+  """
+  @expression_doc expression: "delete(contact, \"gender\")",
+                  context: %{
+                    "contact" => %{
+                      "gender" => "?",
+                      "age" => 32
+                    }
+                  },
+                  result: %{"age" => 32}
+  def delete(_ctx, map, key) do
+    Map.delete(map, key)
   end
 end
