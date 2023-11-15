@@ -97,16 +97,16 @@ defmodule ExpressionTest do
 
     test "delete an element from a map" do
       assert {:ok, %{"age" => 32}} ==
-               Expression.evaluate("@delete(contact, \"gender\")", %{
-                 "contact" => %{
+               Expression.evaluate("@delete(patient, \"gender\")", %{
+                 "patient" => %{
                    "gender" => "?",
                    "age" => 32
                  }
                })
 
       assert {:ok, %{"gender" => "?", "age" => 32}} ==
-               Expression.evaluate("@delete(contact, \"unknown\")", %{
-                 "contact" => %{
+               Expression.evaluate("@delete(patient, \"unknown\")", %{
+                 "patient" => %{
                    "gender" => "?",
                    "age" => 32
                  }
@@ -358,6 +358,19 @@ defmodule ExpressionTest do
     test "throw an error" do
       assert_raise RuntimeError, "expression is not a number: `\"not a number\"`", fn ->
         Expression.evaluate_block!("block.value > 0", %{"block" => %{"value" => "not a number"}})
+      end
+
+      assert_raise Protocol.UndefinedError, ~r/Enumerable not implemented for \"D\"/, fn ->
+        Expression.evaluate("@append(first_list, second_list)", %{
+          "first_list" => ["A", "B", "C"],
+          "second_list" => "D"
+        })
+      end
+
+      assert_raise BadMapError, "expected a map, got: [\"A\", \"B\", \"C\"]", fn ->
+        Expression.evaluate("@delete(map, \"key\")", %{
+          "map" => ["A", "B", "C"]
+        })
       end
     end
   end

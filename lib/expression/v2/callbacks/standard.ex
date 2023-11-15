@@ -1318,13 +1318,8 @@ defmodule Expression.V2.Callbacks.Standard do
   @doc """
   Deletes an element from a map by the given key.
   """
-  @expression_doc expression: "delete(contact, \"gender\")",
-                  context: %{
-                    "contact" => %{
-                      "gender" => "?",
-                      "age" => 32
-                    }
-                  },
+  @expression_doc expression: "delete(patient, \"gender\")",
+                  context: %{"patient" => %{"gender" => "?", "age" => 32}},
                   result: %{"age" => 32}
   def delete(_ctx, map, key) do
     Map.delete(map, key)
