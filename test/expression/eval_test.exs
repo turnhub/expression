@@ -142,6 +142,11 @@ defmodule Expression.EvalTest do
   end
 
   describe "lists" do
+    test "empty list" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@[]")
+      assert [] == Eval.eval!(ast, %{})
+    end
+
     test "with integer indices" do
       {:ok, ast, "", _, _, _} = Parser.parse("@foo[1]")
 
