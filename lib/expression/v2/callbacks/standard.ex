@@ -1307,12 +1307,16 @@ defmodule Expression.V2.Callbacks.Standard do
   end
 
   @doc """
-  Appends items from one list to another list.
+  Appends an item or a list of items to a given list.
   """
+  @expression_doc expression: "append([\"A\", \"B\"], \"C\")",
+                  result: ["A", "B", "C"]
   @expression_doc expression: "append([\"A\", \"B\"], [\"C\", \"B\"])",
                   result: ["A", "B", "C", "B"]
-  def append(_ctx, first_list, second_list) do
-    Enum.concat(first_list, second_list)
+  def append(_ctx, list, payload) do
+    enumerable = if is_list(payload), do: payload, else: [payload]
+
+    Enum.concat(list, enumerable)
   end
 
   @doc """
