@@ -23,10 +23,12 @@ defmodule ExpressionTest do
                })
 
       assert true == Expression.evaluate_as_boolean!("@has_only_phrase('foo bar', 'foo bar')")
-      assert false == Expression.evaluate_as_boolean!("@has_only_phrase('foo bar baz', 'foo bar')")
 
       assert false ==
-        Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
+               Expression.evaluate_as_boolean!("@has_only_phrase('foo bar baz', 'foo bar')")
+
+      assert false ==
+               Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
     end
 
     test "list with indices" do
