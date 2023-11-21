@@ -2,17 +2,35 @@ defmodule ExpressionTest do
   use ExUnit.Case, async: true
   doctest Expression
 
-  describe "evaluate_as_boolean!" do
-    assert true == Expression.evaluate_as_boolean!("@(tRuE)")
-    assert false == Expression.evaluate_as_boolean!("@(fAlSe)")
-    assert true == Expression.evaluate_as_boolean!("@(1 > 0)")
-    assert true == Expression.evaluate_as_boolean!("@has_all_words('foo', 'foo')")
-    assert true == Expression.evaluate_as_boolean!("@or(has_all_words('foo', 'bar'), true)")
-    assert false == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'bar'), true)")
-    assert true == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'foo'), true)")
-  end
-
   describe "evaluate" do
+    test "evaluate_as_boolean!" do
+      assert true == Expression.evaluate_as_boolean!("@(tRuE)")
+      assert false == Expression.evaluate_as_boolean!("@(fAlSe)")
+      assert true == Expression.evaluate_as_boolean!("@(1 > 0)")
+      assert true == Expression.evaluate_as_boolean!("@has_all_words('foo', 'foo')")
+      assert true == Expression.evaluate_as_boolean!("@or(has_all_words('foo', 'bar'), true)")
+      assert false == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'bar'), true)")
+      assert true == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'foo'), true)")
+      assert true == Expression.evaluate_as_boolean!("@has_phrase('foo', 'foo')")
+      assert false == Expression.evaluate_as_boolean!("@has_phrase('foo', 'bar')")
+
+      assert false ==
+               Expression.evaluate_as_boolean!("@has_phrase(name, 'bar')", %{"name" => nil})
+
+      assert true ==
+               Expression.evaluate_as_boolean!("@has_phrase(contact.number, \"456\")", %{
+                 "contact" => %{"number" => 123_456}
+               })
+
+      assert true == Expression.evaluate_as_boolean!("@has_only_phrase('foo bar', 'foo bar')")
+
+      assert false ==
+               Expression.evaluate_as_boolean!("@has_only_phrase('foo bar baz', 'foo bar')")
+
+      assert false ==
+               Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
+    end
+
     test "list with indices" do
       assert "bar" == Expression.evaluate_as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end

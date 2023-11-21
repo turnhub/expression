@@ -1166,7 +1166,7 @@ defmodule Expression.V2.Callbacks.Standard do
                   result: false
 
   def has_only_phrase(_ctx, expression, phrase) do
-    case Enum.map([expression, phrase], &String.downcase/1) do
+    case Enum.map([expression, phrase], fn argument -> String.downcase(to_string(argument)) end) do
       # Future match result: expression
       [same, same] -> true
       _anything_else -> false
@@ -1240,8 +1240,8 @@ defmodule Expression.V2.Callbacks.Standard do
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"quick fox\")", result: false
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
   def has_phrase(_ctx, expression, phrase) do
-    lower_expression = String.downcase(expression)
-    lower_phrase = String.downcase(phrase)
+    lower_expression = String.downcase(to_string(expression))
+    lower_phrase = String.downcase(to_string(phrase))
     found? = String.contains?(lower_expression, lower_phrase)
     # Future match result: phrase
     found?
