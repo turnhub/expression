@@ -1280,7 +1280,7 @@ defmodule Expression.Callbacks.Standard do
   def has_only_phrase(ctx, expression, phrase) do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
 
-    case Enum.map([expression, phrase], &String.downcase/1) do
+    case Enum.map([expression, phrase], fn argument -> String.downcase(to_string(argument)) end) do
       # Future match result: expression
       [same, same] -> true
       _anything_else -> false
