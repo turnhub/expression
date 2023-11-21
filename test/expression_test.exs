@@ -67,6 +67,22 @@ defmodule ExpressionTest do
       assert nil == Expression.evaluate!("@foo[100]", %{"foo" => ["baz", "bar"]})
     end
 
+    test "append one item" do
+      assert {:ok, ["A", "B", "C"]} ==
+               Expression.evaluate("@append(list, item)", %{
+                 "list" => ["A", "B"],
+                 "item" => "C"
+               })
+    end
+
+    test "append a list of items" do
+      assert {:ok, ["A", "B", "C", "D", "E"]} ==
+               Expression.evaluate("@append(first_list, second_list)", %{
+                 "first_list" => ["A", "B", "C"],
+                 "second_list" => ["D", "E"]
+               })
+    end
+
     test "calculation with explicit precedence" do
       assert {:ok, 8} = Expression.evaluate("@(2 + (2 * 3))")
     end
@@ -101,6 +117,24 @@ defmodule ExpressionTest do
                  "map" => %{
                    "__value__" => "foo",
                    "bar" => "bar"
+                 }
+               })
+    end
+
+    test "delete an element from a map" do
+      assert {:ok, %{"age" => 32}} ==
+               Expression.evaluate("@delete(patient, \"gender\")", %{
+                 "patient" => %{
+                   "gender" => "?",
+                   "age" => 32
+                 }
+               })
+
+      assert {:ok, %{"gender" => "?", "age" => 32}} ==
+               Expression.evaluate("@delete(patient, \"unknown\")", %{
+                 "patient" => %{
+                   "gender" => "?",
+                   "age" => 32
                  }
                })
     end
@@ -350,6 +384,19 @@ defmodule ExpressionTest do
     test "throw an error" do
       assert_raise RuntimeError, "expression is not a number: `\"not a number\"`", fn ->
         Expression.evaluate_block!("block.value > 0", %{"block" => %{"value" => "not a number"}})
+      end
+
+      assert_raise Protocol.UndefinedError, ~r/Enumerable not implemented for \"A\"/, fn ->
+        Expression.evaluate("@append(first_list, second_list)", %{
+          "first_list" => "A",
+          "second_list" => "B"
+        })
+      end
+
+      assert_raise BadMapError, "expected a map, got: [\"A\", \"B\", \"C\"]", fn ->
+        Expression.evaluate("@delete(map, \"key\")", %{
+          "map" => ["A", "B", "C"]
+        })
       end
     end
   end
