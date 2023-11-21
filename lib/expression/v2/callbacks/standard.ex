@@ -1240,8 +1240,8 @@ defmodule Expression.V2.Callbacks.Standard do
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"quick fox\")", result: false
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
   def has_phrase(_ctx, expression, phrase) do
-    lower_expression = String.downcase(expression)
-    lower_phrase = String.downcase(phrase)
+    lower_expression = String.downcase(to_string(expression))
+    lower_phrase = String.downcase(to_string(phrase))
     found? = String.contains?(lower_expression, lower_phrase)
     # Future match result: phrase
     found?
