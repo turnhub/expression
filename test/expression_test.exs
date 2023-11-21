@@ -13,8 +13,14 @@ defmodule ExpressionTest do
       assert true == Expression.evaluate_as_boolean!("@and(has_all_words('foo', 'foo'), true)")
       assert true == Expression.evaluate_as_boolean!("@has_phrase('foo', 'foo')")
       assert false == Expression.evaluate_as_boolean!("@has_phrase('foo', 'bar')")
-      assert false == Expression.evaluate_as_boolean!("@has_phrase(name, 'bar')", %{"name" => nil})
-      assert true == Expression.evaluate_as_boolean!("@has_phrase(contact.number, \"456\")", %{"contact" => %{"number" => 123_456}})
+
+      assert false ==
+               Expression.evaluate_as_boolean!("@has_phrase(name, 'bar')", %{"name" => nil})
+
+      assert true ==
+               Expression.evaluate_as_boolean!("@has_phrase(contact.number, \"456\")", %{
+                 "contact" => %{"number" => 123_456}
+               })
     end
 
     test "list with indices" do
