@@ -59,6 +59,10 @@ defmodule Expression.EvalTest do
     assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
   end
 
+  test "attributes on things that cannot have attributes should return nil" do
+    assert nil == Expression.evaluate_block!("foo.bar", %{"foo" => "not a map"})
+  end
+
   test "attributes with literals" do
     assert "value" ==
              Expression.evaluate_as_string!("@foo.bar.123.baz", %{
@@ -151,6 +155,11 @@ defmodule Expression.EvalTest do
       {:ok, ast, "", _, _, _} = Parser.parse("@foo[1]")
 
       assert 1 == Eval.eval!(ast, %{"foo" => [0, 1, 2]})
+    end
+
+    test "with indices on non-listy things" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@foo[1]")
+      assert nil == Eval.eval!(ast, %{"foo" => "not a list"})
     end
 
     test "with binary keys" do

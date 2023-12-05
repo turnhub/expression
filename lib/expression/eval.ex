@@ -41,9 +41,11 @@ defmodule Expression.Eval do
   def eval!({:atom, atom}, {:not_found, history}, _mod),
     do: {:not_found, history ++ [atom]}
 
-  def eval!({:atom, atom}, context, _mod) do
+  def eval!({:atom, atom}, context, _mod) when is_map(context) do
     Map.get(context, atom, {:not_found, [atom]})
   end
+
+  def eval!({:atom, _atom}, _context, _mod), do: nil
 
   def eval!({:attribute, [{:attribute, ast}, literal: literal]}, context, mod) do
     # When we receive a key for an attribute, at times this could be a literal.
@@ -105,12 +107,7 @@ defmodule Expression.Eval do
     subject = eval!(subject_ast, context, mod)
     key = eval!(key_ast, context, mod)
 
-    case key do
-      {:not_found, _} -> nil
-      index when is_number(index) -> get_in(subject, [Access.at(index)])
-      range when is_struct(range, Range) -> Enum.slice(subject, range)
-      binary when is_binary(binary) -> Map.get(subject, binary)
-    end
+    read_key_from_subject(subject, key)
   end
 
   def eval!({:literal, literal}, context, mod) when is_binary(literal) do
@@ -141,6 +138,20 @@ defmodule Expression.Eval do
       chunks -> chunks
     end
   end
+
+  defp read_key_from_subject(_subject, {:not_found, _}), do: nil
+
+  defp read_key_from_subject(subject, index)
+       when is_number(index) and (is_list(subject) or is_map(subject)),
+       do: get_in(subject, [Access.at(index)])
+
+  defp read_key_from_subject(subject, range) when is_struct(range, Range) and is_list(subject),
+    do: Enum.slice(subject, range)
+
+  defp read_key_from_subject(subject, binary) when is_binary(binary) and is_map(subject),
+    do: Map.get(subject, binary)
+
+  defp read_key_from_subject(_subject, _other), do: nil
 
   # when acting on integer or Elixir literal numeric types
   def op(operator, a, b)
