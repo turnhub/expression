@@ -1378,7 +1378,7 @@ defmodule Expression.Callbacks.Standard do
     parse_phone_number(letters_removed, country_code)
   end
 
-  def parse_phone_number(string, country_code) do
+  defp parse_phone_number(string, country_code) do
     pn =
       case ExPhoneNumber.parse(string, country_code) do
         {:ok, pn} -> ExPhoneNumber.format(pn, :e164)
