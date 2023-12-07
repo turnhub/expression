@@ -145,7 +145,11 @@ defmodule Expression.Callbacks.Standard do
     }
   end
 
-  @expression_doc doc: "Parse a date value and return a DateTime",
+  @doc """
+  Parse random dates and times with `strftime` patterns and return a DateTime value
+  when it matches.
+  """
+  @expression_doc doc: "Parse a date value using strftime formatting and return a DateTime",
                   expression: "parse_datevalue(\"2016-02-29T22:25:00-00:00\", \"%FT%T%:z\")",
                   result: DateTime.new!(~D[2016-02-29], ~T[22:25:00])
   @expression_doc doc: "Attempt to parse a date value and return nil when failing",
