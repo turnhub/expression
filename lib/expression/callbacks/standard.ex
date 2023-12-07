@@ -998,11 +998,26 @@ defmodule Expression.Callbacks.Standard do
 
   This is very naively implemented with a regular expression.
   """
-  @expression_doc expression: "has_date(\"the date is 15/01/2017\")", result: true
+  @expression_doc expression: "has_date(\"the date is 15/01/2017 05:50\")",
+                  result: %{
+                    "__value__" => true,
+                    "date" => ~D[2017-01-15],
+                    "datetime" => ~U[2017-01-15 05:50:00Z]
+                  }
+  @expression_doc expression: "has_date(\"the date is 15/01/2017\").date", result: ~D[2017-01-15]
+  @expression_doc expression: "has_date(\"the date is 15/01/2017 05:50\").datetime",
+                  result: ~U[2017-01-15 05:50:00Z]
   @expression_doc expression: "has_date(\"there is no date here, just a year 2017\")",
-                  result: false
+                  result: %{"__value__" => false, "date" => nil, "datetime" => nil}
   def has_date(ctx, expression) do
-    !!DateHelpers.extract_dateish(eval!(expression, ctx))
+    {date, datetime} =
+      if datetime = DateHelpers.extract_datetimeish(eval!(expression, ctx)) do
+        {DateTime.to_date(datetime), datetime}
+      else
+        {nil, nil}
+      end
+
+    %{"__value__" => !!date, "date" => date, "datetime" => datetime}
   end
 
   @doc """
@@ -1055,16 +1070,20 @@ defmodule Expression.Callbacks.Standard do
   Tests whether an email is contained in text
   """
   @expression_doc expression: "has_email(\"my email is foo1@bar.com, please respond\")",
-                  result: true
-  @expression_doc expression: "has_email(\"i'm not sharing my email\")", result: false
+                  result: %{"__value__" => true, "email" => "foo1@bar.com"}
+  @expression_doc expression: "has_email(\"i'm not sharing my email\")",
+                  result: %{"__value__" => false, "email" => nil}
   def has_email(ctx, expression) do
     expression = eval!(expression, ctx)
 
-    case Regex.run(~r/([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/, expression) do
-      # future match result: match
-      [_match | _] -> true
-      nil -> false
-    end
+    email =
+      case Regex.run(~r/([a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+)/, expression) do
+        # future match result: match
+        [match | _] -> match
+        nil -> nil
+      end
+
+    %{"__value__" => !!email, "email" => email}
   end
 
   @doc """
@@ -1148,16 +1167,21 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number
   """
-  @expression_doc expression: "has_number(\"the number is 42 and 5\")", result: true
-  @expression_doc expression: "has_number(\"العدد ٤٢\")", result: true
-  @expression_doc expression: "has_number(\"٠.٥\")", result: true
-  @expression_doc expression: "has_number(\"0.6\")", result: true
+  @expression_doc expression: "has_number(\"the number is 42 and 5\")",
+                  result: %{"__value__" => true, "number" => 42.0}
+  @expression_doc expression: "has_number(\"العدد ٤٢\")",
+                  result: %{"__value__" => true, "number" => 42.0}
+  @expression_doc expression: "has_number(\"٠.٥\")",
+                  result: %{"__value__" => true, "number" => 0.5}
+  @expression_doc expression: "has_number(\"0.6\")",
+                  result: %{"__value__" => true, "number" => 0.6}
 
   def has_number(ctx, expression) do
     expression = eval!(expression, ctx)
     number = extract_numberish(expression)
     # future match result: number
     !!number
+    %{"__value__" => !!number, "number" => number}
   end
 
   @doc """
@@ -1332,33 +1356,36 @@ defmodule Expression.Callbacks.Standard do
   Tests whether `expresssion` contains a phone number.
   The optional country_code argument specifies the country to use for parsing.
   """
-  @expression_doc expression: "has_phone(\"my number is +12067799294 thanks\")", result: true
+  @expression_doc expression: "has_phone(\"my number is +12067799294 thanks\")",
+                  result: %{"__value__" => true, "phonenumber" => "+12067799294"}
   @expression_doc expression: "has_phone(\"my number is 2067799294 thanks\", \"US\")",
-                  result: true
+                  result: %{"__value__" => true, "phonenumber" => "+12067799294"}
   @expression_doc expression: "has_phone(\"my number is 206 779 9294 thanks\", \"US\")",
-                  result: true
+                  result: %{"__value__" => true, "phonenumber" => "+12067799294"}
   @expression_doc expression: "has_phone(\"my number is none of your business\", \"US\")",
-                  result: false
+                  result: %{"__value__" => false, "phonenumber" => nil}
   def has_phone(ctx, expression) do
     [expression] = eval_args!([expression], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, expression, "")
 
-    case ExPhoneNumber.parse(letters_removed, "") do
-      # Future match result: ExPhoneNumber.format(pn, :es164)
-      {:ok, _pn} -> true
-      _ -> false
-    end
+    parse_phone_number(letters_removed, "")
   end
 
   def has_phone(ctx, expression, country_code) do
     [expression, country_code] = eval_args!([expression, country_code], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, expression, "")
 
-    case ExPhoneNumber.parse(letters_removed, country_code) do
-      # Future match result: ExPhoneNumber.format(pn, :es164)
-      {:ok, _pn} -> true
-      _ -> false
-    end
+    parse_phone_number(letters_removed, country_code)
+  end
+
+  def parse_phone_number(string, country_code) do
+    pn =
+      case ExPhoneNumber.parse(string, country_code) do
+        {:ok, pn} -> ExPhoneNumber.format(pn, :e164)
+        _ -> nil
+      end
+
+    %{"__value__" => !!pn, "phonenumber" => pn}
   end
 
   @doc """
