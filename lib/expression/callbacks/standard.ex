@@ -112,7 +112,11 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc doc: "Convert a date from a piece of text to a formatted date string",
                   expression: "datevalue(\"2022-01-01\")",
-                  result: %{"__value__" => "2022-01-01 00:00:00", "date" => ~D[2022-01-01]}
+                  result: %{
+                    "__value__" => "2022-01-01 00:00:00",
+                    "date" => ~D[2022-01-01],
+                    "datetime" => ~U[2022-01-01 00:00:00Z]
+                  }
   @expression_doc doc: "Convert a date from a piece of text and read the date field",
                   expression: "datevalue(\"2022-01-01\").date",
                   result: ~D[2022-01-01]
@@ -122,17 +126,22 @@ defmodule Expression.Callbacks.Standard do
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
 
-    if date = DateHelpers.extract_dateish(date) do
-      %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
+    if datetime = DateHelpers.extract_datetimeish(date) do
+      %{
+        "__value__" => Timex.format!(datetime, format, :strftime),
+        "date" => DateTime.to_date(datetime),
+        "datetime" => datetime
+      }
     end
   end
 
   def datevalue(ctx, date) do
-    date = DateHelpers.extract_dateish(eval!(date, ctx))
+    datetime = DateHelpers.extract_datetimeish(eval!(date, ctx))
 
     %{
-      "__value__" => Timex.format!(date, "%Y-%m-%d %H:%M:%S", :strftime),
-      "date" => date
+      "__value__" => Timex.format!(datetime, "%Y-%m-%d %H:%M:%S", :strftime),
+      "date" => DateTime.to_date(datetime),
+      "datetime" => datetime
     }
   end
 
