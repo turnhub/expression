@@ -140,7 +140,11 @@ defmodule ExpressionTest do
     end
 
     test "operators against default values" do
-      assert %{"__value__" => to_string(Date.utc_today()), "date" => Date.utc_today()} ==
+      assert %{
+               "__value__" => to_string(Date.utc_today()),
+               "date" => Date.utc_today(),
+               "datetime" => Timex.beginning_of_day(DateTime.utc_now())
+             } ==
                Expression.evaluate_block!("datevalue(today(), '%Y-%m-%d')")
 
       assert Expression.evaluate_block!("date == today()", %{

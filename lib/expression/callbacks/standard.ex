@@ -112,7 +112,11 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_doc doc: "Convert a date from a piece of text to a formatted date string",
                   expression: "datevalue(\"2022-01-01\")",
-                  result: %{"__value__" => "2022-01-01 00:00:00", "date" => ~D[2022-01-01]}
+                  result: %{
+                    "__value__" => "2022-01-01 00:00:00",
+                    "date" => ~D[2022-01-01],
+                    "datetime" => ~U[2022-01-01 00:00:00Z]
+                  }
   @expression_doc doc: "Convert a date from a piece of text and read the date field",
                   expression: "datevalue(\"2022-01-01\").date",
                   result: ~D[2022-01-01]
