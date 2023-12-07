@@ -122,17 +122,22 @@ defmodule Expression.Callbacks.Standard do
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
 
-    if date = DateHelpers.extract_dateish(date) do
-      %{"__value__" => Timex.format!(date, format, :strftime), "date" => date}
+    if datetime = DateHelpers.extract_datetimeish(date) do
+      %{
+        "__value__" => Timex.format!(datetime, format, :strftime),
+        "date" => DateTime.to_date(datetime),
+        "datetime" => datetime
+      }
     end
   end
 
   def datevalue(ctx, date) do
-    date = DateHelpers.extract_dateish(eval!(date, ctx))
+    datetime = DateHelpers.extract_datetimeish(eval!(date, ctx))
 
     %{
-      "__value__" => Timex.format!(date, "%Y-%m-%d %H:%M:%S", :strftime),
-      "date" => date
+      "__value__" => Timex.format!(datetime, "%Y-%m-%d %H:%M:%S", :strftime),
+      "date" => DateTime.to_date(datetime),
+      "datetime" => datetime
     }
   end
 

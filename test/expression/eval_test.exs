@@ -97,9 +97,10 @@ defmodule Expression.EvalTest do
     }
 
     {:ok, ast, "", _, _, _} =
-      Parser.parse(~s|@concatenate(datevalue(flow.date, "%Y-%m-%d"), "T", flow.time)|)
+      Parser.parse(~s|@datevalue(concatenate(datevalue(flow.date, "%Y-%m-%d"), "T", flow.time))|)
 
-    assert "2023-12-07T09:30:00" == Eval.eval!(ast, ctx)
+    assert ~U[2023-12-07 09:30:00.0Z] == Eval.eval!(ast, ctx)["datetime"]
+    assert ~D[2023-12-07] == Eval.eval!(ast, ctx)["date"]
   end
 
   test "if" do
