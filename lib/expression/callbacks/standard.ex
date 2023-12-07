@@ -146,6 +146,28 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Parse random dates and times with `strftime` patterns and return a DateTime value
+  when it matches.
+  """
+  @expression_doc doc: "Parse a date value using strftime formatting and return a DateTime",
+                  expression: "parse_datevalue(\"2016-02-29T22:25:00-00:00\", \"%FT%T%:z\")",
+                  result: DateTime.new!(~D[2016-02-29], ~T[22:25:00])
+  @expression_doc doc: "Attempt to parse a date value and return nil when failing",
+                  expression: "parse_datevalue(\"👻👻👻👻\", \"%FT%T%:z\")",
+                  result: nil
+  def parse_datevalue(ctx, datetime, format) do
+    [datetime, format] = eval_args!([datetime, format], ctx)
+
+    case Timex.parse(datetime, format, :strftime) do
+      {:ok, datetime} ->
+        Timex.to_datetime(datetime)
+
+      {:error, _} ->
+        nil
+    end
+  end
+
+  @doc """
   Returns only the day of the month of a date (1 to 31)
   """
   @expression_doc doc: "Getting today's day of the month",
