@@ -501,7 +501,9 @@ defmodule Expression.Callbacks.Standard do
                   },
                   result: "name surname"
   def concatenate_vargs(ctx, arguments) do
-    Enum.join(eval_args!(arguments, ctx), "")
+    arguments
+    |> eval_args!(ctx)
+    |> Enum.map_join("", &Expression.Eval.default_value/1)
   end
 
   @doc """

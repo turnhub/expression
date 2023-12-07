@@ -86,6 +86,22 @@ defmodule Expression.EvalTest do
     assert true == Eval.eval!(ast, %{})
   end
 
+  test "concatenate with default values" do
+    now = "2023-12-07T09:47:27.234912Z"
+
+    ctx = %{
+      "flow" => %{
+        "date" => now,
+        "time" => "09:30:00"
+      }
+    }
+
+    {:ok, ast, "", _, _, _} =
+      Parser.parse(~s|@concatenate(datevalue(flow.date, "%Y-%m-%d"), "T", flow.time)|)
+
+    assert "2023-12-07T09:30:00" == Eval.eval!(ast, ctx)
+  end
+
   test "if" do
     {:ok, ast, "", _, _, _} =
       Parser.parse("@if(image_response.status == 200,\nimage_response.body.id,\nfalse)")
