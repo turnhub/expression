@@ -117,7 +117,7 @@ defmodule Expression.V2.Compile do
   defp quoted("\"" <> _ = binary) when is_binary(binary) do
     binary
     # Chop off the outer quoting
-    |> String.slice(1..-2)
+    |> String.slice(1..-2//1)
     # Remove the double quoting
     |> String.replace("\\\"", "\"")
   end

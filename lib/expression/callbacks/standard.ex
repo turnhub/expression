@@ -856,13 +856,13 @@ defmodule Expression.Callbacks.Standard do
       stop > 0 ->
         binary
         |> String.split(@punctuation_pattern)
-        |> Enum.slice((start - 1)..(stop - 2))
+        |> Enum.slice((start - 1)..(stop - 2)//1)
         |> Enum.join(" ")
 
       stop < 0 ->
         binary
         |> String.split(@punctuation_pattern)
-        |> Enum.slice((start - 1)..(stop - 1))
+        |> Enum.slice((start - 1)..(stop - 1)//1)
         |> Enum.join(" ")
     end
   end
