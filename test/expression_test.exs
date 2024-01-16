@@ -29,6 +29,17 @@ defmodule ExpressionTest do
 
       assert false ==
                Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
+
+      # Function accepts a pre-parsed Expression too
+      assert true ==
+               Expression.evaluate_as_boolean!(
+                 [
+                   expression: [
+                     function: [name: "has_only_phrase", args: [atom: "name", literal: "bar"]]
+                   ]
+                 ],
+                 %{"name" => "bar"}
+               )
     end
 
     test "list with indices" do
@@ -412,5 +423,19 @@ defmodule ExpressionTest do
     assert "@@bar[0]" == Expression.escape("@bar[0]")
     assert "@@if(foo, bar, baz)" == Expression.escape("@if(foo, bar, baz)")
     assert "@@if(foo, bar.baz, baz)" == Expression.escape("@if(foo, bar.baz, baz)")
+  end
+
+  test "parse!/1 skips expensive parsing is the expression is already an AST struct" do
+    # If the expression is a provided as a string then it gets parsed to an AST
+    assert [expression: [attribute: [atom: "contact", atom: "age"]], text: " + 2"] ==
+             Expression.parse!("@contact.age + 2")
+
+    # If the expression is a already provided as a parsed AST then it is simply
+    # returned as is
+    assert [expression: [attribute: [atom: "contact", atom: "age"]], text: " + 2"] ==
+             Expression.parse!(
+               expression: [attribute: [atom: "contact", atom: "age"]],
+               text: " + 2"
+             )
   end
 end
