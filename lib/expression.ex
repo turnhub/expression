@@ -83,7 +83,7 @@ defmodule Expression do
     String.replace(expression, ~r/@([a-z]+)(\(|\.)?/i, "@@\\g{1}\\g{2}")
   end
 
-  @spec parse!(String.t() | Number.t() | tuple()) :: Keyword.t()
+  @spec parse!(String.t() | Number.t() | list()) :: Keyword.t()
   def parse!(expression) when is_number(expression), do: to_string(expression) |> parse!()
 
   def parse!(expression_ast) when is_list(expression_ast), do: expression_ast
