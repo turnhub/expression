@@ -29,6 +29,11 @@ defmodule ExpressionTest do
 
       assert false ==
                Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
+
+      assert true ==
+               Expression.evaluate_as_boolean!("@has_beginning(contact.number, \"123\")", %{
+                 "contact" => %{"number" => 123_456}
+               })
     end
 
     test "list with indices" do

@@ -878,7 +878,7 @@ defmodule Expression.V2.Callbacks.Standard do
                   result: false
   @expression_doc expression: "has_beginning(\"The Quick Brown\", \"quick brown\")", result: false
   def has_beginning(_ctx, text, beginning) do
-    case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
+    case Regex.run(~r/^#{Regex.escape(beginning)}/i, to_string(text)) do
       # future match result: first
       [_first | _remainder] -> true
       nil -> false
