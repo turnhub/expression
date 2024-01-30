@@ -1008,7 +1008,7 @@ defmodule Expression.Callbacks.Standard do
   def has_beginning(ctx, text, beginning) do
     [text, beginning] = eval_args!([text, beginning], ctx)
 
-    case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
+    case Regex.run(~r/^#{Regex.escape(beginning)}/i, to_string(text)) do
       # future match result: first
       [_first | _remainder] -> true
       nil -> false
