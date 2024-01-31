@@ -1,3 +1,5 @@
+name: Hex.pm releases
+
 on:
   push:
     tags:
