@@ -24,3 +24,5 @@ jobs:
           mix compile
           mix hex.build
           mix hex.publish --yes
+        env:
+          HEX_API_KEY: ${{ secrets.HEX_API_KEY }}
