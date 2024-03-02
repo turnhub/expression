@@ -174,8 +174,10 @@ defmodule Expression.V2.Compat do
     return_or_raise(expression, context, val1, val2)
   end
 
-  def return_or_raise(_expression, _context, {:error, error1}, {:error, _error2}) do
-    error1
+  def return_or_raise(expression, _context, {:error, error1}, {:error, error2}) do
+    Logger.error("#{inspect(expression)} -> error1: #{inspect(error1)}")
+    Logger.error("#{inspect(expression)} -> error2: #{inspect(error2)}")
+    error2
   end
 
   def return_or_raise(expression, context, "2023" <> _ = v1_resp, "2023" <> _ = v2_resp)
