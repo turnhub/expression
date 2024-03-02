@@ -16,6 +16,7 @@ defmodule Expression.V2.Compat do
     and then compares the result before returning a value.
   """
   require Logger
+  alias Expression.V2
 
   def evaluate_as_string!(
         expression,
