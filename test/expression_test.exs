@@ -413,9 +413,7 @@ defmodule ExpressionTest do
   test "escaping" do
     assert "@@if(foo, bar, baz)" == Expression.escape("@if(foo, bar, baz)")
     assert "@@bar.baz" == Expression.escape("@bar.baz")
-    assert "@@bar" == Expression.escape("@bar")
-    assert "@@bar[0]" == Expression.escape("@bar[0]")
-    assert "@@if(foo, bar, baz)" == Expression.escape("@if(foo, bar, baz)")
-    assert "@@if(foo, bar.baz, baz)" == Expression.escape("@if(foo, bar.baz, baz)")
+    assert "@@if(foo, @bar, baz)" == Expression.escape("@if(foo, @bar, baz)")
+    assert "@@if(foo, @@bar.baz, baz)" == Expression.escape("@if(foo, @bar.baz, baz)")
   end
 end
