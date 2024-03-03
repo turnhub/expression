@@ -7,6 +7,6 @@ defmodule Expression.ContextBehaviour do
           callback_module: nil | atom
         }
 
-  @callback new(vars :: Map.t(), callback_module :: atom) :: t
+  @callback new(vars :: map, callback_module :: atom) :: t
   @callback private(t, key :: String.t(), value :: term) :: t
 end
