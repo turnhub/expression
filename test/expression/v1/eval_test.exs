@@ -1,20 +1,21 @@
 defmodule Expression.EvalTest do
   use ExUnit.Case, async: true
+  alias Expression.V1
   alias Expression.V1.Eval
   alias Expression.V1.Parser
 
   test "substitution" do
-    assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})
+    assert "bar" == V1.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
   test "substitutions in substitutions" do
     assert "string with quotes \" inside" ==
-             Expression.evaluate_block!(~S("string with quotes \" inside"))
+             V1.evaluate_block!(~S("string with quotes \" inside"))
 
     # Note the escaping of the @IF here with an @
     # credo:disable-for-lines:2 Credo.Check.Readability.StringSigils
     assert true ==
-             Expression.evaluate_block!(
+             V1.evaluate_block!(
                "block.response = \"@@IF(cursor + 1 < total_items, \\\"Next article ➡️\\\", \\\"⏮ First article\\\")\"",
                %{
                  "block" => %{
@@ -27,7 +28,7 @@ defmodule Expression.EvalTest do
              )
 
     assert "Your application was successful" ==
-             Expression.evaluate_as_string!(
+             V1.evaluate_as_string!(
                ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
                %{
                  "conditional" => true,
@@ -37,7 +38,7 @@ defmodule Expression.EvalTest do
              )
 
     assert "Your application was unsuccessful" ==
-             Expression.evaluate_as_string!(
+             V1.evaluate_as_string!(
                ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
                %{
                  "conditional" => false,
@@ -47,7 +48,7 @@ defmodule Expression.EvalTest do
              )
 
     assert "true" ==
-             Expression.evaluate_as_string!(
+             V1.evaluate_as_string!(
                ~s|@or(answer == 1, has_all_words(answer, "red fox"))|,
                %{
                  "answer" => "1"
@@ -56,16 +57,16 @@ defmodule Expression.EvalTest do
   end
 
   test "attributes on substitutions" do
-    assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
+    assert "baz" == V1.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
   end
 
   test "attributes on things that cannot have attributes should return nil" do
-    assert nil == Expression.evaluate_block!("foo.bar", %{"foo" => "not a map"})
+    assert nil == V1.evaluate_block!("foo.bar", %{"foo" => "not a map"})
   end
 
   test "attributes with literals" do
     assert "value" ==
-             Expression.evaluate_as_string!("@foo.bar.123.baz", %{
+             V1.evaluate_as_string!("@foo.bar.123.baz", %{
                "foo" => %{
                  "bar" => %{
                    "123" => %{
@@ -140,7 +141,7 @@ defmodule Expression.EvalTest do
 
     test "lambda with joins" do
       assert [["one", "Button one"], ["two", "Button two"], ["three", "Button three"]] ==
-               Expression.evaluate!("@map(choices, &([&1, 'Button ' & &1]))", %{
+               V1.evaluate!("@map(choices, &([&1, 'Button ' & &1]))", %{
                  "choices" => ["one", "two", "three"]
                })
     end
@@ -148,7 +149,7 @@ defmodule Expression.EvalTest do
 
   test "email addresses" do
     assert "email info@one.two.three.four.five.six for more information" ==
-             Expression.evaluate_as_string!(
+             V1.evaluate_as_string!(
                "email info@one.two.three.four.five.six for more information",
                %{}
              )
@@ -156,7 +157,7 @@ defmodule Expression.EvalTest do
 
   test "attributes on functions" do
     assert "Fox" ==
-             Expression.evaluate_as_string!(
+             V1.evaluate_as_string!(
                ~s[@has_any_word("The Quick Brown Fox", "red fox").match],
                %{}
              )
@@ -249,7 +250,7 @@ defmodule Expression.EvalTest do
 
   test "text" do
     assert "hello Bob" ==
-             Expression.evaluate_as_string!("hello @contact.name", %{
+             V1.evaluate_as_string!("hello @contact.name", %{
                "contact" => %{"name" => "Bob"}
              })
   end
