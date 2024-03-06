@@ -1,4 +1,4 @@
-defmodule Expression.Autodoc do
+defmodule Expression.V1.Autodoc do
   @moduledoc """
 
   Extract `@expression_doc` attributes from modules defining callbacks
@@ -33,10 +33,10 @@ defmodule Expression.Autodoc do
     quote do
       @expression_docs []
       Module.register_attribute(__MODULE__, :expression_doc, accumulate: true)
-      @on_definition Expression.Autodoc
-      @before_compile Expression.Autodoc
+      @on_definition Expression.V1.Autodoc
+      @before_compile Expression.V1.Autodoc
 
-      import Expression.Autodoc
+      import Expression.V1.Autodoc
     end
   end
 

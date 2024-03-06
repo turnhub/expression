@@ -6,7 +6,7 @@ defmodule ExpressionCustomCallbacksTest do
 
   defmodule CustomCallback do
     use Callbacks
-    use Expression.Autodoc
+    use Expression.V1.Autodoc
 
     def echo(ctx, value) do
       value = eval!(value, ctx)

@@ -24,7 +24,7 @@ defmodule Expression.V1.Callbacks.Standard do
   import Expression.V1.Callbacks.EvalHelpers
 
   use Expression.V1.Callbacks
-  use Expression.Autodoc
+  use Expression.V1.Autodoc
 
   alias Expression.V1.DateHelpers
   alias Expression.V1.Eval
