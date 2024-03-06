@@ -1,4 +1,4 @@
-defmodule Expression.Callbacks do
+defmodule Expression.V1.Callbacks do
   @moduledoc """
   Use this module to implement one's own callbacks.
   The standard callbacks available are implemented in `Expression.Callbacks.Standard`.
@@ -18,7 +18,7 @@ defmodule Expression.Callbacks do
   ```
   """
 
-  alias Expression.Callbacks.Standard
+  alias Expression.V1.Callbacks.Standard
 
   @built_in_operators [:+, :-, :*, :/, :>, :>=, :<, :<=, :==, :!=]
   @reserved_words ~w[and if or not]
@@ -101,10 +101,10 @@ defmodule Expression.Callbacks do
 
   defmacro __using__(_opts) do
     quote do
-      import Expression.Callbacks.EvalHelpers
+      import Expression.V1.Callbacks.EvalHelpers
 
       defdelegate handle(module \\ __MODULE__, function_name, arguments, context),
-        to: Expression.Callbacks
+        to: Expression.V1.Callbacks
     end
   end
 end

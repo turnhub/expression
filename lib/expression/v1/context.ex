@@ -1,4 +1,4 @@
-defmodule Expression.Context do
+defmodule Expression.V1.Context do
   @moduledoc """
 
   A helper module for creating a context that can be
@@ -63,7 +63,7 @@ defmodule Expression.Context do
   end
 
   defp evaluate!(binary) when is_binary(binary) do
-    case Expression.Parser.literal(binary) do
+    case Expression.V1.Parser.literal(binary) do
       {:ok, [{:literal, literal}], "", _, _, _} -> literal
       # when we're not parsing the full literal
       {:ok, [{:literal, _literal}], _, _, _, _} -> binary

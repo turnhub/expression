@@ -1,4 +1,4 @@
-defmodule Expression.Callbacks.Standard do
+defmodule Expression.V1.Callbacks.Standard do
   @moduledoc """
   The function callbacks for the standard function set available
   in FLOIP expressions.
@@ -21,12 +21,12 @@ defmodule Expression.Callbacks.Standard do
   underscore.
   """
 
-  import Expression.Callbacks.EvalHelpers
+  import Expression.V1.Callbacks.EvalHelpers
 
-  use Expression.Callbacks
+  use Expression.V1.Callbacks
   use Expression.Autodoc
 
-  alias Expression.DateHelpers
+  alias Expression.V1.DateHelpers
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
   @doc """
@@ -534,7 +534,7 @@ defmodule Expression.Callbacks.Standard do
   def concatenate_vargs(ctx, arguments) do
     arguments
     |> eval_args!(ctx)
-    |> Enum.map_join("", &Expression.Eval.default_value/1)
+    |> Enum.map_join("", &Expression.V1.Eval.default_value/1)
   end
 
   @doc """

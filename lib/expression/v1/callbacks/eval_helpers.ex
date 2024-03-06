@@ -1,4 +1,4 @@
-defmodule Expression.Callbacks.EvalHelpers do
+defmodule Expression.V1.Callbacks.EvalHelpers do
   @moduledoc false
 
   @doc """
@@ -8,8 +8,8 @@ defmodule Expression.Callbacks.EvalHelpers do
   @spec eval!(term, map) :: term
   def eval!(ast, ctx) do
     ast
-    |> Expression.Eval.eval!(ctx)
-    |> Expression.Eval.not_founds_as_nil()
+    |> Expression.V1.Eval.eval!(ctx)
+    |> Expression.V1.Eval.not_founds_as_nil()
   end
 
   @doc """

@@ -44,9 +44,9 @@ defmodule Expression do
           | DateTime.t()
           | Date.t()
 
-  alias Expression.Context
-  alias Expression.Eval
-  alias Expression.Parser
+  alias Expression.V1.Context
+  alias Expression.V1.Eval
+  alias Expression.V1.Parser
 
   @spec parse_expression(String.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def parse_expression(expression_block) do
