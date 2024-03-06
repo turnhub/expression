@@ -32,7 +32,7 @@ defmodule Expression.V1.Eval do
   @kernel_operators @numeric_kernel_operators ++ [:==, :!=]
   @allowed_nested_function_arguments [:function, :lambda] ++ @kernel_operators
 
-  def eval!(ast, context, mod \\ Expression.Callbacks)
+  def eval!(ast, context, mod \\ Expression.V1.Callbacks)
 
   def eval!({:expression, [ast]}, context, mod) do
     eval!(ast, context, mod)

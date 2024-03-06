@@ -38,7 +38,7 @@ defmodule Expression.V2.Compat do
   end
 
   def v1_module(Turn.Build.Callbacks), do: Turn.Build.CallbacksV1
-  def v1_module(V2.Callbacks.Standard), do: Expression.Callbacks.Standard
+  def v1_module(V2.Callbacks.Standard), do: Expression.V1.Callbacks.Standard
 
   def patch_v1_key(key),
     do:

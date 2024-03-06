@@ -1,6 +1,6 @@
-defmodule Expression.ParserTest do
+defmodule Expression.V1.ParserTest do
   use ExUnit.Case, async: true
-  doctest Expression.Parser
+  doctest Expression.V1.Parser
 
   test "text" do
     assert_ast([text: "foo"], "foo")
@@ -15,7 +15,7 @@ defmodule Expression.ParserTest do
   end
 
   def assert_ast(ast, expression) do
-    assert {:ok, produced_ast, "", %{}, _, _} = Expression.Parser.parse(expression)
+    assert {:ok, produced_ast, "", %{}, _, _} = Expression.V1.Parser.parse(expression)
     assert ast == produced_ast
   end
 

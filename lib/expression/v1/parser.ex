@@ -9,7 +9,7 @@ defmodule Expression.V1.Parser do
 
   # Example
 
-    iex(1)> Expression.Parser.parse("hello @world")
+    iex(1)> Expression.V1.Parser.parse("hello @world")
     {:ok, [text: "hello ", expression: [atom: "world"]], "", %{}, {1, 0}, 12}
 
   """
