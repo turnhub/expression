@@ -15,6 +15,7 @@ defmodule Expression.V2.Compat do
   > **NOTE**: This module does *twice* the work because it runs V1 and V2 sequentially
     and then compares the result before returning a value.
   """
+  @behaviour Expression.Behaviour
   require Logger
   alias Expression.V2
 

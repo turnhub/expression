@@ -5,6 +5,7 @@ defmodule Expression.V2.Context do
   This will be expanded with support for more attributes that a callback function
   can access but normal Expression evaluation can not.
   """
+  @behaviour Expression.ContextBehaviour
   defstruct vars: %{}, private: %{}, callback_module: Expression.V2.Callbacks.Standard
 
   @type t :: %__MODULE__{
