@@ -44,9 +44,9 @@ defmodule Expression do
           | DateTime.t()
           | Date.t()
 
-  alias Expression.Context
-  alias Expression.Eval
-  alias Expression.Parser
+  alias Expression.V1.Context
+  alias Expression.V1.Eval
+  alias Expression.V1.Parser
 
   @spec parse_expression(String.t()) :: {:ok, Keyword.t()} | {:error, String.t()}
   def parse_expression(expression_block) do
@@ -96,25 +96,25 @@ defmodule Expression do
     end
   end
 
-  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
     ast = parse_expression!(expression)
     Eval.eval!([expression: ast], Context.new(context), mod)
   end
 
-  def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_block(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
     {:ok, evaluate_block!(expression, context, mod)}
   rescue
     e in RuntimeError -> {:error, e.message}
   end
 
-  def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate!(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
     |> Eval.default_value()
   end
 
-  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
@@ -122,7 +122,7 @@ defmodule Expression do
     |> stringify()
   end
 
-  def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
     case evaluate!(expression, context, mod) do
       boolean when is_boolean(boolean) ->
         boolean
@@ -145,7 +145,7 @@ defmodule Expression do
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 
-  def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}
   rescue
     e in RuntimeError -> {:error, e.message}
