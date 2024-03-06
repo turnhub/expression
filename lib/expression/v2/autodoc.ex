@@ -200,8 +200,8 @@ defmodule Expression.V2.Autodoc do
   def type_of(list) when is_list(list),
     do: "List with values " <> Enum.map_join(list, ", ", &type_of/1)
 
-  def stringify(%{"__value__" => value}), do: Expression.stringify(value)
-  def stringify(value), do: Expression.stringify(value)
+  def stringify(%{"__value__" => value}), do: Expression.V1.stringify(value)
+  def stringify(value), do: Expression.V1.stringify(value)
 
   def get_existing_docstring(module) do
     case Module.get_attribute(module, :doc) do

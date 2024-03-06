@@ -504,9 +504,9 @@ defmodule Expression.V1.ParserTest do
 
   describe "prewalking" do
     test "prewalk with identity function" do
-      ast = Expression.parse!("@hour(now())")
+      ast = Expression.V1.parse!("@hour(now())")
 
-      assert Expression.prewalk(ast, & &1) == [
+      assert Expression.V1.prewalk(ast, & &1) == [
                expression: [
                  function: [
                    name: "hour",
@@ -517,9 +517,9 @@ defmodule Expression.V1.ParserTest do
     end
 
     test "prewalk and change all function names" do
-      ast = Expression.parse!("@hour(now())")
+      ast = Expression.V1.parse!("@hour(now())")
 
-      assert Expression.prewalk(ast, fn
+      assert Expression.V1.prewalk(ast, fn
                {:function, opts} -> {:function, Keyword.put(opts, :name, "foo")}
                other -> other
              end) == [
@@ -535,10 +535,10 @@ defmodule Expression.V1.ParserTest do
 
   describe "traversal" do
     test "traversal to fetch all functions" do
-      ast = Expression.parse!("@hour(now())")
+      ast = Expression.V1.parse!("@hour(now())")
 
       assert {ast, functions} =
-               Expression.traverse(
+               Expression.V1.traverse(
                  ast,
                  [],
                  fn
