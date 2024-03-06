@@ -8,7 +8,7 @@ defmodule Expression.ContextBehaviour do
   defstruct vars: %{}, private: %{}, callback_module: nil
 
   @type t :: %{
-          __struct__: atom(),
+          __struct__: atom,
           vars: map,
           private: map,
           callback_module: nil | atom
