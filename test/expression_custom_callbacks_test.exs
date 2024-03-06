@@ -1,8 +1,10 @@
 defmodule ExpressionCustomCallbacksTest do
   use ExUnit.Case, async: true
 
+  alias Expression.V1.Callbacks
+
   defmodule CustomCallback do
-    use Expression.V1.Callbacks
+    use Callbacks
     use Expression.Autodoc
 
     def echo(ctx, value) do
@@ -27,7 +29,7 @@ defmodule ExpressionCustomCallbacksTest do
   describe "implements" do
     test "defined functions" do
       assert {:exact, ExpressionCustomCallbacksTest.CustomCallback, :echo, 2} ==
-               Expression.V1.Callbacks.implements(
+               Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "echo",
                  [1]
@@ -36,7 +38,7 @@ defmodule ExpressionCustomCallbacksTest do
 
     test "undefined functions" do
       assert {:error, "boo is not implemented."} ==
-               Expression.V1.Callbacks.implements(
+               Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "boo",
                  [1]
@@ -45,7 +47,7 @@ defmodule ExpressionCustomCallbacksTest do
 
     test "wrong arity functions" do
       assert {:error, "echo is not implemented."} ==
-               Expression.V1.Callbacks.implements(
+               Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "echo",
                  [1, 2, 3]
@@ -54,14 +56,14 @@ defmodule ExpressionCustomCallbacksTest do
 
     test "variable args functions" do
       assert {:vargs, ExpressionCustomCallbacksTest.CustomCallback, :length_vargs, 2} ==
-               Expression.V1.Callbacks.implements(
+               Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "length",
                  [1, 2, 3]
                )
 
       assert {:vargs, ExpressionCustomCallbacksTest.CustomCallback, :length_vargs, 2} ==
-               Expression.V1.Callbacks.implements(
+               Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "length",
                  []
@@ -70,7 +72,7 @@ defmodule ExpressionCustomCallbacksTest do
 
     test "built in operators" do
       assert {:exact, ExpressionCustomCallbacksTest.CustomCallback, :!=, 2} =
-               Expression.V1.Callbacks.implements(
+               Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "!=",
                  [1, 1]

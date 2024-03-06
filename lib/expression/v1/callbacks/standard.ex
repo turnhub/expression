@@ -27,6 +27,7 @@ defmodule Expression.V1.Callbacks.Standard do
   use Expression.Autodoc
 
   alias Expression.V1.DateHelpers
+  alias Expression.V1.Eval
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
   @doc """
@@ -534,7 +535,7 @@ defmodule Expression.V1.Callbacks.Standard do
   def concatenate_vargs(ctx, arguments) do
     arguments
     |> eval_args!(ctx)
-    |> Enum.map_join("", &Expression.V1.Eval.default_value/1)
+    |> Enum.map_join("", &Eval.default_value/1)
   end
 
   @doc """
