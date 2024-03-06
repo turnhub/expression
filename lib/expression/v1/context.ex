@@ -32,6 +32,8 @@ defmodule Expression.V1.Context do
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
   """
+  alias Expression.V1.Parser
+
   @type t :: map
 
   @spec new(map) :: t
@@ -63,7 +65,7 @@ defmodule Expression.V1.Context do
   end
 
   defp evaluate!(binary) when is_binary(binary) do
-    case Expression.V1.Parser.literal(binary) do
+    case Parser.literal(binary) do
       {:ok, [{:literal, literal}], "", _, _, _} -> literal
       # when we're not parsing the full literal
       {:ok, [{:literal, _literal}], _, _, _, _} -> binary
