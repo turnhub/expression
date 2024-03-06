@@ -36,6 +36,7 @@ defmodule Expression do
   ```
 
   """
+  @behaviour Expression.Behaviour
 
   @type expression_type ::
           String.t()
