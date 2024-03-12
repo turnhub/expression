@@ -177,7 +177,7 @@ defmodule Expression.Eval do
   def op(:==, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
     do: DateTime.compare(a, b) == :eq
 
-  def op(:=, a, b) when is_struct(a, Date) and is_struct(b, Date),
+  def op(:=, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
     do: Date.compare(a, b) == :eq
 
   def op(:>, a, b) when is_struct(a, Date) and is_struct(b, Date),
@@ -197,6 +197,32 @@ defmodule Expression.Eval do
 
   def op(:=, a, b) when is_struct(a, Date) and is_struct(b, Date),
     do: Date.compare(a, b) == :eq
+
+  def op(operator, a, b)
+      when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and
+             (is_struct(a, Date) or is_struct(a, DateTime)) and
+             is_binary(b) do
+    comparison_result =
+      if is_struct(a, Date) do
+        Date.compare(a, Expression.DateHelpers.extract_dateish(b))
+      else
+        DateTime.compare(a, Expression.DateHelpers.extract_datetimeish(b))
+      end
+
+    case {operator, comparison_result} do
+      {:=, :eq} -> true
+      {:==, :eq} -> true
+      {:!=, :lt} -> true
+      {:!=, :gt} -> true
+      {:<, :lt} -> true
+      {:<=, :lt} -> true
+      {:<=, :eq} -> true
+      {:>, :gt} -> true
+      {:>=, :gt} -> true
+      {:>=, :eq} -> true
+      _ -> false
+    end
+  end
 
   # when acting on any other supported type but still expected to be numeric
   def op(operator, a, b) when operator in @numeric_kernel_operators do

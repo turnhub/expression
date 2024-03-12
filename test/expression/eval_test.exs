@@ -253,4 +253,134 @@ defmodule Expression.EvalTest do
                "contact" => %{"name" => "Bob"}
              })
   end
+
+  describe "comparing dates and ISO8601 strings" do
+    test "using ==, =, != to compare a date an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a == \"2024-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2024-01-01]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a = \"2024-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2024-01-01]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a != \"2024-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2024-01-04]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a != \"2024-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2024-01-01]})
+    end
+
+    test "using < to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2024-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2019-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2019-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2019-01-01]})
+    end
+
+    test "using <= to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2024-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2019-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2019-01-01]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2019-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+    end
+
+    test "using > to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2024-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2019-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2019-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2019-01-01]})
+    end
+
+    test "using >= to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a >= \"2024-01-01\")")
+      assert false == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a >= \"2019-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2019-01-01]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a >= \"2019-01-01\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+    end
+
+    test "a date can be compared to an ISO8601 string representation of a datetime" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2020-11-16T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+    end
+  end
+
+  describe "comparing datetimes and ISO8601 strings" do
+    test "using ==, =, != to compare a date an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a == \"2024-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2024-01-01 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a = \"2024-01-01T10:40:50.277483Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2024-01-01 10:40:50.277483Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a != \"2024-01-01T10:40:50.277484Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2024-01-04 10:40:50.277484Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a != \"2024-01-01T10:40:50.277485Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2024-01-01 10:40:50.277485Z]})
+    end
+
+    test "using < to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2024-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2024-01-01 10:39:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2019-01-01T10:40:50.277482Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2019-01-01T10:40:50.277482Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2019-01-01 10:40:50.277482Z]})
+    end
+
+    test "using <= to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2024-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2019-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2019-01-01 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a <= \"2019-01-01T10:40:50.277482Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+    end
+
+    test "using > to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2024-01-01T10:40:50.277482Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2019-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2019-01-01T10:40:50.277482Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2019-01-01 10:40:50.277482Z]})
+    end
+
+    test "using >= to compare a date to an ISO8601 string representation of a date" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a >= \"2024-01-01T10:40:50.277482Z\")")
+      assert false == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a >= \"2019-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2019-01-01 10:40:50.277482Z]})
+
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a >= \"2019-01-01T10:40:50.277482Z\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2020-11-16 10:40:50.277482Z]})
+    end
+
+    test "a date can be compared to an ISO8601 string representation of a datetime" do
+      {:ok, ast, "", _, _, _} = Parser.parse("@(a > \"2020-11-16\")")
+      assert true == Eval.eval!(ast, %{"a" => ~U[2023-11-16 10:40:50.277482Z]})
+    end
+  end
 end
