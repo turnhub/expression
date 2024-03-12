@@ -28,6 +28,8 @@ defmodule Expression.Eval do
 
   """
 
+  alias Expression.DateHelpers
+
   @numeric_kernel_operators [:+, :-, :*, :/, :>, :>=, :<, :<=]
   @kernel_operators @numeric_kernel_operators ++ [:==, :!=]
   @allowed_nested_function_arguments [:function, :lambda] ++ @kernel_operators
@@ -198,16 +200,25 @@ defmodule Expression.Eval do
   def op(:=, a, b) when is_struct(a, Date) and is_struct(b, Date),
     do: Date.compare(a, b) == :eq
 
+  # Support comparing a `Date`/`DateTime` value with an ISO8601 date/datetime string
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def op(operator, a, b)
       when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and
-             (is_struct(a, Date) or is_struct(a, DateTime)) and
-             is_binary(b) do
+             (((is_struct(a, Date) or is_struct(a, DateTime)) and is_binary(b)) or
+                (is_binary(a) and (is_struct(b, Date) or is_struct(b, DateTime)))) do
+    {date_a, date_b} =
+      cond do
+        is_struct(a, Date) -> {a, DateHelpers.extract_dateish(b)}
+        is_struct(a, DateTime) -> {a, DateHelpers.extract_datetimeish(b)}
+        is_struct(b, Date) -> {DateHelpers.extract_dateish(a), b}
+        is_struct(b, DateTime) -> {DateHelpers.extract_datetimeish(a), b}
+      end
+
     comparison_result =
-      if is_struct(a, Date) do
-        Date.compare(a, Expression.DateHelpers.extract_dateish(b))
+      if is_struct(date_a, Date) do
+        Date.compare(date_a, date_b)
       else
-        DateTime.compare(a, Expression.DateHelpers.extract_datetimeish(b))
+        DateTime.compare(date_a, date_b)
       end
 
     case {operator, comparison_result} do
