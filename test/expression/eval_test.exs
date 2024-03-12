@@ -279,6 +279,9 @@ defmodule Expression.EvalTest do
       {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2019-01-01\")")
       assert false == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
 
+      {:ok, ast, "", _, _, _} = Parser.parse("@(\"2019-01-01\" < a)")
+      assert true == Eval.eval!(ast, %{"a" => ~D[2020-11-16]})
+
       {:ok, ast, "", _, _, _} = Parser.parse("@(a < \"2019-01-01\")")
       assert false == Eval.eval!(ast, %{"a" => ~D[2019-01-01]})
     end
