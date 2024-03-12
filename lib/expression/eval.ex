@@ -198,6 +198,7 @@ defmodule Expression.Eval do
   def op(:=, a, b) when is_struct(a, Date) and is_struct(b, Date),
     do: Date.compare(a, b) == :eq
 
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def op(operator, a, b)
       when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and
              (is_struct(a, Date) or is_struct(a, DateTime)) and
