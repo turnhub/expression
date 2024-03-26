@@ -17,25 +17,23 @@ defmodule Expression.ContextTest do
              Context.new(context)
   end
 
-  describe "context is parsed correctly when using the skip_context_evaluation? option" do
+  describe "context is parsed correctly when using the `skip_context_evaluation?` option" do
     test "string values in context that resemble booleans should not be parsed as booleans" do
-      assert %{
-               "block" => %{"response" => "True"}
-             } ==
-               Context.new(
-                 %{
-                   "block" => %{"response" => "True"}
-                 },
+      # By default (without the flag) boolean-ish string values as parsed as booleans
+      assert %{"block" => %{"response" => true}} ==
+               Context.new(%{
+                 "block" => %{"response" => "True"}
+               })
+
+      # With the flag set to true they are kept as strings
+      assert %{"block" => %{"response" => "True"}} ==
+               Context.new(%{"block" => %{"response" => "True"}},
                  skip_context_evaluation?: true
                )
 
-      assert %{
-               "block" => %{"response" => "true"}
-             } ==
+      assert %{"block" => %{"response" => "true"}} ==
                Context.new(
-                 %{
-                   "block" => %{"response" => "true"}
-                 },
+                 %{"block" => %{"response" => "true"}},
                  skip_context_evaluation?: true
                )
     end
