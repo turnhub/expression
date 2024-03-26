@@ -16,4 +16,50 @@ defmodule Expression.ContextTest do
     assert %{"block" => %{"value" => %{"program_start_date" => ~U[2022-11-10 13:40:05.921378Z]}}} =
              Context.new(context)
   end
+
+  describe "context is parsed correctly when using the skip_context_evaluation? option" do
+    test "string values in context that resemble booleans should not be parsed as booleans" do
+      assert %{
+               "block" => %{"response" => "True"}
+             } ==
+               Context.new(
+                 %{
+                   "block" => %{"response" => "True"}
+                 },
+                 skip_context_evaluation?: true
+               )
+
+      assert %{
+               "block" => %{"response" => "true"}
+             } ==
+               Context.new(
+                 %{
+                   "block" => %{"response" => "true"}
+                 },
+                 skip_context_evaluation?: true
+               )
+    end
+
+    test "string values in context that resemble numbers should not be parsed as numbers" do
+      assert %{
+               "ref_buttons_7bef16" => %{
+                 "__value__" => "2",
+                 "index" => 1,
+                 "label" => "2",
+                 "name" => "2"
+               }
+             } ==
+               Context.new(
+                 %{
+                   "ref_Buttons_7bef16" => %{
+                     "__value__" => "2",
+                     "index" => 1,
+                     "label" => "2",
+                     "name" => "2"
+                   }
+                 },
+                 skip_context_evaluation?: true
+               )
+    end
+  end
 end

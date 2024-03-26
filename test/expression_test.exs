@@ -418,4 +418,35 @@ defmodule ExpressionTest do
     assert "@@if(foo, bar, baz)" == Expression.escape("@if(foo, bar, baz)")
     assert "@@if(foo, bar.baz, baz)" == Expression.escape("@if(foo, bar.baz, baz)")
   end
+
+  describe "context is parsed correctly when using the skip_context_evaluation? option" do
+    test "string values in context that resemble booleans should not be parsed as booleans" do
+      assert true ==
+               Expression.evaluate_block!(
+                 "block.response = \"True\"",
+                 %{
+                   "block" => %{"response" => "True"}
+                 },
+                 Expression.Callbacks,
+                 skip_context_evaluation?: true
+               )
+    end
+
+    test "string values in context that resemble numbers should not be parsed as numbers" do
+      assert true ==
+               Expression.evaluate_block!(
+                 "ref_Buttons_7bef16 == \"2\"",
+                 %{
+                   "ref_Buttons_7bef16" => %{
+                     "__value__" => "2",
+                     "index" => 1,
+                     "label" => "2",
+                     "name" => "2"
+                   }
+                 },
+                 Expression.Callbacks,
+                 skip_context_evaluation?: true
+               )
+    end
+  end
 end
