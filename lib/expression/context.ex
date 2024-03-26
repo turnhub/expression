@@ -60,7 +60,7 @@ defmodule Expression.Context do
   defp iterate({key, value}, _), do: {key, value}
 
   defp evaluate!(ctx, opts) when is_map(ctx) and not is_struct(ctx) do
-    new(ctx, Keyword.put(opts, :recursive_call, true))
+    new(ctx, opts)
   end
 
   defp evaluate!(ctx, opts) when is_list(ctx) do
