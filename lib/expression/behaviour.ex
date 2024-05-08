@@ -26,6 +26,7 @@ defmodule Expression.Behaviour do
   @callback evaluate_block!(
               expression :: String.t(),
               context :: Expression.ContextBehaviour.t(),
-              callback_module :: atom
+              callback_module :: atom,
+              opts :: Keyword.t()
             ) :: term
 end

@@ -164,7 +164,7 @@ defmodule Expression.V1.DateHelpers do
   def extract_dateish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
-    case Expression.parse_expression(expression) do
+    case Expression.V1.parse_expression(expression) do
       {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
         DateTime.to_date(datetime)
 
@@ -186,7 +186,7 @@ defmodule Expression.V1.DateHelpers do
   def extract_datetimeish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z]/u, expression, "")
 
-    case Expression.parse_expression(expression) do
+    case Expression.V1.parse_expression(expression) do
       {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
         datetime
 
@@ -208,7 +208,7 @@ defmodule Expression.V1.DateHelpers do
   def extract_timeish(expression) when is_binary(expression) do
     expression = Regex.replace(~r/[a-z\s]/u, expression, "")
 
-    case Expression.parse_expression(expression) do
+    case Expression.V1.parse_expression(expression) do
       {:ok, [{:literal, datetime}]} when is_struct(datetime, DateTime) ->
         DateTime.to_time(datetime)
 

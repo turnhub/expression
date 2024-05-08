@@ -117,7 +117,7 @@ defmodule Expression.V2.Compat do
   def evaluate!(expression, context \\ %{}, callback_module \\ V2.Callbacks.Standard)
 
   def evaluate!(expression, context, callback_module) do
-    v1_resp = Expression.evaluate!(expression, context, v1_module(callback_module))
+    v1_resp = Expression.V1.evaluate!(expression, context, v1_module(callback_module))
 
     v2_resp =
       V2.eval(
@@ -137,8 +137,7 @@ defmodule Expression.V2.Compat do
       )
 
   def evaluate_block!(expression, context, callback_module, opts) do
-    v1_resp =
-      Expression.evaluate_block(expression, context, v1_module(callback_module), opts)
+    v1_resp = Expression.V1.evaluate_block(expression, context, v1_module(callback_module), opts)
 
     v2_resp =
       case V2.eval_block(

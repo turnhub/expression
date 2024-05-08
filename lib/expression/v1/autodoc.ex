@@ -1,4 +1,4 @@
-defmodule Expression.Autodoc do
+defmodule Expression.V1.Autodoc do
   @moduledoc """
 
   Extract `@expression_doc` attributes from modules defining callbacks
@@ -33,10 +33,10 @@ defmodule Expression.Autodoc do
     quote do
       @expression_docs []
       Module.register_attribute(__MODULE__, :expression_doc, accumulate: true)
-      @on_definition Expression.Autodoc
-      @before_compile Expression.Autodoc
+      @on_definition Expression.V1.Autodoc
+      @before_compile Expression.V1.Autodoc
 
-      import Expression.Autodoc
+      import Expression.V1.Autodoc
     end
   end
 
@@ -191,8 +191,8 @@ defmodule Expression.Autodoc do
   def type_of(list) when is_list(list),
     do: "List with values " <> Enum.map_join(list, ", ", &type_of/1)
 
-  def stringify(%{"__value__" => value}), do: Expression.stringify(value)
-  def stringify(value), do: Expression.stringify(value)
+  def stringify(%{"__value__" => value}), do: Expression.V1.stringify(value)
+  def stringify(value), do: Expression.V1.stringify(value)
 
   def get_existing_docstring(module) do
     case Module.get_attribute(module, :doc) do

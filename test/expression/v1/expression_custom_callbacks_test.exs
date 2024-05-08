@@ -1,11 +1,12 @@
 defmodule ExpressionCustomCallbacksTest do
   use ExUnit.Case, async: true
 
+  alias Expression.V1
   alias Expression.V1.Callbacks
 
   defmodule CustomCallback do
     use Callbacks
-    use Expression.Autodoc
+    use Expression.V1.Autodoc
 
     def echo(ctx, value) do
       value = eval!(value, ctx)
@@ -81,47 +82,47 @@ defmodule ExpressionCustomCallbacksTest do
   end
 
   test "custom callback" do
-    assert {:ok, "You said \"foo\""} == Expression.evaluate("@echo(\"foo\")", %{}, CustomCallback)
+    assert {:ok, "You said \"foo\""} == V1.evaluate("@echo(\"foo\")", %{}, CustomCallback)
   end
 
   test "custom callback inside a common callback" do
     assert {:ok, "You Said \"foo\""} ==
-             Expression.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
+             V1.evaluate("@proper(echo(\"foo\"))", %{}, CustomCallback)
   end
 
   test "custom callback with kernel operator" do
-    assert {:ok, "You said true"} == Expression.evaluate("@echo(1 == 1)", %{}, CustomCallback)
+    assert {:ok, "You said true"} == V1.evaluate("@echo(1 == 1)", %{}, CustomCallback)
   end
 
   test "custom callback with numeric kernel operator inside a common callback" do
-    assert {:ok, "D"} == Expression.evaluate("@char(count(\"foo\") + 65)", %{}, CustomCallback)
+    assert {:ok, "D"} == V1.evaluate("@char(count(\"foo\") + 65)", %{}, CustomCallback)
   end
 
   test "custom callback with numeric kernel operator inside a custom callback" do
     assert {:ok, "You said 2"} ==
-             Expression.evaluate("@echo(count(\"foo\") - 1)", %{}, CustomCallback)
+             V1.evaluate("@echo(count(\"foo\") - 1)", %{}, CustomCallback)
   end
 
   test "custom callbacks with numeric kernel operator inside a common callback" do
     assert {:ok, "You Said 4"} ==
-             Expression.evaluate("@proper(echo(count(\"foo\") + 1))", %{}, CustomCallback)
+             V1.evaluate("@proper(echo(count(\"foo\") + 1))", %{}, CustomCallback)
   end
 
   test "custom callback with numeric kernel operator with a list" do
     assert {:ok, 1} ==
-             Expression.evaluate("@([1, 2, 3][count(\"foo\") - 3])", %{}, CustomCallback)
+             V1.evaluate("@([1, 2, 3][count(\"foo\") - 3])", %{}, CustomCallback)
   end
 
   test "common callback inside a custom callback" do
     assert {:ok, "You said \"Foo\""} ==
-             Expression.evaluate("@echo(proper(\"foo\"))", %{}, CustomCallback)
+             V1.evaluate("@echo(proper(\"foo\"))", %{}, CustomCallback)
   end
 
   test "custom callback inside a block" do
-    assert {:ok, 4} == Expression.evaluate("@(count(\"foo\") + 1)", %{}, CustomCallback)
+    assert {:ok, 4} == V1.evaluate("@(count(\"foo\") + 1)", %{}, CustomCallback)
   end
 
   test "fallback to default callback" do
-    assert {:ok, "FOO"} = Expression.evaluate("@upper(\"foo\")", %{}, CustomCallback)
+    assert {:ok, "FOO"} = V1.evaluate("@upper(\"foo\")", %{}, CustomCallback)
   end
 end
