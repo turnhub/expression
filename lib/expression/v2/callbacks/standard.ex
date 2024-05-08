@@ -326,8 +326,22 @@ defmodule Expression.V2.Callbacks.Standard do
   @expression_doc expression: "or(false, false)",
                   code_expression: "false or false",
                   result: false
+  @expression_doc expression: "or(a, b)",
+                  context: %{"a" => false, "b" => "bee"},
+                  code_expression: "a or b",
+                  result: "bee"
+  @expression_doc expression: "or(a, b)",
+                  context: %{"a" => "a", "b" => false},
+                  code_expression: "a or b",
+                  result: "a"
+  @expression_doc expression: "or(b, b)",
+                  context: %{},
+                  code_expression: "b or b",
+                  result: false
   def or_vargs(_ctx, arguments) do
-    Enum.reduce(arguments, fn a, b -> a || b end)
+    Enum.reduce_while(arguments, false, fn arg, acc ->
+      if(arg, do: {:halt, arg}, else: {:cont, acc})
+    end)
   end
 
   @doc """
