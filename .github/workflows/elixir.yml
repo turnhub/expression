@@ -12,6 +12,7 @@ jobs:
       matrix:
         elixir: ["1.15"]
         otp: ["26"]
+        cache_version: ["1"]
 
     steps:
       - uses: actions/checkout@v2
@@ -25,8 +26,8 @@ jobs:
         id: mix-cache
         with:
           path: deps
-          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
-          restore-keys: ${{ runner.os }}-mix-
+          key: ${{matrix.cache_version}}-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{matrix.cache_version}}-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
       - name: Install Mix Dependencies
         if: steps.mix-cache.outputs.cache-hit != 'true'
         run: |
@@ -42,7 +43,7 @@ jobs:
         id: plt-cache
         with:
           path: .plts
-          key: ${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
+          key: ${{matrix.cache_version}}-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-plts-${{ hashFiles(format('{0}{1}', github.workspace, '/mix.lock')) }}
       - name: Create PLTs
         if: steps.plt-cache.outputs.cache-hit != 'true'
         run: |
