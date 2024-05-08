@@ -9,5 +9,5 @@ defmodule Expression do
 
   defdelegate evaluate!(expression, context, callback), to: Expression.V1
   defdelegate evaluate_as_string!(expression, context, callback), to: Expression.V1
-  defdelegate evaluate_block!(expression, context, callback), to: Expression.V1
+  defdelegate evaluate_block!(expression, context, callback, opts \\ []), to: Expression.V1
 end

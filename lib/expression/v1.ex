@@ -74,13 +74,17 @@ defmodule Expression.V1 do
     |> Eval.default_value()
   end
 
-  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
+  def evaluate_block!(expression, context \\ %{}, mod \\ Expression.V1.Callbacks, opts \\ [])
+
+  def evaluate_block!(expression, context, mod, opts) do
     ast = parse_expression!(expression)
-    Eval.eval!([expression: ast], Context.new(context), mod)
+    Eval.eval!([expression: ast], Context.new(context, opts), mod)
   end
 
-  def evaluate_block(expression, context \\ %{}, mod \\ Expression.V1.Callbacks) do
-    {:ok, evaluate_block!(expression, context, mod)}
+  def evaluate_block(expression, context \\ %{}, mod \\ Expression.V1.Callbacks, opts \\ [])
+
+  def evaluate_block(expression, context, mod, opts) do
+    {:ok, evaluate_block!(expression, context, mod, opts)}
   rescue
     e in RuntimeError -> {:error, e.message}
   end
