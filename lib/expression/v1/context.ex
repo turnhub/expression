@@ -1,4 +1,4 @@
-defmodule Expression.Context do
+defmodule Expression.V1.Context do
   @moduledoc """
 
   A helper module for creating a context that can be
@@ -6,32 +6,34 @@ defmodule Expression.Context do
 
   # Example
 
-    iex> Expression.Context.new(%{foo: "bar"})
+    iex> Expression.V1.Context.new(%{foo: "bar"})
     %{"foo" => "bar"}
-    iex> Expression.Context.new(%{FOO: "bar"})
+    iex> Expression.V1.Context.new(%{FOO: "bar"})
     %{"foo" => "bar"}
-    iex> Expression.Context.new(%{foo: %{bar: "baz"}})
+    iex> Expression.V1.Context.new(%{foo: %{bar: "baz"}})
     %{"foo" => %{"bar" => "baz"}}
-    iex> Expression.Context.new(%{Foo: %{Bar: "baz"}})
+    iex> Expression.V1.Context.new(%{Foo: %{Bar: "baz"}})
     %{"foo" => %{"bar" => "baz"}}
-    iex> Expression.Context.new(%{foo: %{bar: 1}})
+    iex> Expression.V1.Context.new(%{foo: %{bar: 1}})
     %{"foo" => %{"bar" => 1}}
-    iex> Expression.Context.new(%{date: "2020-12-13T23:34:45"})
+    iex> Expression.V1.Context.new(%{date: "2020-12-13T23:34:45"})
     %{"date" => ~U[2020-12-13 23:34:45.0Z]}
-    iex> Expression.Context.new(%{boolean: "true"})
+    iex> Expression.V1.Context.new(%{boolean: "true"})
     %{"boolean" => true}
-    iex> Expression.Context.new(%{float: 1.234})
+    iex> Expression.V1.Context.new(%{float: 1.234})
     %{"float" => 1.234}
     iex> now = DateTime.utc_now()
-    iex> ctx = Expression.Context.new(%{float: "1.234", nested: %{date: now}})
+    iex> ctx = Expression.V1.Context.new(%{float: "1.234", nested: %{date: now}})
     iex> ctx["float"]
     1.234
     iex> now == ctx["nested"]["date"]
     true
-    iex> Expression.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})
+    iex> Expression.V1.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
   """
+  alias Expression.V1.Parser
+
   @type t :: map
 
   @spec new(map) :: t
@@ -63,7 +65,7 @@ defmodule Expression.Context do
   end
 
   defp evaluate!(binary) when is_binary(binary) do
-    case Expression.Parser.literal(binary) do
+    case Parser.literal(binary) do
       {:ok, [{:literal, literal}], "", _, _, _} -> literal
       # when we're not parsing the full literal
       {:ok, [{:literal, _literal}], _, _, _, _} -> binary

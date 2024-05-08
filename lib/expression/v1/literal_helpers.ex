@@ -1,4 +1,4 @@
-defmodule Expression.LiteralHelpers do
+defmodule Expression.V1.LiteralHelpers do
   @moduledoc false
   import NimbleParsec
 

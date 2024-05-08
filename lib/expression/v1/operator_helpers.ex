@@ -1,4 +1,4 @@
-defmodule Expression.OperatorHelpers do
+defmodule Expression.V1.OperatorHelpers do
   @moduledoc false
   import NimbleParsec
 

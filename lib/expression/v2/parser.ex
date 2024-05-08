@@ -57,7 +57,7 @@ defmodule Expression.V2.Parser do
   Internally `parse/2` refers to the same parsers as `expression/2` for things that are expressions.
   """
   import NimbleParsec
-  import Expression.DateHelpers
+  import Expression.V1.DateHelpers
 
   # Booleans can be spelled in any mixed case
   boolean_true =

@@ -1,15 +1,17 @@
-defmodule Expression.Callbacks.EvalHelpers do
+defmodule Expression.V1.Callbacks.EvalHelpers do
   @moduledoc false
 
   @doc """
   Evaluate the given AST against the context and return the value
   after evaluation.
   """
+  alias Expression.V1.Eval
+
   @spec eval!(term, map) :: term
   def eval!(ast, ctx) do
     ast
-    |> Expression.Eval.eval!(ctx)
-    |> Expression.Eval.not_founds_as_nil()
+    |> Eval.eval!(ctx)
+    |> Eval.not_founds_as_nil()
   end
 
   @doc """

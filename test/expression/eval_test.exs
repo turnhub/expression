@@ -1,7 +1,7 @@
 defmodule Expression.EvalTest do
   use ExUnit.Case, async: true
-  alias Expression.Eval
-  alias Expression.Parser
+  alias Expression.V1.Eval
+  alias Expression.V1.Parser
 
   test "substitution" do
     assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})

@@ -14,8 +14,10 @@ defmodule Expression.V2.Context do
           callback_module: module
         }
 
+  @impl true
   def new(vars \\ %{}, callback_module \\ Expression.V2.Callbacks.Standard),
     do: %__MODULE__{vars: vars, callback_module: callback_module}
 
+  @impl true
   def private(ctx, key, value), do: %{ctx | private: Map.put(ctx.private, key, value)}
 end

@@ -1,6 +1,6 @@
 defmodule Expression.ContextTest do
   use ExUnit.Case
-  alias Expression.Context
+  alias Expression.V1.Context
 
   test "new context from a context containing a datetime string" do
     context = %{"block" => %{"value" => %{"program_start_date" => "2022-11-10T13:40:05.921378"}}}

@@ -9,7 +9,7 @@ defmodule Expression.V2.Callbacks.Standard do
   use Expression.V2.Callbacks
   use Expression.V2.Autodoc
 
-  alias Expression.DateHelpers
+  alias Expression.V1.DateHelpers
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
   @doc """

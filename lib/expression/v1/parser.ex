@@ -1,4 +1,4 @@
-defmodule Expression.Parser do
+defmodule Expression.V1.Parser do
   @moduledoc """
   Expression.Parser is responsible for accepting a string
   containing an expression and returning the abstract syntax
@@ -9,15 +9,15 @@ defmodule Expression.Parser do
 
   # Example
 
-    iex(1)> Expression.Parser.parse("hello @world")
+    iex(1)> Expression.V1.Parser.parse("hello @world")
     {:ok, [text: "hello ", expression: [atom: "world"]], "", %{}, {1, 0}, 12}
 
   """
   import NimbleParsec
-  import Expression.BooleanHelpers
-  import Expression.DateHelpers
-  import Expression.LiteralHelpers
-  import Expression.OperatorHelpers
+  import Expression.V1.BooleanHelpers
+  import Expression.V1.DateHelpers
+  import Expression.V1.LiteralHelpers
+  import Expression.V1.OperatorHelpers
 
   # literal = 1, 2.1, "three", 'four', true, false, ISO dates
   defparsec(

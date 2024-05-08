@@ -1,6 +1,6 @@
 defmodule Expression.AutodocTest do
   use ExUnit.Case, async: true
-  alias Expression.Callbacks.Standard
+  alias Expression.V1.Callbacks.Standard
 
   defp find_docs(module, name) do
     Enum.filter(module.expression_docs(), &(elem(&1, 0) == name))

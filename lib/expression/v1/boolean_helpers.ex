@@ -1,4 +1,4 @@
-defmodule Expression.BooleanHelpers do
+defmodule Expression.V1.BooleanHelpers do
   @moduledoc false
   import NimbleParsec
 
