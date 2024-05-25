@@ -18,6 +18,7 @@ defmodule Expression.V2.Compat do
   @behaviour Expression.Behaviour
   require Logger
   alias Expression.V2
+  alias Expression.V1
 
   def evaluate_as_string!(
         expression,
@@ -37,8 +38,8 @@ defmodule Expression.V2.Compat do
     return_or_log(expression, context, v1_resp, v2_resp)
   end
 
-  def v1_module(Turn.Build.Callbacks), do: Turn.Build.CallbacksV1
-  def v1_module(V2.Callbacks.Standard), do: Expression.V1.Callbacks.Standard
+  def v1_module(Turn.Build.Callbacks), do: Turn.Build.CallbacksV2
+  def v1_module(V2.Callbacks.Standard), do: V1.Callbacks.Standard
 
   def patch_v1_key(key),
     do:
@@ -142,7 +143,7 @@ defmodule Expression.V2.Compat do
     v2_resp =
       case V2.eval_block(
              expression,
-             V2.Context.new(patch_v1_context(context), callback_module)
+             V2.Context.new(patch_v1_context(context), v1_module(callback_module))
            ) do
         {:error, error, reason} -> {:error, error <> " " <> reason}
         value -> {:ok, value}
