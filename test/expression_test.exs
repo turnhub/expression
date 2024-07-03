@@ -40,6 +40,27 @@ defmodule ExpressionTest do
       assert "bar" == Expression.evaluate_as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end
 
+    test "risings problem" do
+      assert "hello" ==
+               Expression.evaluate_block!("content_units_response.body[current_activity]", %{
+                 "content_units_response" => %{
+                   "body" => ["hello", "bye"]
+                 },
+                 "current_activity" => 0
+               })
+
+      assert "hello" ==
+               Expression.evaluate_block!(
+                 "content_units_response.body[current_activity]",
+                 %{
+                   "content_units_response" => %{
+                     "body" => ["hello", "bye"]
+                   },
+                   "current_activity" => "0"
+                 }
+               )
+    end
+
     test "list with variable" do
       assert "bar" =
                Expression.evaluate_as_string!("@foo[cursor]", %{
