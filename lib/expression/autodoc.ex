@@ -218,8 +218,18 @@ defmodule Expression.Autodoc do
     """
   end
 
-  def format_result(result),
-    do: " value of type **#{type_of(result)}**: `#{Jason.encode!(result, pretty: true)}`"
+  def format_result(result) do
+    value = Jason.encode!(result, pretty: true)
+
+    value_to_print =
+      if String.contains?(value, "\n") do
+        "\n\n```\n#{value}\n```\n\n"
+      else
+        "`#{value}`"
+      end
+
+    " value of type **#{type_of(result)}**: #{value_to_print}"
+  end
 
   def format_context(nil), do: "."
 

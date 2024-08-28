@@ -34,35 +34,52 @@ defmodule Expression.Context do
   """
   @type t :: map
 
-  @spec new(map) :: t
-  def new(ctx) when is_map(ctx) do
+  @spec new(map, Keyword.t() | nil) :: t
+  def new(ctx, opts \\ []) when is_map(ctx) do
     ctx
     # Ensure all keys are lower case strings
     |> Enum.map(&downcase_string_key/1)
-    |> Enum.map(&iterate(&1))
+    |> Enum.map(&iterate(&1, opts))
     |> Enum.into(%{})
   end
 
   defp downcase_string_key({key, value}), do: {String.downcase(to_string(key)), value}
 
-  defp iterate({key, value}) when is_map(value) or is_list(value) do
-    {key, evaluate!(value)}
+  defp iterate({key, value}, opts) when is_map(value) or is_list(value) do
+    {key, evaluate!(value, opts)}
   end
 
-  defp iterate({key, value}) when is_binary(value), do: {key, evaluate!(value)}
+  # Implictly convert the string "0" as a number
+  defp iterate({key, "0"}, _opts), do: {key, 0}
 
-  defp iterate({key, value}), do: {key, value}
-
-  defp evaluate!(ctx) when is_map(ctx) and not is_struct(ctx) do
-    new(ctx)
+  # Prevent implictly converting numbers starting with a zero
+  defp iterate({key, "0" <> value}, opts) when is_binary(value) do
+    if String.match?("0" <> value, ~r/^[0-9]/) do
+      {key, "0" <> value}
+    else
+      iterate({key, value}, opts)
+    end
   end
 
-  defp evaluate!(ctx) when is_list(ctx) do
-    ctx
-    |> Enum.map(&evaluate!(&1))
+  defp iterate({key, value}, opts) when is_binary(value) do
+    if Keyword.get(opts, :skip_context_evaluation?, false) do
+      {key, value}
+    else
+      {key, evaluate!(value, opts)}
+    end
   end
 
-  defp evaluate!(binary) when is_binary(binary) do
+  defp iterate({key, value}, _), do: {key, value}
+
+  defp evaluate!(ctx, opts) when is_map(ctx) and not is_struct(ctx) do
+    new(ctx, opts)
+  end
+
+  defp evaluate!(ctx, opts) when is_list(ctx) do
+    Enum.map(ctx, &evaluate!(&1, opts))
+  end
+
+  defp evaluate!(binary, _) when is_binary(binary) do
     case Expression.Parser.literal(binary) do
       {:ok, [{:literal, literal}], "", _, _, _} -> literal
       # when we're not parsing the full literal
@@ -74,5 +91,5 @@ defmodule Expression.Context do
     ArgumentError -> binary
   end
 
-  defp evaluate!(value), do: value
+  defp evaluate!(value, _), do: value
 end

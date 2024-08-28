@@ -5,10 +5,8 @@ defmodule Expression.LiteralHelpers do
   def int do
     optional(string("-"))
     |> times(
-      choice([
-        integer(min: 1),
-        ignore(utf8_char([?_]))
-      ]),
+      integer(min: 1)
+      |> concat(optional(ignore(utf8_char([?_])))),
       min: 1
     )
     |> reduce({Enum, :join, [""]})

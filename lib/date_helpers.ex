@@ -176,8 +176,7 @@ defmodule Expression.DateHelpers do
     end
   end
 
-  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t() | nil) :: DateTime.t() | nil
-  def extract_datetimeish(nil), do: nil
+  @spec extract_datetimeish(DateTime.t() | Date.t() | String.t() | term) :: DateTime.t() | nil
   def extract_datetimeish(date_time) when is_struct(date_time, DateTime), do: date_time
 
   def extract_datetimeish(date) when is_struct(date, Date),
@@ -197,6 +196,8 @@ defmodule Expression.DateHelpers do
         nil
     end
   end
+
+  def extract_datetimeish(_term), do: nil
 
   @spec extract_timeish(DateTime.t() | Time.t() | String.t()) :: Time.t() | nil
   def extract_timeish(datetime) when is_struct(datetime, DateTime),

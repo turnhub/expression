@@ -20,6 +20,7 @@ defmodule Expression.Callbacks do
 
   alias Expression.Callbacks.Standard
 
+  @built_in_operators [:+, :-, :*, :/, :>, :>=, :<, :<=, :==, :!=]
   @reserved_words ~w[and if or not]
 
   @doc """
@@ -73,6 +74,9 @@ defmodule Expression.Callbacks do
     |> Enum.each(&Code.ensure_loaded!/1)
 
     cond do
+      exact_function_name in @built_in_operators ->
+        {:exact, module, exact_function_name, 2}
+
       # Check if the exact function signature has been implemented
       function_exported?(module, exact_function_name, length(arguments) + 1) ->
         {:exact, module, exact_function_name, length(arguments) + 1}

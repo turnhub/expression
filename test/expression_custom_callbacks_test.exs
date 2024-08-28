@@ -11,12 +11,70 @@ defmodule ExpressionCustomCallbacksTest do
       "You said #{inspect(value)}"
     end
 
+    def length_vargs(_ctx, args) do
+      Enum.count(args)
+    end
+
     def count(ctx, value) do
       case eval!(value, ctx) do
         string when is_binary(string) -> String.length(string)
         list when is_list(list) -> length(list)
         other -> Enum.count(other)
       end
+    end
+  end
+
+  describe "implements" do
+    test "defined functions" do
+      assert {:exact, ExpressionCustomCallbacksTest.CustomCallback, :echo, 2} ==
+               Expression.Callbacks.implements(
+                 ExpressionCustomCallbacksTest.CustomCallback,
+                 "echo",
+                 [1]
+               )
+    end
+
+    test "undefined functions" do
+      assert {:error, "boo is not implemented."} ==
+               Expression.Callbacks.implements(
+                 ExpressionCustomCallbacksTest.CustomCallback,
+                 "boo",
+                 [1]
+               )
+    end
+
+    test "wrong arity functions" do
+      assert {:error, "echo is not implemented."} ==
+               Expression.Callbacks.implements(
+                 ExpressionCustomCallbacksTest.CustomCallback,
+                 "echo",
+                 [1, 2, 3]
+               )
+    end
+
+    test "variable args functions" do
+      assert {:vargs, ExpressionCustomCallbacksTest.CustomCallback, :length_vargs, 2} ==
+               Expression.Callbacks.implements(
+                 ExpressionCustomCallbacksTest.CustomCallback,
+                 "length",
+                 [1, 2, 3]
+               )
+
+      assert {:vargs, ExpressionCustomCallbacksTest.CustomCallback, :length_vargs, 2} ==
+               Expression.Callbacks.implements(
+                 ExpressionCustomCallbacksTest.CustomCallback,
+                 "length",
+                 []
+               )
+    end
+
+    test "built in operators" do
+      assert {:exact, ExpressionCustomCallbacksTest.CustomCallback, :!=, 2} =
+               Expression.Callbacks.implements(
+                 ExpressionCustomCallbacksTest.CustomCallback,
+                 "!=",
+                 [1, 1]
+               )
     end
   end
 

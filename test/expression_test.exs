@@ -25,24 +25,96 @@ defmodule ExpressionTest do
       assert true == Expression.evaluate_as_boolean!("@has_only_phrase('foo bar', 'foo bar')")
 
       assert false ==
-               Expression.evaluate_as_boolean!("@has_only_phrase('foo bar baz', 'foo bar')")
+               Expression.evaluate_as_boolean!("@has_only_phrase('foo bar baz', 'foo bar ')")
 
       assert false ==
                Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
 
-      # Function accepts a pre-parsed Expression too
       assert true ==
-               Expression.evaluate_as_boolean!(
-                 [
-                   expression: [
-                     function: [name: "has_only_phrase", args: [atom: "name", literal: "bar"]]
-                   ]
-                 ],
-                 %{"name" => "bar"}
-               )
+               Expression.evaluate_as_boolean!("@has_beginning(contact.number, \"123\")", %{
+                 "contact" => %{"number" => 123_456}
+               })
+    end
+
+    test "evaluate_as_boolean! with kernel operators" do
+      assert true == Expression.evaluate_as_boolean!("@(123 == 123)")
+      assert true == Expression.evaluate_as_boolean!("@(\"123\" == a)", %{"a" => "123"})
+      assert true == Expression.evaluate_as_boolean!("@(123 == \"123\")")
+      assert true == Expression.evaluate_as_boolean!("@(\"123\" == 123)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.123\" == 0.123)")
+
+      assert true == Expression.evaluate_as_boolean!("@(2 > 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" > a)", %{"a" => "1"})
+      assert true == Expression.evaluate_as_boolean!("@(2 > \"1\")")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" > 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.2\" > 0.1)")
+
+      assert true == Expression.evaluate_as_boolean!("@(2 >= 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" >= a)", %{"a" => "1"})
+      assert true == Expression.evaluate_as_boolean!("@(2 >= \"1\")")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" >= 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.1\" >= 0.1)")
+
+      assert true == Expression.evaluate_as_boolean!("@(1 < 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"1\" < a)", %{"a" => "2"})
+      assert true == Expression.evaluate_as_boolean!("@(1 < \"2\")")
+      assert true == Expression.evaluate_as_boolean!("@(\"1\" < 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.1\" < 0.2)")
+
+      assert true == Expression.evaluate_as_boolean!("@(1 <= 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"1\" <= a)", %{"a" => "2"})
+      assert true == Expression.evaluate_as_boolean!("@(1 <= \"2\")")
+      assert true == Expression.evaluate_as_boolean!("@(\"1\" <= 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.1\" <= 0.1)")
+
+      assert true == Expression.evaluate_as_boolean!("@(2 + 1 == 3)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" + a == 3)", %{"a" => "1"})
+      assert true == Expression.evaluate_as_boolean!("@(2 + \"1\" == 3)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" + 1 == 3)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.2\" + 0.1 == 0.30000000000000004)")
+
+      assert true == Expression.evaluate_as_boolean!("@(2 - 1 == 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" - a == 1)", %{"a" => "1"})
+      assert true == Expression.evaluate_as_boolean!("@(2 - \"1\" == 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" - 1 == 1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.2\" - 0.1 == 0.1)")
+
+      assert true == Expression.evaluate_as_boolean!("@(-2 + 1 == -1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"-2\" + a == -1)", %{"a" => "1"})
+      assert true == Expression.evaluate_as_boolean!("@(-2 + \"1\" == -1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"-2\" + 1 == -1)")
+      assert true == Expression.evaluate_as_boolean!("@(\"-0.2\" + 0.1 == -0.1)")
+
+      assert true == Expression.evaluate_as_boolean!("@(2 / 1 == 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" / a == 2)", %{"a" => "1"})
+      assert true == Expression.evaluate_as_boolean!("@(2 / \"1\" == 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"2\" / 1 == 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.2\" / 0.1 == 2.0)")
+
+      assert true == Expression.evaluate_as_boolean!("@(1 * 2 == 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"1\" * a == 2)", %{"a" => "2"})
+      assert true == Expression.evaluate_as_boolean!("@(1 * \"2\" == 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"1\" * 2 == 2)")
+      assert true == Expression.evaluate_as_boolean!("@(\"0.1\" * 0.2 == 0.020000000000000004)")
+
+      assert true == Expression.evaluate_as_boolean!("@(\"1. A\" == x)", %{"x" => "1. A"})
+      assert false == Expression.evaluate_as_boolean!("@(\"1. A wrong\" == x)", %{"x" => "1. A"})
+
+      assert_raise RuntimeError, "expression is not a number: `\"NaN\"`", fn ->
+        Expression.evaluate_as_boolean!("@(1 * \"NaN\" == 2)")
+      end
+
+      assert_raise RuntimeError, "expression is not a number: `\"NaN\"`", fn ->
+        Expression.evaluate_as_boolean!("@(\"1\" * a == 2)", %{"a" => "NaN"})
+      end
+
+      assert_raise RuntimeError, "expression is not a number: `\"NaN\"`", fn ->
+        Expression.evaluate_as_boolean!("@(\"NaN\" * 0.2 == 0.02)")
+      end
     end
 
     test "list with indices" do
+      assert "baz" == Expression.evaluate_as_string!("@foo[0]", %{"foo" => ["baz", "bar"]})
       assert "bar" == Expression.evaluate_as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end
 
@@ -52,6 +124,25 @@ defmodule ExpressionTest do
                  "foo" => ["baz", "bar"],
                  "cursor" => 1
                })
+
+      assert "hello" ==
+               Expression.evaluate_block!("content_units_response.body[current_activity]", %{
+                 "content_units_response" => %{
+                   "body" => ["hello", "bye"]
+                 },
+                 "current_activity" => 0
+               })
+
+      assert "hello" ==
+               Expression.evaluate_block!(
+                 "content_units_response.body[current_activity]",
+                 %{
+                   "content_units_response" => %{
+                     "body" => ["hello", "bye"]
+                   },
+                   "current_activity" => "0"
+                 }
+               )
     end
 
     test "stringify primitives" do
@@ -425,17 +516,34 @@ defmodule ExpressionTest do
     assert "@@if(foo, bar.baz, baz)" == Expression.escape("@if(foo, bar.baz, baz)")
   end
 
-  test "parse!/1 skips expensive parsing is the expression is already an AST struct" do
-    # If the expression is a provided as a string then it gets parsed to an AST
-    assert [expression: [attribute: [atom: "contact", atom: "age"]], text: " + 2"] ==
-             Expression.parse!("@contact.age + 2")
+  describe "context is parsed correctly when using the skip_context_evaluation? option" do
+    test "string values in context that resemble booleans should not be parsed as booleans" do
+      assert true ==
+               Expression.evaluate_block!(
+                 "block.response = \"True\"",
+                 %{
+                   "block" => %{"response" => "True"}
+                 },
+                 Expression.Callbacks,
+                 skip_context_evaluation?: true
+               )
+    end
 
-    # If the expression is a already provided as a parsed AST then it is simply
-    # returned as is
-    assert [expression: [attribute: [atom: "contact", atom: "age"]], text: " + 2"] ==
-             Expression.parse!(
-               expression: [attribute: [atom: "contact", atom: "age"]],
-               text: " + 2"
-             )
+    test "string values in context that resemble numbers should not be parsed as numbers" do
+      assert true ==
+               Expression.evaluate_block!(
+                 "ref_Buttons_7bef16 == \"2\"",
+                 %{
+                   "ref_Buttons_7bef16" => %{
+                     "__value__" => "2",
+                     "index" => 1,
+                     "label" => "2",
+                     "name" => "2"
+                   }
+                 },
+                 Expression.Callbacks,
+                 skip_context_evaluation?: true
+               )
+    end
   end
 end

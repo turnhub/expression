@@ -83,6 +83,12 @@ defmodule Expression.ParserTest do
       assert_ast([expression: [literal: 1.23]], "@(1.23)")
       assert_ast([expression: [literal: -1.23]], "@(-1.23)")
       assert_ast([expression: [literal: -0.00002]], "@(-0.00002)")
+      # prevent parsing a single underscore as an integer
+      assert_ast([expression: [[]], text: "(_)"], "@(_)")
+      assert_ast([expression: [literal: 1]], "@(1_)")
+      assert_ast([expression: [literal: 11]], "@(1_1)")
+      assert_ast([expression: [[]], text: "(1__1)"], "@(1__1)")
+      assert_ast([expression: [literal: 111]], "@(1_1_1)")
 
       assert_ast(
         [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],

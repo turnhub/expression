@@ -326,8 +326,22 @@ defmodule Expression.V2.Callbacks.Standard do
   @expression_doc expression: "or(false, false)",
                   code_expression: "false or false",
                   result: false
+  @expression_doc expression: "or(a, b)",
+                  context: %{"a" => false, "b" => "bee"},
+                  code_expression: "a or b",
+                  result: "bee"
+  @expression_doc expression: "or(a, b)",
+                  context: %{"a" => "a", "b" => false},
+                  code_expression: "a or b",
+                  result: "a"
+  @expression_doc expression: "or(b, b)",
+                  context: %{},
+                  code_expression: "b or b",
+                  result: false
   def or_vargs(_ctx, arguments) do
-    Enum.reduce(arguments, fn a, b -> a || b end)
+    Enum.reduce_while(arguments, false, fn arg, acc ->
+      if(arg, do: {:halt, arg}, else: {:cont, acc})
+    end)
   end
 
   @doc """
@@ -878,7 +892,7 @@ defmodule Expression.V2.Callbacks.Standard do
                   result: false
   @expression_doc expression: "has_beginning(\"The Quick Brown\", \"quick brown\")", result: false
   def has_beginning(_ctx, text, beginning) do
-    case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
+    case Regex.run(~r/^#{Regex.escape(beginning)}/i, to_string(text)) do
       # future match result: first
       [_first | _remainder] -> true
       nil -> false
@@ -1161,12 +1175,14 @@ defmodule Expression.V2.Callbacks.Standard do
   The phrase must be the only text in the text to match
   """
   @expression_doc expression: "has_only_phrase(\"Quick Brown\", \"quick brown\")", result: true
-  @expression_doc expression: "has_only_phrase(\"\", \"\")", result: true
+  @expression_doc expression: "has_only_phrase(\"\", \" \")", result: true
   @expression_doc expression: "has_only_phrase(\"The Quick Brown Fox\", \"quick brown\")",
                   result: false
 
   def has_only_phrase(_ctx, expression, phrase) do
-    case Enum.map([expression, phrase], fn argument -> String.downcase(to_string(argument)) end) do
+    result = Enum.map([expression, phrase], &String.downcase(String.trim(to_string(&1))))
+
+    case result do
       # Future match result: expression
       [same, same] -> true
       _anything_else -> false
@@ -1242,9 +1258,8 @@ defmodule Expression.V2.Callbacks.Standard do
   def has_phrase(_ctx, expression, phrase) do
     lower_expression = String.downcase(to_string(expression))
     lower_phrase = String.downcase(to_string(phrase))
-    found? = String.contains?(lower_expression, lower_phrase)
-    # Future match result: phrase
-    found?
+
+    String.contains?(lower_expression, lower_phrase)
   end
 
   @doc """

@@ -88,18 +88,31 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Negative offsets",
                   expression: "datetime_add(date(2020, 02, 29), -1, \"D\")",
                   result: ~U[2020-02-28 00:00:00.000000Z]
+  @expression_doc doc: "Invalid date inputs",
+                  expression: "datetime_add(\"_..[0]._\", 0, \"h\")",
+                  context: %{},
+                  result: %{
+                    "__type__" => "expression/v1error",
+                    "error" => true,
+                    "message" => "Invalid date"
+                  }
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = DateHelpers.extract_datetimeish(eval!(datetime, ctx))
-    [offset, unit] = eval_args!([offset, unit], ctx)
 
-    case unit do
-      "Y" -> Timex.shift(datetime, years: offset)
-      "M" -> Timex.shift(datetime, months: offset)
-      "W" -> Timex.shift(datetime, weeks: offset)
-      "D" -> Timex.shift(datetime, days: offset)
-      "h" -> Timex.shift(datetime, hours: offset)
-      "m" -> Timex.shift(datetime, minutes: offset)
-      "s" -> Timex.shift(datetime, seconds: offset)
+    if is_struct(datetime, DateTime) do
+      [offset, unit] = eval_args!([offset, unit], ctx)
+
+      case unit do
+        "Y" -> Timex.shift(datetime, years: offset)
+        "M" -> Timex.shift(datetime, months: offset)
+        "W" -> Timex.shift(datetime, weeks: offset)
+        "D" -> Timex.shift(datetime, days: offset)
+        "h" -> Timex.shift(datetime, hours: offset)
+        "m" -> Timex.shift(datetime, minutes: offset)
+        "s" -> Timex.shift(datetime, seconds: offset)
+      end
+    else
+      Expression.error("Invalid date")
     end
   end
 
@@ -416,16 +429,30 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "or(false, false)",
                   code_expression: "false or false",
                   result: false
+  @expression_doc expression: "or(a, b)",
+                  context: %{"a" => false, "b" => "bee"},
+                  code_expression: "a or b",
+                  result: "bee"
+  @expression_doc expression: "or(a, b)",
+                  context: %{"a" => "a", "b" => false},
+                  code_expression: "a or b",
+                  result: "a"
+  @expression_doc expression: "or(b, b)",
+                  context: %{},
+                  code_expression: "b or b",
+                  result: false
   def or_vargs(ctx, arguments) do
-    arguments = eval_args!(arguments, ctx)
-    Enum.reduce(arguments, fn a, b -> a || b end)
+    Enum.reduce_while(arguments, false, fn arg, acc ->
+      arg = eval!(arg, ctx)
+      if(arg, do: {:halt, arg}, else: {:cont, acc})
+    end)
   end
 
   @doc """
   Returns the absolute value of a number
   """
-  @expression_doc expression: "abs(-1)",
-                  result: 1
+  @expression_doc expression: "abs(-1)", result: 1
+  @expression_doc expression: "abs(-0.5)", result: 0.5
   def abs(ctx, number) do
     abs(eval!(number, ctx))
   end
@@ -545,14 +572,11 @@ defmodule Expression.Callbacks.Standard do
   "You have 4.21 in your account"
   ```
   """
-  @expression_doc expression: "fixed(4.209922, 2, false)",
-                  result: "4.21"
-  @expression_doc expression: "fixed(4000.424242, 4, true)",
-                  result: "4,000.4242"
-  @expression_doc expression: "fixed(3.7979, 2, false)",
-                  result: "3.80"
-  @expression_doc expression: "fixed(3.7979, 2)",
-                  result: "3.80"
+  @expression_doc expression: "fixed(4.209922, 2, false)", result: "4.21"
+  @expression_doc expression: "fixed(4000.424242, 4, true)", result: "4000.4242"
+  @expression_doc expression: "fixed(3.7979, 2, false)", result: "3.80"
+  @expression_doc expression: "fixed(3.7979, 2)", result: "3.80"
+  @expression_doc expression: "fixed(0.0909, 2)", result: "0.09"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
     Number.Delimit.number_to_delimited(number, precision: precision)
@@ -563,7 +587,7 @@ defmodule Expression.Callbacks.Standard do
       [number, precision, true] ->
         Number.Delimit.number_to_delimited(number,
           precision: precision,
-          delimiter: ",",
+          delimiter: "",
           separator: "."
         )
 
@@ -1008,7 +1032,7 @@ defmodule Expression.Callbacks.Standard do
   def has_beginning(ctx, text, beginning) do
     [text, beginning] = eval_args!([text, beginning], ctx)
 
-    case Regex.run(~r/^#{Regex.escape(beginning)}/i, text) do
+    case Regex.run(~r/^#{Regex.escape(beginning)}/i, to_string(text)) do
       # future match result: first
       [_first | _remainder] -> true
       nil -> false
@@ -1023,6 +1047,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_date(\"the date is 15/01/2017 05:50\")",
                   result: %{
                     "__value__" => true,
+                    "match" => ~U[2017-01-15 05:50:00Z],
                     "date" => ~D[2017-01-15],
                     "datetime" => ~U[2017-01-15 05:50:00Z]
                   }
@@ -1030,7 +1055,27 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_date(\"the date is 15/01/2017 05:50\").datetime",
                   result: ~U[2017-01-15 05:50:00Z]
   @expression_doc expression: "has_date(\"there is no date here, just a year 2017\")",
-                  result: %{"__value__" => false, "date" => nil, "datetime" => nil}
+                  result: %{
+                    "__value__" => false,
+                    "match" => nil,
+                    "date" => nil,
+                    "datetime" => nil
+                  }
+  @expression_doc expression: "has_date(1)",
+                  result: %{
+                    "__value__" => false,
+                    "date" => nil,
+                    "datetime" => nil,
+                    "match" => nil
+                  }
+  @expression_doc expression: "has_date(var)",
+                  context: %{"var" => 1},
+                  result: %{
+                    "__value__" => false,
+                    "date" => nil,
+                    "datetime" => nil,
+                    "match" => nil
+                  }
   def has_date(ctx, expression) do
     {date, datetime} =
       if datetime = DateHelpers.extract_datetimeish(eval!(expression, ctx)) do
@@ -1039,54 +1084,129 @@ defmodule Expression.Callbacks.Standard do
         {nil, nil}
       end
 
-    %{"__value__" => !!date, "date" => date, "datetime" => datetime}
+    %{
+      "__value__" => !!(date || datetime),
+      "match" => datetime || date,
+      "date" => date,
+      "datetime" => datetime
+    }
   end
 
   @doc """
   Tests whether `expression` is a date equal to `date_string`
   """
   @expression_doc expression: "has_date_eq(\"the date is 15/01/2017\", \"2017-01-15\")",
-                  result: true
+                  result: %{
+                    "__value__" => true,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-01-15]
+                  }
   @expression_doc expression:
                     "has_date_eq(\"there is no date here, just a year 2017\", \"2017-01-15\")",
-                  result: false
+                  result: %{
+                    "error" => %{
+                      "__type__" => "expression/v1error",
+                      "error" => true,
+                      "message" => "The first argument is nil"
+                    },
+                    "__value__" => false,
+                    "match" => nil,
+                    "test" => ~D[2017-01-15]
+                  }
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = DateHelpers.extract_dateish(expression)
     test_date = DateHelpers.extract_dateish(date_string)
-    # Future match result: found_date
-    found_date == test_date
+
+    case date_compare(found_date, test_date) do
+      {:ok, match} ->
+        matched_date_value(match == :eq, found_date, test_date)
+
+      {:error, error} ->
+        matched_date_value(false, found_date, test_date, error: error)
+    end
   end
 
   @doc """
   Tests whether `expression` is a date after the date `date_string`
   """
   @expression_doc expression: "has_date_gt(\"the date is 15/01/2017\", \"2017-01-01\")",
-                  result: true
+                  result: %{
+                    "__value__" => true,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-01-01]
+                  }
   @expression_doc expression: "has_date_gt(\"the date is 15/01/2017\", \"2017-03-15\")",
-                  result: false
+                  result: %{
+                    "__value__" => false,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-03-15]
+                  }
   def has_date_gt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = DateHelpers.extract_dateish(expression)
     test_date = DateHelpers.extract_dateish(date_string)
-    # future match result: found_date
-    Date.compare(found_date, test_date) == :gt
+
+    case date_compare(found_date, test_date) do
+      {:ok, match} ->
+        matched_date_value(match == :gt, found_date, test_date)
+
+      {:error, error} ->
+        matched_date_value(false, found_date, test_date, error: error)
+    end
   end
 
   @doc """
   Tests whether `expression` contains a date before the date `date_string`
   """
   @expression_doc expression: "has_date_lt(\"the date is 15/01/2017\", \"2017-06-01\")",
-                  result: true
+                  result: %{
+                    "__value__" => true,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-06-01]
+                  }
   @expression_doc expression: "has_date_lt(\"the date is 15/01/2021\", \"2017-03-15\")",
-                  result: false
+                  result: %{
+                    "__value__" => false,
+                    "match" => ~D[2021-01-15],
+                    "test" => ~D[2017-03-15]
+                  }
   def has_date_lt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = DateHelpers.extract_dateish(expression)
     test_date = DateHelpers.extract_dateish(date_string)
-    # future match result: found_date
-    Date.compare(found_date, test_date) == :lt
+
+    case date_compare(found_date, test_date) do
+      {:ok, match} ->
+        matched_date_value(match == :lt, found_date, test_date)
+
+      {:error, error} ->
+        matched_date_value(false, found_date, test_date, error: error)
+    end
   end
+
+  @spec matched_date_value(
+          boolean(),
+          match :: DateTime.t() | Date.t() | nil,
+          test :: DateTime.t() | Date.t() | nil,
+          opts :: Keyword.t()
+        ) :: %{required(String.t()) => term}
+  defp matched_date_value(value, match, test, opts \\ []) do
+    value = %{"__value__" => value, "match" => match, "test" => test}
+
+    if error = opts[:error] do
+      Map.put(value, "error", error)
+    else
+      value
+    end
+  end
+
+  @spec date_compare(DateTime.t() | nil, DateTime.t() | nil) ::
+          {:ok, :gt | :lt | :eq}
+          | {:error, %{required(String.t()) => term}}
+  defp date_compare(nil, _date2), do: {:error, Expression.error("The first argument is nil")}
+  defp date_compare(_date1, nil), do: {:error, Expression.error("The second argument is nil")}
+  defp date_compare(date1, date2), do: {:ok, Date.compare(date1, date2)}
 
   @doc """
   Tests whether an email is contained in text
@@ -1213,6 +1333,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_eq(\"the number is 42\", 42)", result: true
   @expression_doc expression: "has_number_eq(\"the number is 42\", 42.0)", result: true
   @expression_doc expression: "has_number_eq(\"the number is 42\", \"42\")", result: true
+  @expression_doc expression: "has_number_eq(\"the number is 0.5\", \"0.5\")", result: true
   @expression_doc expression: "has_number_eq(\"the number is 42.0\", \"42\")", result: true
   @expression_doc expression: "has_number_eq(\"the number is 40\", \"42\")", result: false
   @expression_doc expression: "has_number_eq(\"the number is 40\", \"foo\")", result: false
@@ -1236,6 +1357,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_gt(\"the number is 42\", 40)", result: true
   @expression_doc expression: "has_number_gt(\"the number is 42\", 40.0)", result: true
   @expression_doc expression: "has_number_gt(\"the number is 42\", \"40\")", result: true
+  @expression_doc expression: "has_number_gt(\"the number is 0.6\", \"0.5\")", result: true
   @expression_doc expression: "has_number_gt(\"the number is 42.0\", \"40\")", result: true
   @expression_doc expression: "has_number_gt(\"the number is 40\", \"40\")", result: false
   @expression_doc expression: "has_number_gt(\"the number is 40\", \"foo\")", result: false
@@ -1259,6 +1381,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_gte(\"the number is 42\", 42)", result: true
   @expression_doc expression: "has_number_gte(\"the number is 42\", 42.0)", result: true
   @expression_doc expression: "has_number_gte(\"the number is 42\", \"42\")", result: true
+  @expression_doc expression: "has_number_gte(\"the number is 0.5\", \"0.5\")", result: true
   @expression_doc expression: "has_number_gte(\"the number is 42.0\", \"45\")", result: false
   @expression_doc expression: "has_number_gte(\"the number is 40\", \"45\")", result: false
   @expression_doc expression: "has_number_gte(\"the number is 40\", \"foo\")", result: false
@@ -1282,6 +1405,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lt(\"the number is 42\", 44)", result: true
   @expression_doc expression: "has_number_lt(\"the number is 42\", 44.0)", result: true
   @expression_doc expression: "has_number_lt(\"the number is 42\", \"40\")", result: false
+  @expression_doc expression: "has_number_lt(\"the number is 0.6\", \"0.5\")", result: false
   @expression_doc expression: "has_number_lt(\"the number is 42.0\", \"40\")", result: false
   @expression_doc expression: "has_number_lt(\"the number is 40\", \"40\")", result: false
   @expression_doc expression: "has_number_lt(\"the number is 40\", \"foo\")", result: false
@@ -1305,6 +1429,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lte(\"the number is 42\", 42)", result: true
   @expression_doc expression: "has_number_lte(\"the number is 42\", 42.0)", result: true
   @expression_doc expression: "has_number_lte(\"the number is 42\", \"42\")", result: true
+  @expression_doc expression: "has_number_lte(\"the number is 0.5\", \"0.5\")", result: true
   @expression_doc expression: "has_number_lte(\"the number is 42.0\", \"40\")", result: false
   @expression_doc expression: "has_number_lte(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_lte(\"four hundred\", \"foo\")", result: false
@@ -1336,8 +1461,9 @@ defmodule Expression.Callbacks.Standard do
 
   def has_only_phrase(ctx, expression, phrase) do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
+    result = Enum.map([expression, phrase], &String.downcase(String.trim(to_string(&1))))
 
-    case Enum.map([expression, phrase], fn argument -> String.downcase(to_string(argument)) end) do
+    case result do
       # Future match result: expression
       [same, same] -> true
       _anything_else -> false
@@ -1422,9 +1548,8 @@ defmodule Expression.Callbacks.Standard do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
     lower_expression = String.downcase(to_string(expression))
     lower_phrase = String.downcase(to_string(phrase))
-    found? = String.contains?(lower_expression, lower_phrase)
-    # Future match result: phrase
-    found?
+
+    String.contains?(lower_expression, lower_phrase)
   end
 
   @doc """
@@ -1519,5 +1644,24 @@ defmodule Expression.Callbacks.Standard do
     [map, key] = eval_args!([map, key], ctx)
 
     Map.delete(map, key)
+  end
+
+  @doc """
+  Checks whether `value` is an error
+  """
+  @expression_doc expression: "is_error(error)",
+                  context: %{"error" => Expression.error("the error")},
+                  result: true
+  @expression_doc expression: "is_error(\"not an error\")",
+                  context: %{},
+                  result: false
+  @spec is_error(Expression.Context.t(), %{required(String.t()) => term}) :: boolean
+  # Disable credo as the expression function is standardised to has an `is_*` predicate
+  # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
+  def is_error(ctx, value) do
+    case eval!(value, ctx) do
+      %{"__type__" => "expression/v1error"} -> true
+      _other -> false
+    end
   end
 end
