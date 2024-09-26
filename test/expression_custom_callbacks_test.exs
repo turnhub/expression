@@ -44,7 +44,7 @@ defmodule ExpressionCustomCallbacksTest do
     end
 
     test "wrong arity functions" do
-      assert {:error, "echo is not implemented."} ==
+      assert {:error, "wrong number of arguments to echo."} ==
                Expression.Callbacks.implements(
                  ExpressionCustomCallbacksTest.CustomCallback,
                  "echo",
