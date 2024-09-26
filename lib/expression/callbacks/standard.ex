@@ -1721,6 +1721,10 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => false, "phonenumber" => nil}
   @expression_doc expression: "has_phone(nil, \"US\")",
                   result: %{"__value__" => false, "phonenumber" => nil}
+  @expression_doc expression: "has_phone(\"+27\")",
+                  result: %{"__value__" => false, "phonenumber" => nil}
+  @expression_doc expression: "has_phone(\"+27\", \"ZA\")",
+                  result: %{"__value__" => false, "phonenumber" => nil}
   def has_phone(ctx, expression) do
     [expression] = eval_args!([expression], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, to_string(expression), "")
@@ -1737,8 +1741,11 @@ defmodule Expression.Callbacks.Standard do
 
   defp parse_phone_number(string, country_code) do
     pn =
-      case ExPhoneNumber.parse(string, country_code) do
-        {:ok, pn} -> ExPhoneNumber.format(pn, :e164)
+      with {:ok, pn} <- ExPhoneNumber.parse(string, country_code),
+           true <- ExPhoneNumber.is_possible_number?(string, country_code),
+           true <- ExPhoneNumber.is_valid_number?(pn) do
+        ExPhoneNumber.format(pn, :e164)
+      else
         _ -> nil
       end
 
