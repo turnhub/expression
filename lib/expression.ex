@@ -119,18 +119,16 @@ defmodule Expression do
     |> Eval.default_value()
   end
 
-  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
-    case expression do
-      nil ->
-        ""
+  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks)
 
-      _ ->
-        expression
-        |> parse!
-        |> Eval.eval!(Context.new(context), mod)
-        |> Eval.default_value(handle_not_found: true)
-        |> stringify()
-    end
+  def evaluate_as_string!(nil, _context, _mod), do: ""
+
+  def evaluate_as_string!(expression, context, mod) do
+    expression
+    |> parse!
+    |> Eval.eval!(Context.new(context), mod)
+    |> Eval.default_value(handle_not_found: true)
+    |> stringify()
   end
 
   def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
