@@ -121,14 +121,16 @@ defmodule Expression do
 
   def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     case expression do
-      nil -> ""
+      nil ->
+        ""
+
       _ ->
         expression
         |> parse!
         |> Eval.eval!(Context.new(context), mod)
         |> Eval.default_value(handle_not_found: true)
         |> stringify()
-      end
+    end
   end
 
   def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
