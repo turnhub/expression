@@ -170,6 +170,7 @@ defmodule ExpressionTest do
       assert "123" == Expression.evaluate_as_string!("@([1,2,3])")
       assert "1" == Expression.evaluate_as_string!(1)
       assert "1.5" == Expression.evaluate_as_string!(1.5)
+      assert "" == Expression.evaluate_as_string!(nil)
     end
 
     test "list with attribute" do
