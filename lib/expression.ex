@@ -119,7 +119,11 @@ defmodule Expression do
     |> Eval.default_value()
   end
 
-  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks)
+
+  def evaluate_as_string!(nil, _context, _mod), do: ""
+
+  def evaluate_as_string!(expression, context, mod) do
     expression
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
