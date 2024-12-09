@@ -144,6 +144,15 @@ def deps do
 end
 ```
 
+## Doing releases
+
+Use the Github UI to create a new release and publish it. Make sure to update the
+`mix.exs` and `README.md` version references _before_ publishing otherwise hex.pm
+will complain and prevent you from publishing over an already existing released
+version.
+
+## Documentation
+
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/expression](https://hexdocs.pm/expression).
