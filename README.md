@@ -139,10 +139,19 @@ by adding `expression` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:expression, "~> 2.41.2"}
+    {:expression, "~> 2.41.3"}
   ]
 end
 ```
+
+## Doing releases
+
+Use the Github UI to create a new release and publish it. Make sure to update the
+`mix.exs` and `README.md` version references _before_ publishing otherwise hex.pm
+will complain and prevent you from publishing over an already existing released
+version.
+
+## Documentation
 
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
