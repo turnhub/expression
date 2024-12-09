@@ -119,6 +119,11 @@ defmodule Expression do
     |> Eval.default_value()
   end
 
+  @spec evaluate_as_string!(
+          String.t() | nil,
+          map(),
+          module()
+        ) :: String.t()
   def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks)
 
   def evaluate_as_string!(nil, _context, _mod), do: ""
