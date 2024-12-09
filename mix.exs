@@ -56,16 +56,11 @@ defmodule Expression.MixProject do
       {:nimble_parsec, "~> 1.1"},
       {:number, "~> 1.0"},
       {:decimal, "~> 2.0"},
-      {:timex, "~> 3.7"},
-      {:version_tasks, "~> 0.12.0", only: [:dev], runtime: false}
+      {:timex, "~> 3.7"}
     ]
   end
 
   defp aliases do
-    [
-      "release.major": ["version.up major", "version.tag"],
-      "release.minor": ["version.up minor", "version.tag"],
-      "release.patch": ["version.up patch", "version.tag"]
-    ]
+    []
   end
 end
