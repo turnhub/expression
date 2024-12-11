@@ -120,7 +120,7 @@ defmodule Expression do
   end
 
   @spec evaluate_as_string!(
-          String.t() | nil,
+          any(),
           map(),
           module()
         ) :: String.t()
