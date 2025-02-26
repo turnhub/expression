@@ -47,6 +47,36 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Chunk a list into a list of smaller lists.
+
+  This is useful in cases where one has a large list but want
+  to process them in smaller chunks.
+
+  """
+  @expression_doc doc: """
+                  Split a large set of sentences into a smaller set of sentences.
+                  """,
+                  expression: "chunk_every(sentences, 2)",
+                  result: [
+                    ["the first sentence", "the second sentence"],
+                    ["the third sentence", "the fourth sentence"],
+                    ["the fifth sentence"]
+                  ],
+                  context: %{
+                    "sentences" => [
+                      "the first sentence",
+                      "the second sentence",
+                      "the third sentence",
+                      "the fourth sentence",
+                      "the fifth sentence"
+                    ]
+                  }
+  def chunk_every(ctx, enumerable, count) do
+    [enumerable, count] = eval_args!([enumerable, count], ctx)
+    Enum.chunk_every(enumerable, count)
+  end
+
+  @doc """
   Defines a new date value
   """
   @expression_doc doc: "Construct a date from year, month, and day integers",
@@ -132,6 +162,34 @@ defmodule Expression.Callbacks.Standard do
       Expression.error("Invalid date")
     end
   end
+
+  @doc """
+  Parses a UNIX time and returns a DateTime
+  """
+  @expression_doc expression: "datetime_from_unix(\"1701903600000\", \"millisecond\")",
+                  context: %{},
+                  result: DateTime.from_unix!(1_701_903_600_000, :millisecond)
+  @expression_doc expression: "datetime_from_unix(1701903600000, \"millisecond\")",
+                  context: %{},
+                  result: DateTime.from_unix!(1_701_903_600_000, :millisecond)
+  @expression_doc expression: "datetime_from_unix(\"1701903600\", \"second\")",
+                  context: %{},
+                  result: DateTime.from_unix!(1_701_903_600, :second)
+  @spec datetime_from_unix(map, {:literal, String.t() | integer}, {:literal, unit :: String.t()}) ::
+          DateTime.t()
+  def datetime_from_unix(ctx, unix, unit) do
+    [unix, unit] = eval_args!([unix, unit], ctx)
+    parse_unix(unix, unit)
+  end
+
+  defp parse_unix(unix, unit) when is_binary(unix) and is_binary(unit),
+    do: parse_unix(String.to_integer(unix), unit)
+
+  defp parse_unix(unix, "second"), do: parse_unix(unix, :second)
+  defp parse_unix(unix, "millisecond"), do: parse_unix(unix, :millisecond)
+
+  defp parse_unix(unix, unit) when is_integer(unix) and is_atom(unit),
+    do: DateTime.from_unix!(unix, unit)
 
   @expression_doc doc:
                     ~s[The SWITCH function evaluates one value (called the expression) against a list of values, and returns the result corresponding to the first matching value. If there is no match, an optional default value (the last one in the list if the list is odd) may be returned],
@@ -1044,6 +1102,22 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Captures named values out of a string using a regex.
+  In contrast to `regex_capture()` this returns a map
+  where the keys are the names of the captures and the
+  values are the captured values.
+  """
+  @expression_doc expression: "regex_named_capture(\"testing\", \"test(?P<match>.+)\")",
+                  result: %{"match" => "ing"}
+  @expression_doc expression: "regex_named_capture(\"testing\", \"foo(?P<match>.+)\")",
+                  result: %{}
+  def regex_named_capture(ctx, binary, pattern) do
+    [binary, pattern] = eval_args!([binary, pattern], ctx)
+    regex = Regex.compile!(pattern)
+    Regex.named_captures(regex, binary) || %{}
+  end
+
+  @doc """
   Wraps each item of the list in a new list with the item itself and its
   index in the original list.
   """
@@ -1305,6 +1379,164 @@ defmodule Expression.Callbacks.Standard do
     else
       false
     end
+  end
+
+  @doc """
+  Checks if the given text starts with any of the provided prefixes. The function performs a case-insensitive match.
+  """
+  @expression_doc expression:
+                    ~S|has_any_beginning("HEY HOW ARE YOU?", ["hello", "hey how are you"])|,
+                  result: true
+  @expression_doc expression: ~S|has_any_beginning("كيف حالك؟", ["كيف حالك", "hey how are you"])|,
+                  result: true
+  def has_any_beginning(ctx, text, prefixes) do
+    [text, prefixes] = eval_args!([text, prefixes], ctx)
+    parsed_text = String.downcase(to_string(text))
+    parsed_prefixes = Enum.map(prefixes, &String.downcase(to_string(&1)))
+
+    String.starts_with?(parsed_text, parsed_prefixes)
+  end
+
+  @doc """
+  Check whether the given text exactly matches any of the provided phrases. The function performs a case-insensitive exact match.
+  """
+  @expression_doc expression:
+                    ~S|has_any_exact_phrase("HEY HOW ARE YOU?", ["hello", "hey how are you?"])|,
+                  result: true
+  @expression_doc expression:
+                    ~S|has_any_exact_phrase("كيف حالك؟", ["كيف حالك", "hey how are you"])|,
+                  result: false
+  def has_any_exact_phrase(ctx, text, phrases) do
+    [text, phrases] = eval_args!([text, phrases], ctx)
+
+    phrases
+    |> Enum.map(&String.downcase(to_string(&1)))
+    |> Enum.member?(String.downcase(to_string(text)))
+  end
+
+  @doc """
+  Return true if a list contains any of the provided items
+  """
+  @expression_doc doc: "Check whether the given list contains any of the provided items",
+                  expression: ~S|has_any_member(["A", "B", "C"], ["Z", "C"])|,
+                  result: true
+  def has_any_member(ctx, list, items) do
+    [list, items] = eval_args!([list, items], ctx)
+    Enum.any?(items, &Enum.member?(list, &1))
+  end
+
+  @expression_doc doc:
+                    "Check whether the given text ends with the provided string. The function performs a case-insensitive match.",
+                  expression: ~S|has_end("I would like to book a vaccine", "vaccine")|,
+                  result: true
+  def has_end(ctx, text, end_text) do
+    [text, end_text] = eval_args!([text, end_text], ctx)
+
+    String.ends_with?(
+      String.downcase(to_string(text)),
+      String.downcase(to_string(end_text))
+    )
+  end
+
+  @expression_doc doc:
+                    "Check whether the given text ends with any of the provided strings. The function performs a case-insensitive match.",
+                  expression:
+                    ~S|has_any_end("I would like to book a vaccine", ["appointment", "visit", "vaccine"])|,
+                  result: true
+  def has_any_end(ctx, text, end_texts) do
+    [text, end_texts] = eval_args!([text, end_texts], ctx)
+
+    String.ends_with?(
+      String.downcase(to_string(text)),
+      Enum.map(end_texts, fn end_text -> String.downcase(to_string(end_text)) end)
+    )
+  end
+
+  @doc """
+  URL encode an expression
+  """
+  @expression_doc expression: "url_encode(\"hello world\")",
+                  result: URI.encode("hello world")
+  def url_encode(ctx, thing) do
+    eval!(thing, ctx)
+    |> URI.encode()
+  end
+
+  @doc """
+  URL decode an expression
+  """
+  @expression_doc expression: "url_decode(\"hello%20world\")",
+                  result: "hello world"
+  def url_decode(ctx, thing) do
+    eval!(thing, ctx)
+    |> URI.decode()
+  end
+
+  @doc """
+  Base64 encode an expression
+  """
+  @expression_doc expression: "base64_encode(\"hello world\")",
+                  result: "aGVsbG8gd29ybGQ="
+  def base64_encode(ctx, thing) do
+    thing = eval!(thing, ctx)
+    Base.encode64(thing)
+  end
+
+  @doc """
+  Base64 decode an expression
+  """
+  @expression_doc expression: "base64_decode(\"aGVsbG8gd29ybGQ=\")",
+                  result: "hello world"
+  def base64_decode(ctx, thing) do
+    thing = eval!(thing, ctx)
+
+    case Base.decode64(thing) do
+      {:ok, decoded_thing} -> decoded_thing
+      :error -> Expression.error("Unable to decode")
+    end
+  end
+
+  @doc """
+  Rejects elements from a list by returning a new list that contains only the
+  elements for which `reject_fun` is truthy.
+  """
+  @expression_doc expression: "reject([\"A\", \"B\", \"C\", \"B\"], & &1 == \"B\")",
+                  result: ["A", "C"]
+  def reject(ctx, enumerable, reject_fun) do
+    [enumerable, reject_fun] = eval_args!([enumerable, reject_fun], ctx)
+
+    enumerable
+    # Wrap each list item in a list because `reject_fun`
+    # expects a list of arguments
+    |> Enum.map(&[&1])
+    |> Enum.reject(reject_fun)
+    # Unwrap each list item
+    |> Enum.map(fn [item] -> item end)
+  end
+
+  @doc """
+  Removes duplicate values from a list.
+  """
+  @expression_doc expression: "uniq([\"A\", \"B\", \"C\", \"B\"])", result: ["A", "B", "C"]
+  def uniq(ctx, enumerable) do
+    [enumerable] = eval_args!([enumerable], ctx)
+
+    Enum.uniq(enumerable)
+  end
+
+  @doc """
+  Sorts a list of values using the result of the sorter function
+  """
+  @expression_doc expression: "sort_by([\"a\", \"b\", \"c\"], &rand_between(1, 5))",
+                  fake_result: ["b", "c", "a"]
+  def sort_by(ctx, enumerable, sorter_fun) do
+    [enumerable, sorter_fun] = eval_args!([enumerable, sorter_fun], ctx)
+
+    enumerable
+    |> Enum.map(&[&1])
+    |> Enum.sort_by(sorter_fun)
+    # Unwrap each list item
+    |> Enum.map(fn [item] -> item end)
   end
 
   @doc """
