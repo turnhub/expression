@@ -29,6 +29,23 @@ defmodule Expression.Callbacks.Standard do
   alias Expression.DateHelpers
 
   @punctuation_pattern ~r/\s*[,:;!?.-]\s*|\s/
+
+  @doc """
+  Return the number of entries in a list, string, or a map.
+  """
+  @expression_doc expression: "count([1, 2, 3])", result: 3
+  @expression_doc expression: "count(\"zoë\")", result: 3
+  @expression_doc expression: "count(map)", context: %{"map" => %{"foo" => "bar"}}, result: 1
+  @expression_doc expression: "count(nil_value)", context: %{"nil_value" => nil}, result: 0
+  def count(ctx, term) do
+    case eval!(term, ctx) do
+      list when is_list(list) -> length(list)
+      binary when is_binary(binary) -> String.length(binary)
+      map when is_map(map) -> Enum.count(map)
+      nil -> 0
+    end
+  end
+
   @doc """
   Defines a new date value
   """
@@ -282,6 +299,45 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Filters a list by returning a new list that contains only the
+  elements for which `filter_fun` is truthy.
+  """
+  @expression_doc expression: "filter([\"A\", \"B\", \"C\", \"B\"], & &1 == \"B\")",
+                  result: ["B", "B"]
+  def filter(ctx, enumerable, filter_fun) do
+    [enumerable, filter_fun] = eval_args!([enumerable, filter_fun], ctx)
+
+    enumerable
+    # Wrap each list item in a list because `filter_fun`
+    # expects a list of arguments
+    |> Enum.map(&[&1])
+    |> Enum.filter(filter_fun)
+    # Unwrap each list item
+    |> Enum.map(fn [item] -> item end)
+  end
+
+  @doc """
+  Finds the first element in the list for which `filter_fun` is truthy.
+  """
+  @expression_doc expression:
+                    "find([[\"Hello\", \"World\"], [\"Hi\", \"World\"]], & &1[0] == \"Hi\")",
+                  result: ["Hi", "World"]
+  def find(ctx, enumerable, find_fun) do
+    [enumerable, find_fun] = eval_args!([enumerable, find_fun], ctx)
+
+    enumerable
+    # Wrap each list item in a list because `find_fun`
+    # expects a list of arguments
+    |> Enum.map(&[&1])
+    |> Enum.find(find_fun)
+    # Unwrap element found
+    |> then(fn
+      nil -> nil
+      [element] -> element
+    end)
+  end
+
+  @doc """
   Returns only the hour of a datetime (0 to 23)
   """
   @expression_doc doc: "Get the current hour",
@@ -479,6 +535,20 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Returns true if the argument is nil or an empty string
+  """
+  @expression_doc doc: "Check whether the given argument is nil or an empty string",
+                  expression: ~S|is_nil_or_empty(nil)|,
+                  result: true
+  # Skipping the Credo check since this is a Stacks DSL Expression, not an
+  # Elixir function in Turn
+  # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
+  def is_nil_or_empty(ctx, arg) do
+    [arg] = eval_args!([arg], ctx)
+    arg == nil or arg == ""
+  end
+
+  @doc """
   Returns `true` if any argument is `true`.
   Returns the first truthy value found or otherwise false.
 
@@ -553,6 +623,19 @@ defmodule Expression.Callbacks.Standard do
     [a, b] = eval_args!([a, b], ctx)
     :math.pow(a, b)
   end
+
+  @doc """
+  Split a string into an array using the pattern as separator.
+  Defaults to split the string using a space.
+  """
+  @expression_doc expression: "split(\"testing something\")", result: ["testing", "something"]
+  @expression_doc expression: "split(\"testing something\", \"e\")",
+                  result: ["t", "sting som", "thing"]
+  def split(ctx, binary),
+    do: String.split(eval!(binary, ctx), " ")
+
+  def split(ctx, binary, pattern),
+    do: String.split(eval!(binary, ctx), eval!(pattern, ctx))
 
   @doc """
   Returns the sum of all arguments, equivalent to the + operator
@@ -944,6 +1027,37 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Capture values out of a string using a regex.
+  Returns the list of captures in a list.
+  Returns `nil` if there was nothing to match
+  """
+  @expression_doc expression: "regex_capture(\"testing\", \"test(.+)\")", result: ["ing"]
+  @expression_doc expression: "regex_capture(\"testing\", \"foo(.+)\")", result: nil
+  def regex_capture(ctx, binary, pattern) do
+    [binary, pattern] = eval_args!([binary, pattern], ctx)
+    regex = Regex.compile!(pattern)
+
+    case Regex.run(regex, binary) do
+      nil -> nil
+      [_matched_text | captures] -> captures
+    end
+  end
+
+  @doc """
+  Wraps each item of the list in a new list with the item itself and its
+  index in the original list.
+  """
+  @expression_doc expression: "with_index([\"A\", \"B\", \"C\"])",
+                  result: [["A", 0], ["B", 1], ["C", 2]]
+  def with_index(ctx, enumerable) do
+    [enumerable] = eval_args!([enumerable], ctx)
+
+    enumerable
+    |> Enum.with_index()
+    |> Enum.map(fn {element, index} -> [element, index] end)
+  end
+
+  @doc """
   Extracts the nth word from the given text string. If stop is a negative number,
   then it is treated as count backwards from the end of the text. If by_spaces is
   specified and is `true` then the function splits the text into words only by spaces.
@@ -1163,6 +1277,17 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Return true if a list contains all the provided items
+  """
+  @expression_doc doc: "Check whether the given list contains all the provided items",
+                  expression: ~S|has_all_members(["A", "B", "C"], ["C", "B"])|,
+                  result: true
+  def has_all_members(ctx, list, items) do
+    [list, items] = eval_args!([list, items], ctx)
+    Enum.all?(items, &Enum.member?(list, &1))
+  end
+
+  @doc """
   Tests whether all the words are contained in text
 
   The words can be in any order and may appear more than once.
@@ -1217,6 +1342,36 @@ defmodule Expression.Callbacks.Standard do
         "match" => if(match?, do: Enum.join(matched_haystack_words, " "), else: nil)
       }
     end
+  end
+
+  @doc """
+  Check whether the given text contains any of the provided strings. The function performs a case-insensitive exact match.
+  The second argument expects either a list of strings or a single string with comma-separated phrases.
+  """
+  @expression_doc expression:
+                    ~S|has_any_phrase("hey how are you?", ["hello", "bye bye", "how are you"])|,
+                  result: true
+  @expression_doc expression: ~S|has_any_phrase("مرحباً كيف حالك؟", ["كيف حالك", "how are you"])|,
+                  result: true
+  @expression_doc expression:
+                    ~S|has_any_phrase("hey how are you?", "hello, bye bye, how are you")|,
+                  result: true
+  def has_any_phrase(ctx, text, phrases) do
+    [text, phrases] = eval_args!([text, phrases], ctx)
+
+    phrases =
+      if is_binary(phrases) do
+        phrases
+        |> String.split(",")
+        |> Enum.map(&String.trim/1)
+      else
+        phrases
+      end
+
+    String.contains?(
+      String.downcase(to_string(text)),
+      Enum.map(phrases, fn phrase -> String.downcase(to_string(phrase)) end)
+    )
   end
 
   @doc """
@@ -1509,6 +1664,46 @@ defmodule Expression.Callbacks.Standard do
       {float, ""} -> float
       _ -> nil
     end
+  end
+
+  @doc """
+  Parses a string as JSON when given a String which is assumed
+  to be JSON encoded.
+
+  Will return whatever was supplied as is when the given
+  argument is not a String.
+  """
+  @expression_doc expression: "parse_json('[1,2,3]')",
+                  result: [1, 2, 3]
+  @expression_doc expression: "parse_json('[1,2,3]')",
+                  result: [1, 2, 3]
+  def parse_json(ctx, data) do
+    case eval!(data, ctx) do
+      binary when is_binary(binary) -> Jason.decode!(binary)
+      other -> other
+    end
+  end
+
+  @doc """
+  Converts a data structure to JSON
+  """
+  @expression_doc expression: "json(data)",
+                  context: %{"data" => %{"foo" => "bar"}},
+                  result: Jason.encode!(%{"foo" => "bar"})
+  def json(ctx, data) do
+    data = eval!(data, ctx)
+    Jason.encode!(data)
+  end
+
+  @doc """
+  Return true if a list has the given item as a member
+  """
+  @expression_doc doc: "Check whether the given list has the item as a member",
+                  expression: ~S|has_member(["A", "B", "C"], "C")|,
+                  result: true
+  def has_member(ctx, list, item) do
+    [list, item] = eval_args!([list, item], ctx)
+    Enum.member?(list, item)
   end
 
   @doc """
@@ -1829,6 +2024,17 @@ defmodule Expression.Callbacks.Standard do
   end
 
   @doc """
+  Generate a random number between `min` and `max`
+  """
+  @expression_doc doc: "Generate a number between 1 and 10",
+                  expression: "rand_between(1, 10)",
+                  fake_result: 3
+  def rand_between(ctx, min, max) do
+    [min, max] = eval_args!([min, max], ctx)
+    Enum.random(min..max)
+  end
+
+  @doc """
   Return the division remainder of two integers.
   """
   @expression_doc expression: "rem(4, 2)",
@@ -1839,6 +2045,20 @@ defmodule Expression.Callbacks.Standard do
     [integer1, integer2] = eval_args!([integer1, integer2], ctx)
 
     rem(integer1, integer2)
+  end
+
+  @doc """
+  Reduces elements from a list by applying a function and collecting the
+  results in an accumulator.
+
+  The first argument to the lambda function is the item from the list,
+  the second argument is the accumulator.
+  """
+  @expression_doc expression: "reduce(1..3, 0, & &1 + &2)", result: 6
+  def reduce(ctx, enumerable, accumulator, reducer) do
+    [enumerable, accumulator, reducer] = eval_args!([enumerable, accumulator, reducer], ctx)
+
+    Enum.reduce(enumerable, accumulator, &reducer.([&1, &2]))
   end
 
   @doc """
