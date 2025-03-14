@@ -216,7 +216,7 @@ defmodule Expression.Eval do
 
     comparison_result =
       cond do
-        is_struct(date_a, Date) and is_nil(date_b) ->
+        is_nil(date_a) or is_nil(date_b) ->
           nil
 
         is_struct(date_a, Date) ->
