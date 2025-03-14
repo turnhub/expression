@@ -52,20 +52,12 @@ defmodule Expression.Context do
   # Implictly convert the string "0" as a number
   defp iterate({key, "0"}, _opts), do: {key, 0}
 
-  # Prevent implictly converting numbers starting with a zero
-  defp iterate({key, "0" <> value}, opts) when is_binary(value) do
-    if String.match?("0" <> value, ~r/^[0-9]/) do
-      {key, "0" <> value}
-    else
-      iterate({key, value}, opts)
-    end
-  end
-
   defp iterate({key, value}, opts) when is_binary(value) do
-    if Keyword.get(opts, :skip_context_evaluation?, false) do
-      {key, value}
-    else
-      {key, evaluate!(value, opts)}
+    cond do
+      # Prevent implicitly converting numbers starting with a zero - only allows strings fully made of digits or decimals
+      String.starts_with?(value, "0") and String.match?(value, ~r/^\d+(\.\d+)?$/) -> {key, value}
+      Keyword.get(opts, :skip_context_evaluation?, false) -> {key, value}
+      true -> {key, evaluate!(value, opts)}
     end
   end
 

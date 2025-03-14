@@ -2,6 +2,34 @@ defmodule Expression.ContextTest do
   use ExUnit.Case
   alias Expression.Context
 
+  test "new context from a context containing a date string in dd/mm/yyyy" do
+    context = %{"block" => %{"value" => %{"birth_date" => "19/10/2002"}}}
+
+    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-19]}}} =
+             Context.new(context)
+  end
+
+  test "new context from a context containing a date string in dd/mm/yyyy starting with 0" do
+    context = %{"block" => %{"value" => %{"birth_date" => "09/10/2002"}}}
+
+    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-09]}}} =
+             Context.new(context)
+  end
+
+  test "new context from a context containing a date string in dd-mm-yyyy" do
+    context = %{"block" => %{"value" => %{"birth_date" => "19-10-2002"}}}
+
+    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-19]}}} =
+             Context.new(context)
+  end
+
+  test "new context from a context containing a date string in dd-mm-yyyy starting with 0" do
+    context = %{"block" => %{"value" => %{"birth_date" => "09-10-2002"}}}
+
+    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-09]}}} =
+             Context.new(context)
+  end
+
   test "new context from a context containing a datetime string" do
     context = %{"block" => %{"value" => %{"program_start_date" => "2022-11-10T13:40:05.921378"}}}
 
