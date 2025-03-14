@@ -399,4 +399,52 @@ defmodule Expression.EvalTest do
       assert true == Eval.eval!(ast, %{"a" => ~U[2023-11-16 10:40:50.277482Z]})
     end
   end
+
+  describe "handling nil values in date/datetime comparisons" do
+    test "op function directly handles nil in date/datetime comparisons" do
+      # Direct tests of the op function for nil handling
+      date = ~D[2024-01-01]
+      datetime = ~U[2024-01-01 10:40:50.277482Z]
+      date_str = "2024-01-01"
+      datetime_str = "2024-01-01T10:40:50.277482Z"
+
+      # Date with nil string tests
+      assert false == Expression.Eval.op(:>, date, nil)
+      assert false == Expression.Eval.op(:<, date, nil)
+      assert false == Expression.Eval.op(:==, date, nil)
+      assert false == Expression.Eval.op(:>=, date, nil)
+      assert false == Expression.Eval.op(:<=, date, nil)
+
+      # nil with Date string tests
+      assert false == Expression.Eval.op(:>, nil, date)
+      assert false == Expression.Eval.op(:<, nil, date)
+      assert false == Expression.Eval.op(:==, nil, date)
+      assert false == Expression.Eval.op(:>=, nil, date)
+      assert false == Expression.Eval.op(:<=, nil, date)
+
+      # DateTime with nil tests
+      assert false == Expression.Eval.op(:>, datetime, nil)
+      assert false == Expression.Eval.op(:<, datetime, nil)
+      assert false == Expression.Eval.op(:==, datetime, nil)
+      assert false == Expression.Eval.op(:>=, datetime, nil)
+      assert false == Expression.Eval.op(:<=, datetime, nil)
+
+      # nil with DateTime tests
+      assert false == Expression.Eval.op(:>, nil, datetime)
+      assert false == Expression.Eval.op(:<, nil, datetime)
+      assert false == Expression.Eval.op(:==, nil, datetime)
+      assert false == Expression.Eval.op(:>=, nil, datetime)
+      assert false == Expression.Eval.op(:<=, nil, datetime)
+
+      # Date string with nil
+      assert false == Expression.Eval.op(:>, date_str, nil)
+      assert false == Expression.Eval.op(:<, date_str, nil)
+      assert false == Expression.Eval.op(:==, date_str, nil)
+
+      # DateTime string with nil
+      assert false == Expression.Eval.op(:>, datetime_str, nil)
+      assert false == Expression.Eval.op(:<, datetime_str, nil)
+      assert false == Expression.Eval.op(:==, datetime_str, nil)
+    end
+  end
 end

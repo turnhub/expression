@@ -203,6 +203,11 @@ defmodule Expression.Eval do
   # Support comparing a `Date`/`DateTime` value with an ISO8601 date/datetime string
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def op(operator, a, b)
+      when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and (is_nil(a) or is_nil(b)) do
+    false
+  end
+
+  def op(operator, a, b)
       when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and
              (((is_struct(a, Date) or is_struct(a, DateTime)) and is_binary(b)) or
                 (is_binary(a) and (is_struct(b, Date) or is_struct(b, DateTime)))) do
@@ -215,15 +220,10 @@ defmodule Expression.Eval do
       end
 
     comparison_result =
-      cond do
-        is_nil(date_a) or is_nil(date_b) ->
-          nil
-
-        is_struct(date_a, Date) ->
-          Date.compare(date_a, date_b)
-
-        true ->
-          DateTime.compare(date_a, date_b)
+      if is_struct(date_a, Date) do
+        Date.compare(date_a, date_b)
+      else
+        DateTime.compare(date_a, date_b)
       end
 
     case {operator, comparison_result} do
