@@ -445,6 +445,13 @@ defmodule Expression.EvalTest do
       assert false == Expression.Eval.op(:>, datetime_str, nil)
       assert false == Expression.Eval.op(:<, datetime_str, nil)
       assert false == Expression.Eval.op(:==, datetime_str, nil)
+
+      # Comparing nil with nil values
+      assert false == Expression.Eval.op(:>, nil, nil)
+      assert false == Expression.Eval.op(:<, nil, nil)
+      assert false == Expression.Eval.op(:==, nil, nil)
+      assert false == Expression.Eval.op(:>=, nil, nil)
+      assert false == Expression.Eval.op(:<=, nil, nil)
     end
   end
 end
