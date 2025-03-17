@@ -54,7 +54,8 @@ defmodule Expression.Context do
 
   defp iterate({key, value}, opts) when is_binary(value) do
     cond do
-      # Prevent implicitly converting numbers starting with a zero - only allows strings fully made of digits or decimals
+      # Prevent implicitly converting numbers starting with a zero
+      # Only allows strings fully made of digits or decimals
       String.starts_with?(value, "0") and String.match?(value, ~r/^\d+(\.\d+)?$/) -> {key, value}
       Keyword.get(opts, :skip_context_evaluation?, false) -> {key, value}
       true -> {key, evaluate!(value, opts)}
