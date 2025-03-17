@@ -201,6 +201,15 @@ defmodule Expression.Eval do
     do: Date.compare(a, b) == :eq
 
   # Support comparing a `Date`/`DateTime` value with an ISO8601 date/datetime string
+  def op(operator, a, b) when operator in [:=, :==] and is_nil(a) and is_nil(b) do
+    true
+  end
+
+  def op(operator, a, b)
+      when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and (is_nil(a) or is_nil(b)) do
+    false
+  end
+
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   def op(operator, a, b)
       when operator in [:=, :==, :!=, :<, :<=, :>, :>=] and
