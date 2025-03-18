@@ -1,7 +1,7 @@
 defmodule Expression.MixProject do
   use Mix.Project
 
-  @version "2.43.0"
+  @version "2.44.0"
 
   def project do
     [
