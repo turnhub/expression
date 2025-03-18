@@ -224,10 +224,15 @@ defmodule Expression.Eval do
       end
 
     comparison_result =
-      if is_struct(date_a, Date) do
-        Date.compare(date_a, date_b)
-      else
-        DateTime.compare(date_a, date_b)
+      cond do
+        is_nil(date_a) or is_nil(date_b) ->
+          nil
+
+        is_struct(date_a, Date) ->
+          Date.compare(date_a, date_b)
+
+        true ->
+          DateTime.compare(date_a, date_b)
       end
 
     case {operator, comparison_result} do

@@ -454,5 +454,39 @@ defmodule Expression.EvalTest do
       assert false == Expression.Eval.op(:>=, nil, nil)
       assert false == Expression.Eval.op(:<=, nil, nil)
     end
+
+    test "op function directly handles binary in date/datetime comparisons" do
+      # Direct tests of the op function for binary handling
+      date = ~D[2024-01-01]
+      datetime = ~U[2024-01-01 10:40:50.277482Z]
+
+      # Date with binary string tests
+      assert false == Expression.Eval.op(:>, date, "binary")
+      assert false == Expression.Eval.op(:<, date, "binary")
+      assert false == Expression.Eval.op(:==, date, "binary")
+      assert false == Expression.Eval.op(:>=, date, "binary")
+      assert false == Expression.Eval.op(:<=, date, "binary")
+
+      # "binary" with Date string tests
+      assert false == Expression.Eval.op(:>, "binary", date)
+      assert false == Expression.Eval.op(:<, "binary", date)
+      assert false == Expression.Eval.op(:==, "binary", date)
+      assert false == Expression.Eval.op(:>=, "binary", date)
+      assert false == Expression.Eval.op(:<=, "binary", date)
+
+      # DateTime with "binary" tests
+      assert false == Expression.Eval.op(:>, datetime, "binary")
+      assert false == Expression.Eval.op(:<, datetime, "binary")
+      assert false == Expression.Eval.op(:==, datetime, "binary")
+      assert false == Expression.Eval.op(:>=, datetime, "binary")
+      assert false == Expression.Eval.op(:<=, datetime, "binary")
+
+      # "binary" with DateTime tests
+      assert false == Expression.Eval.op(:>, "binary", datetime)
+      assert false == Expression.Eval.op(:<, "binary", datetime)
+      assert false == Expression.Eval.op(:==, "binary", datetime)
+      assert false == Expression.Eval.op(:>=, "binary", datetime)
+      assert false == Expression.Eval.op(:<=, "binary", datetime)
+    end
   end
 end
