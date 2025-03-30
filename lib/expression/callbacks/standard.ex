@@ -90,16 +90,14 @@ defmodule Expression.Callbacks.Standard do
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 
-    fields = [
-      calendar: Calendar.ISO,
-      year: year,
-      month: month,
-      day: day,
-      time_zone: "Etc/UTC",
-      zone_abbr: "UTC"
-    ]
-
-    struct(Date, fields)
+    with true <- is_integer(year),
+         true <- is_integer(month),
+         true <- is_integer(day),
+         {:ok, date} <- Date.new(year, month, day) do
+      date
+    else
+      _ -> Expression.error("Invalid date")
+    end
   end
 
   @doc """
