@@ -23,6 +23,14 @@ defmodule Expression.V2.Callbacks.Standard do
                     "day" => 31
                   },
                   result: ~D[2022-01-31]
+  @expression_doc doc: "Invalid date inputs",
+                  expression: "date(nil, nil, nil)",
+                  context: %{},
+                  result: %{
+                    "__type__" => "expression/v2error",
+                    "error" => true,
+                    "message" => "Invalid date"
+                  }
   def date(_ctx, year, month, day) do
     with true <- is_integer(year),
          true <- is_integer(month),
@@ -30,7 +38,7 @@ defmodule Expression.V2.Callbacks.Standard do
          {:ok, date} <- Date.new(year, month, day) do
       date
     else
-      _ -> Expression.error("Invalid date")
+      _ -> Expression.V2.error("Invalid date")
     end
   end
 

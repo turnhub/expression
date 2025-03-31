@@ -87,6 +87,14 @@ defmodule Expression.Callbacks.Standard do
                     "day" => 31
                   },
                   result: ~D[2022-01-31]
+  @expression_doc doc: "Invalid date inputs",
+                  expression: "date(nil, nil, nil)",
+                  context: %{},
+                  result: %{
+                    "__type__" => "expression/v1error",
+                    "error" => true,
+                    "message" => "Invalid date"
+                  }
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 

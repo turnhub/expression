@@ -15,6 +15,16 @@ defmodule Expression.AutodocTest do
 
     assert expression_docs == [
              %{
+               context: %{},
+               doc: "Invalid date inputs",
+               result: %{
+                 "__type__" => "expression/v1error",
+                 "error" => true,
+                 "message" => "Invalid date"
+               },
+               expression: "date(nil, nil, nil)"
+             },
+             %{
                doc: "Construct a date from year, month, and day integers",
                expression: "date(year, month, day)",
                context: %{"day" => 31, "month" => 1, "year" => 2022},

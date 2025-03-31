@@ -257,4 +257,11 @@ defmodule Expression.V2 do
     |> Compile.wrap_in_context()
     |> Macro.to_string()
   end
+
+  @doc """
+  Generate an error map
+  """
+  @spec error(message :: term) :: %{required(String.t()) => term}
+  def error(message),
+    do: %{"__type__" => "expression/v2error", "error" => true, "message" => to_string(message)}
 end
