@@ -1,8 +1,11 @@
 name: Elixir CI
 
 on:
-  push:
   pull_request:
+    types: [opened, synchronize]
+  push:
+    branches:
+      - develop
 
 jobs:
   build:
