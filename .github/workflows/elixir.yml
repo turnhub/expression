@@ -12,7 +12,7 @@ jobs:
       matrix:
         elixir: ["1.15"]
         otp: ["26"]
-        cache_version: ["2"]
+        cache_version: ["3"]
 
     steps:
       - uses: actions/checkout@v4
