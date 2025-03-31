@@ -1001,19 +1001,14 @@ defmodule Expression.V2.Callbacks.Standard do
     !!group
   end
 
+  @spec extract_numberish(nil | number) :: nil | number
   defp extract_numberish(nil), do: nil
   defp extract_numberish(value) when is_number(value), do: value
 
   defp extract_numberish(expression) do
     with [match] <-
-           Regex.run(~r/([0-9]+\.?[0-9]*)/u, replace_arabic_numerals(expression), capture: :first),
-         float <- parse_float(match) do
-      float
-    else
-      # Regex can return nil
-      nil -> nil
-      # Float parsing can return :error
-      :error -> nil
+           Regex.run(~r/([0-9]+\.?[0-9]*)/u, replace_arabic_numerals(expression), capture: :first) do
+      parse_float(match)
     end
   end
 
@@ -1039,6 +1034,7 @@ defmodule Expression.V2.Callbacks.Standard do
     end)
   end
 
+  @spec parse_float(number | String.t()) :: number | nil
   def parse_float(number) when is_number(number), do: number
 
   def parse_float(binary) when is_binary(binary) do
@@ -1082,7 +1078,6 @@ defmodule Expression.V2.Callbacks.Standard do
       float == number
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -1103,7 +1098,6 @@ defmodule Expression.V2.Callbacks.Standard do
       number > float
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -1124,7 +1118,6 @@ defmodule Expression.V2.Callbacks.Standard do
       number >= float
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -1145,7 +1138,6 @@ defmodule Expression.V2.Callbacks.Standard do
       number < float
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -1168,7 +1160,6 @@ defmodule Expression.V2.Callbacks.Standard do
       number <= float
     else
       nil -> false
-      :error -> false
     end
   end
 
