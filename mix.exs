@@ -29,11 +29,7 @@ defmodule Expression.MixProject do
   end
 
   defp dialyzer() do
-    [
-      plt_core_path: ".plts",
-      plt_file: {:no_warn, ".plts/dialyzer.plt"},
-      ignore_warnings: ".dialyzer_ignore.exs"
-    ]
+    [plt_file: {:no_warn, "priv/plts/expression.plt"}, ignore_warnings: ".dialyzer_ignore.exs"]
   end
 
   # Run "mix help compile.app" to learn about applications.
