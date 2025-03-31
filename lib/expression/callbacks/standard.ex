@@ -1865,14 +1865,8 @@ defmodule Expression.Callbacks.Standard do
 
   defp extract_numberish(expression) do
     with [match] <-
-           Regex.run(~r/([0-9]+\.?[0-9]*)/u, replace_arabic_numerals(expression), capture: :first),
-         float <- parse_float(match) do
-      float
-    else
-      # Regex can return nil
-      nil -> nil
-      # Float parsing can return :error
-      :error -> nil
+           Regex.run(~r/([0-9]+\.?[0-9]*)/u, replace_arabic_numerals(expression), capture: :first) do
+      parse_float(match)
     end
   end
 
@@ -1988,7 +1982,6 @@ defmodule Expression.Callbacks.Standard do
       float == number
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -2012,7 +2005,6 @@ defmodule Expression.Callbacks.Standard do
       number > float
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -2036,7 +2028,6 @@ defmodule Expression.Callbacks.Standard do
       number >= float
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -2060,7 +2051,6 @@ defmodule Expression.Callbacks.Standard do
       number < float
     else
       nil -> false
-      :error -> false
     end
   end
 
@@ -2086,7 +2076,6 @@ defmodule Expression.Callbacks.Standard do
       number <= float
     else
       nil -> false
-      :error -> false
     end
   end
 
