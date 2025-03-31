@@ -93,7 +93,7 @@ defmodule Expression.Callbacks.Standard do
                   result: %{
                     "__type__" => "expression/v1error",
                     "error" => true,
-                    "message" => "Invalid date"
+                    "message" => "Invalid date: date(nil, nil, nil)"
                   }
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
@@ -104,7 +104,10 @@ defmodule Expression.Callbacks.Standard do
          {:ok, date} <- Date.new(year, month, day) do
       date
     else
-      _ -> Expression.error("Invalid date")
+      _ ->
+        Expression.error(
+          "Invalid date: date(#{inspect(year)}, #{inspect(month)}, #{inspect(day)})"
+        )
     end
   end
 

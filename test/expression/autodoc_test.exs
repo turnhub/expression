@@ -20,7 +20,7 @@ defmodule Expression.AutodocTest do
                result: %{
                  "__type__" => "expression/v1error",
                  "error" => true,
-                 "message" => "Invalid date"
+                 "message" => "Invalid date: date(nil, nil, nil)"
                },
                expression: "date(nil, nil, nil)"
              },
