@@ -93,7 +93,8 @@ defmodule Expression.Callbacks.Standard do
                   result: %{
                     "__type__" => "expression/v1error",
                     "error" => true,
-                    "message" => "Invalid date: date(nil, nil, nil)"
+                    "message" => "Invalid date: date(nil, nil, nil)",
+                    "__value__" => nil
                   }
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
@@ -150,7 +151,8 @@ defmodule Expression.Callbacks.Standard do
                   result: %{
                     "__type__" => "expression/v1error",
                     "error" => true,
-                    "message" => "Invalid date"
+                    "message" => "Invalid date",
+                    "__value__" => nil
                   }
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = DateHelpers.extract_datetimeish(eval!(datetime, ctx))
@@ -1703,7 +1705,8 @@ defmodule Expression.Callbacks.Standard do
                     "error" => %{
                       "__type__" => "expression/v1error",
                       "error" => true,
-                      "message" => "The first argument is nil"
+                      "message" => "The first argument is nil",
+                      "__value__" => nil
                     },
                     "__value__" => false,
                     "match" => nil,
