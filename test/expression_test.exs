@@ -523,12 +523,14 @@ defmodule ExpressionTest do
         Expression.evaluate_block!("block.value > 0", %{"block" => %{"value" => "not a number"}})
       end
 
-      assert_raise Protocol.UndefinedError, ~r/Enumerable not implemented for \"A\"/, fn ->
-        Expression.evaluate("@append(first_list, second_list)", %{
-          "first_list" => "A",
-          "second_list" => "B"
-        })
-      end
+      assert_raise Protocol.UndefinedError,
+                   ~r/protocol Enumerable not implemented for .*\s*"A"/s,
+                   fn ->
+                     Expression.evaluate("@append(first_list, second_list)", %{
+                       "first_list" => "A",
+                       "second_list" => "B"
+                     })
+                   end
 
       assert_raise BadMapError, "expected a map, got: [\"A\", \"B\", \"C\"]", fn ->
         Expression.evaluate("@delete(map, \"key\")", %{
