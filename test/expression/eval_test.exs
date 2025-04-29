@@ -107,10 +107,15 @@ defmodule Expression.EvalTest do
     {:ok, ast, "", _, _, _} =
       Parser.parse("@if(image_response.status == 200,\nimage_response.body.id,\nfalse)")
 
-    assert false ==
-             Eval.eval!(ast, %{
-               "image_response" => %{"status" => 500, "body" => "Internal Server Error"}
-             })
+    assert Eval.eval!(ast, %{
+             "image_response" => %{"status" => 500, "body" => "Internal Server Error"}
+           }) == false
+
+    {:ok, ast, "", _, _, _} = Parser.parse("@if(result == 1,\nresult.message,\nfalse)")
+
+    assert Eval.eval!(ast, %{
+             "result" => %{"__value__" => 1, "error" => false, "message" => "some reason"}
+           }) == "some reason"
   end
 
   describe "lambdas" do

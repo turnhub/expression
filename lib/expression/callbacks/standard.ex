@@ -597,10 +597,14 @@ defmodule Expression.Callbacks.Standard do
                   code_expression: "# Shorthand\nif(false, do: \"Yes\", else: \"No\")",
                   result: "No"
   def if_(ctx, condition, yes, no) do
-    if(eval!(condition, ctx),
-      do: eval!(yes, ctx),
-      else: eval!(no, ctx)
-    )
+    result =
+      case eval!(condition, ctx) do
+        # Handle complex objects
+        %{"__value__" => value} -> value
+        other -> other
+      end
+
+    if result, do: eval!(yes, ctx), else: eval!(no, ctx)
   end
 
   @doc """

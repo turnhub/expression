@@ -483,6 +483,36 @@ defmodule ExpressionTest do
                })
     end
 
+    test "checking for complex objects with if" do
+      assert Expression.evaluate!("@IF(var, var, 0)", %{
+               "var" => %{
+                 "__value__" => 1,
+                 "error" => false,
+                 "message" => "some reason"
+               }
+             }) == 1
+
+      assert Expression.evaluate!("@IF(var, var, 0)", %{
+               "var" => %{
+                 "__value__" => nil,
+                 "error" => true,
+                 "message" => "some reason"
+               }
+             }) == 0
+
+      assert Expression.evaluate!("@IF(var, var, 0)", %{}) == 0
+
+      assert Expression.evaluate!("@IF(var.foo, var.foo, 0)", %{
+               "var" => %{
+                 "foo" => %{
+                   "__value__" => 1,
+                   "error" => false,
+                   "message" => "some reason"
+                 }
+               }
+             }) == 1
+    end
+
     test "function calls with expressions" do
       assert {:ok, ["Dear ", "lovely client"]} =
                Expression.evaluate("Dear @IF(contact.gender = 'M', 'Sir', 'lovely client')", %{
