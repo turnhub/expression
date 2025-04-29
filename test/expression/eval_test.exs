@@ -114,8 +114,8 @@ defmodule Expression.EvalTest do
     {:ok, ast, "", _, _, _} = Parser.parse("@if(result == 1,\nresult.message,\nfalse)")
 
     assert Eval.eval!(ast, %{
-             "result" => %{"__value__" => 1, "error" => false, "message" => "some reason"}
-           }) == "some reason"
+             "result" => %{"__value__" => 1, "error" => false, "message" => "some message"}
+           }) == "some message"
   end
 
   describe "lambdas" do

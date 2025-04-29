@@ -483,12 +483,12 @@ defmodule ExpressionTest do
                })
     end
 
-    test "checking for complex objects with if" do
+    test "checking for complex values with if" do
       assert Expression.evaluate!("@IF(var, var, 0)", %{
                "var" => %{
                  "__value__" => 1,
                  "error" => false,
-                 "message" => "some reason"
+                 "message" => "some message"
                }
              }) == 1
 
@@ -496,7 +496,7 @@ defmodule ExpressionTest do
                "var" => %{
                  "__value__" => nil,
                  "error" => true,
-                 "message" => "some reason"
+                 "message" => "some message"
                }
              }) == 0
 
@@ -507,7 +507,7 @@ defmodule ExpressionTest do
                  "foo" => %{
                    "__value__" => 1,
                    "error" => false,
-                   "message" => "some reason"
+                   "message" => "some message"
                  }
                }
              }) == 1

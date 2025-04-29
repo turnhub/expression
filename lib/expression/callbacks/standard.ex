@@ -599,7 +599,7 @@ defmodule Expression.Callbacks.Standard do
   def if_(ctx, condition, yes, no) do
     result =
       case eval!(condition, ctx) do
-        # Handle complex objects
+        # Handle complex values
         %{"__value__" => value} -> value
         other -> other
       end
