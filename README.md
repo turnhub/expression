@@ -139,7 +139,7 @@ by adding `expression` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:expression, "~> 2.44.0"}
+    {:expression, "~> 2.45.1"}
   ]
 end
 ```
