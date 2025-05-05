@@ -1921,8 +1921,22 @@ defmodule Expression.Callbacks.Standard do
                   result: [1, 2, 3]
   def parse_json(ctx, data) do
     case eval!(data, ctx) do
-      binary when is_binary(binary) -> Jason.decode!(binary)
-      other -> other
+      binary when is_binary(binary) ->
+        case JSON.decode(binary) do
+          {:ok, decoded} ->
+            decoded
+
+          {:error, {:invalid_byte, position, _}} ->
+            Expression.error(
+              "Unable to decode JSON \"#{binary}\" due to an invalid byte at position #{position}"
+            )
+
+          {:error, _reason} ->
+            Expression.error("Unable to decode JSON: \"#{binary}\"")
+        end
+
+      other ->
+        other
     end
   end
 
