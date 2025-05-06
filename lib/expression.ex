@@ -98,7 +98,7 @@ defmodule Expression do
     end
   end
 
-  @spec time_struct?(String.t() | Number.t() | Time.t()) :: boolean
+  @spec time_struct?(String.t() | Time.t()) :: boolean
   def time_struct?(value), do: is_struct(value, Time)
 
   def evaluate_block!(
