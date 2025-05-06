@@ -83,10 +83,12 @@ defmodule Expression do
     String.replace(expression, ~r/@([a-z]+)(\(|\.)?/i, "@@\\g{1}\\g{2}")
   end
 
-  @spec parse!(String.t() | Number.t()) :: Keyword.t()
+  @spec parse!(String.t() | Number.t() | Time.t()) :: Keyword.t()
   def parse!(expression) when is_number(expression), do: to_string(expression) |> parse!()
 
   def parse!(expression) do
+    expression = if time_struct?(expression), do: Time.to_string(expression), else: expression
+
     case Parser.parse(expression) do
       {:ok, ast, "", _, _, _} ->
         ast
@@ -95,6 +97,9 @@ defmodule Expression do
         raise "Unable to parse expression: #{expression}, remainder: #{inspect(remainder)}"
     end
   end
+
+  @spec time_struct?(String.t() | Time.t()) :: boolean
+  def time_struct?(value), do: is_struct(value, Time)
 
   def evaluate_block!(
         expression,

@@ -178,6 +178,11 @@ defmodule ExpressionTest do
                Expression.evaluate_as_string!("@foo[0].name", %{"foo" => [%{"name" => "bar"}]})
     end
 
+    test "Stringify time sigil" do
+      assert "11:00:00" =
+               Expression.evaluate_as_string!(~T[11:00:00])
+    end
+
     test "list with out of bound indicess" do
       assert nil ==
                Expression.evaluate!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 100})
