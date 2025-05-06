@@ -87,7 +87,7 @@ defmodule Expression do
   def parse!(expression) when is_number(expression), do: to_string(expression) |> parse!()
 
   def parse!(expression) do
-    expression = if is_time?(expression), do: Time.to_string(expression), else: expression
+    expression = if time_struct?(expression), do: Time.to_string(expression), else: expression
 
     case Parser.parse(expression) do
       {:ok, ast, "", _, _, _} ->
@@ -98,8 +98,8 @@ defmodule Expression do
     end
   end
 
-  @spec is_time?(String.t() | Number.t() | Time.t()) :: boolean
-  def is_time?(value), do: is_struct(value, Time)
+  @spec time_struct?(String.t() | Number.t() | Time.t()) :: boolean
+  def time_struct?(value), do: is_struct(value, Time)
 
   def evaluate_block!(
         expression,
