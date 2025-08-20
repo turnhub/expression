@@ -13,7 +13,7 @@ defmodule Expression.V2 do
   * [strings](https://hexdocs.pm/elixir/typespecs.html#basic-types) either double or single quoted.
   * [integers](https://hexdocs.pm/elixir/typespecs.html#basic-types) such as `1`, `2`, `40`, `55`
   * [floats](https://hexdocs.pm/elixir/typespecs.html#basic-types) such as `3.141592653589793`
-  * [booleans](https://hexdocs.pm/elixir/typespecs.html#basic-types) which can be written in any mixed case such as `tRue` or `TRUE`, `False` etc
+  * [booleans](https://hexdocs.pm/elixir/typespecs.html#basic-types) which can be written only as `true` or `false`
   * `Range.t` such as `1..10`, also with steps `1..10//2`
   * `Date.t` such as `2022-01-01` which is parsed into `~D[2022-01-01]`
   * `Time.t` such as `10:30` which is parsed into `~T[10:30:00]`
