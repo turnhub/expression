@@ -478,9 +478,11 @@ defmodule Expression.ParserTest do
 
     test "booleans" do
       assert_ast([expression: [literal: true]], "@(true)")
-      assert_ast([expression: [literal: true]], "@(True)")
       assert_ast([expression: [literal: false]], "@(false)")
-      assert_ast([expression: [literal: false]], "@(False)")
+      assert_ast([expression: [atom: "true"]], "@(True)")
+      assert_ast([expression: [atom: "false"]], "@(False)")
+      assert_ast([expression: [atom: "true"]], "@(TRUE)")
+      assert_ast([expression: [atom: "false"]], "@(FALSE)")
     end
   end
 
