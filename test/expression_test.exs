@@ -4,8 +4,16 @@ defmodule ExpressionTest do
 
   describe "evaluate" do
     test "evaluate_as_boolean!" do
-      assert true == Expression.evaluate_as_boolean!("@(tRuE)")
-      assert false == Expression.evaluate_as_boolean!("@(fAlSe)")
+      assert_raise RuntimeError, fn ->
+        Expression.evaluate_as_boolean!("@(tRuE)")
+      end
+
+      assert_raise RuntimeError, fn ->
+        Expression.evaluate_as_boolean!("@(fAlSe)")
+      end
+
+      assert true == Expression.evaluate_as_boolean!("@(true)")
+      assert false == Expression.evaluate_as_boolean!("@(false)")
       assert true == Expression.evaluate_as_boolean!("@(1 > 0)")
       assert true == Expression.evaluate_as_boolean!("@has_all_words('foo', 'foo')")
       assert true == Expression.evaluate_as_boolean!("@or(has_all_words('foo', 'bar'), true)")
@@ -163,8 +171,10 @@ defmodule ExpressionTest do
     test "stringify primitives" do
       assert iso_dt = Expression.evaluate_as_string!("@NOW()")
       assert {:ok, %DateTime{}, 0} = DateTime.from_iso8601(iso_dt)
-      assert "true" == Expression.evaluate_as_string!("@(tRuE)")
-      assert "false" == Expression.evaluate_as_string!("@(FaLsE)")
+      assert "@true" == Expression.evaluate_as_string!("@(tRuE)")
+      assert "@false" == Expression.evaluate_as_string!("@(FaLsE)")
+      assert "true" == Expression.evaluate_as_string!("@(true)")
+      assert "false" == Expression.evaluate_as_string!("@(false)")
       assert "1.23" == Expression.evaluate_as_string!("@(1.23)")
       assert "2022-06-28" == Expression.evaluate_as_string!("@date(2022, 6, 28)")
       assert "123" == Expression.evaluate_as_string!("@([1,2,3])")
