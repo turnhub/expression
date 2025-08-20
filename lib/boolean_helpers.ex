@@ -4,20 +4,20 @@ defmodule Expression.BooleanHelpers do
 
   def boolean_true(combinator \\ empty()) do
     combinator
-    |> choice([string("t"), string("T")])
-    |> choice([string("r"), string("R")])
-    |> choice([string("u"), string("U")])
-    |> choice([string("e"), string("E")])
+    |> string("t")
+    |> string("r")
+    |> string("u")
+    |> string("e")
     |> replace(true)
   end
 
   def boolean_false(combinator \\ empty()) do
     combinator
-    |> choice([string("f"), string("F")])
-    |> choice([string("a"), string("A")])
-    |> choice([string("l"), string("L")])
-    |> choice([string("s"), string("S")])
-    |> choice([string("e"), string("E")])
+    |> string("f")
+    |> string("a")
+    |> string("l")
+    |> string("s")
+    |> string("e")
     |> replace(false)
   end
 
