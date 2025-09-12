@@ -33,6 +33,7 @@ defmodule Expression.Autodoc do
     quote do
       @expression_docs []
       Module.register_attribute(__MODULE__, :expression_doc, accumulate: true)
+      Module.register_attribute(__MODULE__, :expression_category, accumulate: false)
       @on_definition Expression.Autodoc
       @before_compile Expression.Autodoc
 
@@ -47,11 +48,13 @@ defmodule Expression.Autodoc do
 
   def annotate_method(module, function, args) do
     if expression_doc = Module.delete_attribute(module, :expression_doc) do
-      update_annotations(module, function, args, expression_doc)
+      category = Module.get_attribute(module, :expression_category) || "uncategorized"
+      Module.delete_attribute(module, :expression_category)
+      update_annotations(module, function, args, expression_doc, category)
     end
   end
 
-  def update_annotations(module, function, args, []) do
+  def update_annotations(module, function, args, [], category) do
     existing_expression_docs = Module.get_attribute(module, :expression_docs)
 
     {_line_number, doc} = get_existing_docstring(module)
@@ -59,12 +62,12 @@ defmodule Expression.Autodoc do
     {function_name, function_type} = format_function_name(function)
 
     Module.put_attribute(module, :expression_docs, [
-      {function_name, function_type, format_function_args(args), doc, []}
+      {function_name, function_type, category, format_function_args(args), doc, []}
       | existing_expression_docs
     ])
   end
 
-  def update_annotations(module, function, args, expression_docs) do
+  def update_annotations(module, function, args, expression_docs, category) do
     existing_expression_docs = Module.get_attribute(module, :expression_docs)
 
     {line_number, doc} = get_existing_docstring(module)
@@ -132,7 +135,7 @@ defmodule Expression.Autodoc do
     {function_name, function_type} = format_function_name(function)
 
     Module.put_attribute(module, :expression_docs, [
-      {function_name, function_type, format_function_args(args), doc,
+      {function_name, function_type, category, format_function_args(args), doc,
        format_docs(expression_docs)}
       | existing_expression_docs
     ])
