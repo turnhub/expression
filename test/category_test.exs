@@ -1,8 +1,10 @@
 defmodule CategoryTest do
   use ExUnit.Case
 
+  alias Expression.Callbacks.Standard
+
   test "expression_docs includes categories" do
-    docs = Expression.Callbacks.Standard.expression_docs()
+    docs = Standard.expression_docs()
 
     # Check that we have docs
     assert length(docs) > 0
