@@ -235,6 +235,7 @@ defmodule Expression.Callbacks.Standard do
                     "The ROUND function rounds a number to a specified number of digits. For example, if cell A1 contains 23.7825, and you want to round that value to zero decimal places you can do ROUND(23.7825)",
                   expression: "ROUND(23.7825)",
                   result: "24"
+  @expression_category "number"
   def round(ctx, value) do
     [value] = eval_args!([value], ctx)
 
@@ -313,6 +314,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "date"
   def datevalue(ctx, date) do
     datetime = DateHelpers.extract_datetimeish(eval!(date, ctx))
 
@@ -742,6 +744,7 @@ defmodule Expression.Callbacks.Standard do
   def split(ctx, binary),
     do: String.split(eval!(binary, ctx), " ")
 
+  @expression_category "string"
   def split(ctx, binary, pattern),
     do: String.split(eval!(binary, ctx), eval!(pattern, ctx))
 
@@ -852,11 +855,13 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "fixed(3.7979, 2, false)", result: "3.80"
   @expression_doc expression: "fixed(3.7979, 2)", result: "3.80"
   @expression_doc expression: "fixed(0.0909, 2)", result: "0.09"
+  @expression_category "string"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
     Number.Delimit.number_to_delimited(number, precision: precision)
   end
 
+  @expression_category "string"
   def fixed(ctx, number, precision, no_commas) do
     case eval_args!([number, precision, no_commas], ctx) do
       [number, precision, true] ->
@@ -1113,6 +1118,7 @@ defmodule Expression.Callbacks.Standard do
     |> Enum.join(separator)
   end
 
+  @expression_category "string"
   def remove_first_word(ctx, binary, separator) do
     [binary, separator] = eval_args!([binary, separator], ctx)
 
@@ -1144,6 +1150,7 @@ defmodule Expression.Callbacks.Standard do
     |> Enum.join(separator)
   end
 
+  @expression_category "string"
   def remove_last_word(ctx, binary, separator) do
     [binary, separator] = eval_args!([binary, separator], ctx)
 
@@ -1232,6 +1239,7 @@ defmodule Expression.Callbacks.Standard do
     part
   end
 
+  @expression_category "string"
   def word(ctx, binary, n, by_spaces) do
     [binary, n, by_spaces] = eval_args!([binary, n, by_spaces], ctx)
     splitter = if(by_spaces, do: " ", else: @punctuation_pattern)
@@ -1272,6 +1280,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "string"
   def word_count(ctx, binary, by_spaces) do
     text = eval!(binary, ctx)
 
@@ -1324,6 +1333,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "string"
   def word_slice(ctx, binary, start, stop) do
     [binary, start, stop] = eval_args!([binary, start, stop], ctx)
 
@@ -1344,6 +1354,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "string"
   def word_slice(ctx, binary, start, stop, by_spaces) do
     [binary, start, stop, by_spaces] = eval_args!([binary, start, stop, by_spaces], ctx)
     splitter = if(by_spaces, do: " ", else: @punctuation_pattern)
@@ -1987,8 +1998,10 @@ defmodule Expression.Callbacks.Standard do
     end)
   end
 
+  @expression_category "number"
   def parse_float(number) when is_number(number), do: number
 
+  @expression_category "number"
   def parse_float(binary) when is_binary(binary) do
     case Float.parse(binary) do
       {float, ""} -> float
@@ -2257,6 +2270,7 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => false, "phonenumber" => nil}
   @expression_doc expression: "has_phone(\"+27\", \"ZA\")",
                   result: %{"__value__" => false, "phonenumber" => nil}
+  @expression_category "string"
   def has_phone(ctx, expression) do
     [expression] = eval_args!([expression], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, to_string(expression), "")
@@ -2264,6 +2278,7 @@ defmodule Expression.Callbacks.Standard do
     parse_phone_number(letters_removed, "")
   end
 
+  @expression_category "string"
   def has_phone(ctx, expression, country_code) do
     [expression, country_code] = eval_args!([expression, country_code], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, to_string(expression), "")
