@@ -33,6 +33,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Return the number of entries in a list, string, or a map.
   """
+  @expression_category "enum"
   @expression_doc expression: "count([1, 2, 3])", result: 3
   @expression_doc expression: "count(\"zoë\")", result: 3
   @expression_doc expression: "count(map)", context: %{"map" => %{"foo" => "bar"}}, result: 1
@@ -53,6 +54,7 @@ defmodule Expression.Callbacks.Standard do
   to process them in smaller chunks.
 
   """
+  @expression_category "enum"
   @expression_doc doc: """
                   Split a large set of sentences into a smaller set of sentences.
                   """,
@@ -79,6 +81,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Defines a new date value
   """
+  @expression_category "date"
   @expression_doc doc: "Construct a date from year, month, and day integers",
                   expression: "date(year, month, day)",
                   context: %{
@@ -128,6 +131,7 @@ defmodule Expression.Callbacks.Standard do
   Specifying a negative offset results in date calculations back in time.
 
   """
+  @expression_category "date"
   @expression_doc doc: "Calculates a new datetime based on the offset and unit provided.",
                   expression: "datetime_add(datetime, offset, unit)",
                   context: %{
@@ -177,6 +181,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Parses a UNIX time and returns a DateTime
   """
+  @expression_category "date"
   @expression_doc expression: "datetime_from_unix(\"1701903600000\", \"millisecond\")",
                   context: %{},
                   result: DateTime.from_unix!(1_701_903_600_000, :millisecond)
@@ -202,6 +207,7 @@ defmodule Expression.Callbacks.Standard do
   defp parse_unix(unix, unit) when is_integer(unix) and is_atom(unit),
     do: DateTime.from_unix!(unix, unit)
 
+  @expression_category "logical"
   @expression_doc doc:
                     ~s[The SWITCH function evaluates one value (called the expression) against a list of values, and returns the result corresponding to the first matching value. If there is no match, an optional default value (the last one in the list if the list is odd) may be returned],
                   expression: ~s[SWITCH(1, 1, "Sunday", 2, "Monday", 3, "Tuesday", "No match")],
@@ -220,6 +226,7 @@ defmodule Expression.Callbacks.Standard do
     |> Map.get(key, optional)
   end
 
+  @expression_category "number"
   @expression_doc doc:
                     "The ROUND function rounds a number to a specified number of digits. For example, if cell A1 contains 23.7825, and you want to round that value to two decimal places you can do ROUND(23.7825, 2)",
                   expression: "ROUND(23.7825, 2)",
@@ -228,6 +235,7 @@ defmodule Expression.Callbacks.Standard do
                     "The ROUND function rounds a number to a specified number of digits. For example, if cell A1 contains 23.7825, and you want to round that value to zero decimal places you can do ROUND(23.7825)",
                   expression: "ROUND(23.7825)",
                   result: "24"
+  @expression_category "number"
   def round(ctx, value) do
     [value] = eval_args!([value], ctx)
 
@@ -237,6 +245,7 @@ defmodule Expression.Callbacks.Standard do
     |> Decimal.to_string(:normal)
   end
 
+  @expression_category "number"
   def round(ctx, value, places) do
     [value, places] = eval_args!([value, places], ctx)
 
@@ -255,6 +264,7 @@ defmodule Expression.Callbacks.Standard do
 
   Implementation based on https://support.microsoft.com/en-us/office/mid-function-2eba57be-0c05-4bdc-bf81-5ecf4421eb8a
   """
+  @expression_category "string"
   @expression_doc doc:
                     "MID returns a specific number of characters from a text string, starting at the position you specify, based on the number of characters you specify.",
                   expression: ~s[MID("Fluid", 1, 5)],
@@ -278,6 +288,7 @@ defmodule Expression.Callbacks.Standard do
   It will fallback to "%Y-%m-%d %H:%M:%S" if no formatting is supplied
 
   """
+  @expression_category "date"
   @expression_doc doc: "Convert a date from a piece of text to a formatted date string",
                   expression: "datevalue(\"2022-01-01\")",
                   result: %{
@@ -303,6 +314,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "date"
   def datevalue(ctx, date) do
     datetime = DateHelpers.extract_datetimeish(eval!(date, ctx))
 
@@ -317,6 +329,7 @@ defmodule Expression.Callbacks.Standard do
   Parse random dates and times with `strftime` patterns and return a DateTime value
   when it matches.
   """
+  @expression_category "date"
   @expression_doc doc: "Parse a date value using strftime formatting and return a DateTime",
                   expression: "parse_datevalue(\"2016-02-29T22:25:00-00:00\", \"%FT%T%:z\")",
                   result: DateTime.new!(~D[2016-02-29], ~T[22:25:00])
@@ -338,6 +351,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns only the day of the month of a date (1 to 31)
   """
+  @expression_category "date"
   @expression_doc doc: "Getting today's day of the month",
                   expression: "day(date(2022, 9, 10))",
                   result: 10
@@ -352,6 +366,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Moves a date by the given number of months
   """
+  @expression_category "date"
   @expression_doc doc: "Move the date in a date object by 1 month",
                   expression: "edate(right_now, 1)",
                   context: %{right_now: DateTime.new!(Date.new!(2022, 1, 1), Time.new!(0, 0, 0))},
@@ -371,6 +386,7 @@ defmodule Expression.Callbacks.Standard do
   Filters a list by returning a new list that contains only the
   elements for which `filter_fun` is truthy.
   """
+  @expression_category "enum"
   @expression_doc expression: "filter([\"A\", \"B\", \"C\", \"B\"], & &1 == \"B\")",
                   result: ["B", "B"]
   def filter(ctx, enumerable, filter_fun) do
@@ -388,6 +404,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Finds the first element in the list for which `filter_fun` is truthy.
   """
+  @expression_category "enum"
   @expression_doc expression:
                     "find([[\"Hello\", \"World\"], [\"Hi\", \"World\"]], & &1[0] == \"Hi\")",
                   result: ["Hi", "World"]
@@ -409,6 +426,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns only the hour of a datetime (0 to 23)
   """
+  @expression_category "date"
   @expression_doc doc: "Get the current hour",
                   expression: "hour(now())",
                   fake_result: DateTime.utc_now().hour
@@ -420,6 +438,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns only the minute of a datetime (0 to 59)
   """
+  @expression_category "date"
   @expression_doc doc: "Get the current minute",
                   expression: "minute(now())",
                   fake_result: DateTime.utc_now().minute
@@ -431,6 +450,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns only the month of a date (1 to 12)
   """
+  @expression_category "date"
   @expression_doc doc: "Get the current month",
                   expression: "month(now())",
                   fake_result: DateTime.utc_now().month
@@ -446,6 +466,7 @@ defmodule Expression.Callbacks.Standard do
   It is currently @NOW()
   ```
   """
+  @expression_category "date"
   @expression_doc doc: "return the current timestamp as a DateTime value",
                   expression: "now()",
                   fake_result: DateTime.utc_now()
@@ -462,6 +483,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns only the second of a datetime (0 to 59)
   """
+  @expression_category "date"
   @expression_doc expression: "second(now)",
                   context: %{"now" => DateTime.utc_now()},
                   fake_result: DateTime.utc_now().second
@@ -473,6 +495,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Defines a time value which can be used for time arithmetic
   """
+  @expression_category "date"
   @expression_doc expression: "time(12, 13, 14)",
                   result: %Time{hour: 12, minute: 13, second: 14}
   def time(ctx, hours, minutes, seconds) do
@@ -483,6 +506,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Converts time stored in text to an actual time
   """
+  @expression_category "date"
   @expression_doc expression: "timevalue(\"2:30\")",
                   result: %Time{hour: 2, minute: 30, second: 0}
   @expression_doc expression: "timevalue(\"2:30:55\")",
@@ -511,6 +535,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the current date
   """
+  @expression_category "date"
   @expression_doc expression: "today()",
                   fake_result: Date.utc_today()
   def today(_ctx) do
@@ -520,6 +545,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the day of the week of a date (1 for Sunday to 7 for Saturday)
   """
+  @expression_category "date"
   @expression_doc expression: "weekday(today)",
                   context: %{"today" => ~D[2022-11-06]},
                   result: 1
@@ -539,6 +565,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns only the year of a date
   """
+  @expression_category "date"
   @expression_doc expression: "year(now)",
                   context: %{"now" => DateTime.utc_now()},
                   fake_result: DateTime.utc_now().year
@@ -550,6 +577,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns `true` if and only if all its arguments evaluate to `true`
   """
+  @expression_category "logical"
   @expression_doc expression: "and(contact.gender = \"F\", contact.age >= 18)",
                   code_expression: "contact.gender = \"F\" and contact.age >= 18",
                   context: %{
@@ -576,6 +604,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns `false` if the argument supplied evaluates to truth-y
   """
+  @expression_category "logical"
   @expression_doc expression: "not(false)", result: true
   def not_(ctx, argument) do
     !eval!(argument, ctx)
@@ -584,6 +613,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns one value if the condition evaluates to `true`, and another value if it evaluates to `false`
   """
+  @expression_category "logical"
   @expression_doc expression: "if(true, \"Yes\", \"No\")",
                   code_expression: """
                   if true do
@@ -610,6 +640,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns true if the argument is nil or an empty string
   """
+  @expression_category "logical"
   @expression_doc doc: "Check whether the given argument is nil or an empty string",
                   expression: ~S|is_nil_or_empty(nil)|,
                   result: true
@@ -627,6 +658,7 @@ defmodule Expression.Callbacks.Standard do
 
   Accepts any amount of arguments for testing truthiness.
   """
+  @expression_category "logical"
   @expression_doc doc: "Return true if any of the values are true",
                   expression: "or(true, false)",
                   code_expression: "true or false",
@@ -663,6 +695,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the absolute value of a number
   """
+  @expression_category "number"
   @expression_doc expression: "abs(-1)", result: 1
   @expression_doc expression: "abs(-0.5)", result: 0.5
   def abs(ctx, number) do
@@ -672,6 +705,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the maximum value of all arguments
   """
+  @expression_category "number"
   @expression_doc expression: "max(1, 2, 3)",
                   result: 3
   def max_vargs(ctx, arguments) do
@@ -681,6 +715,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the minimum value of all arguments
   """
+  @expression_category "number"
   @expression_doc expression: "min(1, 2, 3)",
                   result: 1
   def min_vargs(ctx, arguments) do
@@ -690,6 +725,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the result of a number raised to a power - equivalent to the ^ operator
   """
+  @expression_category "number"
   @expression_doc expression: "power(2, 3)",
                   fake_result: 8.0
   def power(ctx, a, b) do
@@ -701,12 +737,14 @@ defmodule Expression.Callbacks.Standard do
   Split a string into an array using the pattern as separator.
   Defaults to split the string using a space.
   """
+  @expression_category "string"
   @expression_doc expression: "split(\"testing something\")", result: ["testing", "something"]
   @expression_doc expression: "split(\"testing something\", \"e\")",
                   result: ["t", "sting som", "thing"]
   def split(ctx, binary),
     do: String.split(eval!(binary, ctx), " ")
 
+  @expression_category "string"
   def split(ctx, binary, pattern),
     do: String.split(eval!(binary, ctx), eval!(pattern, ctx))
 
@@ -717,6 +755,7 @@ defmodule Expression.Callbacks.Standard do
   You have @SUM(contact.reports, contact.forms) reports and forms
   ```
   """
+  @expression_category "number"
   @expression_doc expression: "sum(1, 2, 3)",
                   result: 6
   def sum_vargs(ctx, arguments) do
@@ -731,6 +770,7 @@ defmodule Expression.Callbacks.Standard do
   "As easy as A, B, C"
   ```
   """
+  @expression_category "string"
   @expression_doc expression: "char(65)",
                   result: "A"
   def char(ctx, code) do
@@ -741,6 +781,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Removes all non-printable characters from a text string
   """
+  @expression_category "string"
   @expression_doc expression: "clean(value)",
                   context: %{"value" => <<65, 0, 66, 0, 67>>},
                   result: "ABC"
@@ -763,6 +804,7 @@ defmodule Expression.Callbacks.Standard do
   "The numeric code of A is 65"
   ```
   """
+  @expression_category "string"
   @expression_doc expression: "code(\"A\")",
                   result: 65
   @expression_doc expression: "code(nil)",
@@ -784,6 +826,7 @@ defmodule Expression.Callbacks.Standard do
   "Your name is name surname"
   ```
   """
+  @expression_category "string"
   @expression_doc expression: "concatenate(contact.first_name, \" \", contact.last_name)",
                   context: %{
                     "contact" => %{
@@ -806,16 +849,19 @@ defmodule Expression.Callbacks.Standard do
   "You have 4.21 in your account"
   ```
   """
+  @expression_category "number"
   @expression_doc expression: "fixed(4.209922, 2, false)", result: "4.21"
   @expression_doc expression: "fixed(4000.424242, 4, true)", result: "4000.4242"
   @expression_doc expression: "fixed(3.7979, 2, false)", result: "3.80"
   @expression_doc expression: "fixed(3.7979, 2)", result: "3.80"
   @expression_doc expression: "fixed(0.0909, 2)", result: "0.09"
+  @expression_category "string"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
     Number.Delimit.number_to_delimited(number, precision: precision)
   end
 
+  @expression_category "string"
   def fixed(ctx, number, precision, no_commas) do
     case eval_args!([number, precision, no_commas], ctx) do
       [number, precision, true] ->
@@ -835,6 +881,7 @@ defmodule Expression.Callbacks.Standard do
 
   It will return `nil` if the given string is `nil`
   """
+  @expression_category "string"
   @expression_doc expression: "left(\"foobar\", 4)",
                   result: "foob"
 
@@ -855,6 +902,7 @@ defmodule Expression.Callbacks.Standard do
   Returns the number of characters in a text string,
   returns 0 if the string is null or empty
   """
+  @expression_category "string"
   @expression_doc expression: "len(\"foo\")",
                   result: 3
   @expression_doc expression: "len(\"zoë\")",
@@ -868,6 +916,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Converts a text string to lowercase
   """
+  @expression_category "string"
   @expression_doc expression: "lower(\"Foo Bar\")",
                   result: "foo bar"
   @expression_doc expression: "lower(nil)",
@@ -883,6 +932,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Capitalizes the first letter of every word in a text string
   """
+  @expression_category "string"
   @expression_doc expression: "proper(\"foo bar\")",
                   result: "Foo Bar"
   @expression_doc expression: "proper(nil)",
@@ -901,6 +951,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Repeats text a given number of times
   """
+  @expression_category "string"
   @expression_doc expression: "rept(\"*\", 10)",
                   result: "**********"
   @expression_doc expression: "rept(nil, 10)",
@@ -918,6 +969,7 @@ defmodule Expression.Callbacks.Standard do
   Returns the last characters in a text string.
   This is Unicode safe.
   """
+  @expression_category "string"
   @expression_doc expression: "right(\"testing\", 3)",
                   result: "ing"
   @expression_doc expression:
@@ -937,6 +989,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Substitutes new_text for old_text in a text string. If instance_num is given, then only that instance will be substituted
   """
+  @expression_category "string"
   @expression_doc expression: "substitute(\"I can't\", \"can't\", \"can do\")",
                   result: "I can do"
   @expression_doc expression: "substitute(nil, \"can't\", \"can do\")",
@@ -953,6 +1006,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the unicode character specified by a number
   """
+  @expression_category "string"
   @expression_doc expression: "unichar(65)", result: "A"
   @expression_doc expression: "unichar(233)", result: "é"
   def unichar(ctx, code) do
@@ -963,6 +1017,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns a numeric code for the first character in a text string
   """
+  @expression_category "string"
   @expression_doc expression: "unicode(\"A\")", result: 65
   @expression_doc expression: "unicode(\"é\")", result: 233
   def unicode(ctx, letter) do
@@ -973,6 +1028,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Converts a text string to uppercase
   """
+  @expression_category "string"
   @expression_doc expression: "upper(\"foo\")",
                   result: "FOO"
   @expression_doc expression: "upper(nil)",
@@ -988,6 +1044,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns the first word in the given text - equivalent to WORD(text, 1)
   """
+  @expression_category "string"
   @expression_doc expression: "first_word(\"foo bar baz\")",
                   result: "foo"
   @expression_doc expression: "first_word(nil)",
@@ -1000,6 +1057,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Formats a number as a percentage
   """
+  @expression_category "number"
   @expression_doc expression: "percent(2/10)", result: "20%"
   @expression_doc expression: "percent(0.2)", result: "20%"
   @expression_doc expression: "percent(d)", context: %{"d" => "0.2"}, result: "20%"
@@ -1014,6 +1072,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Formats digits in text for reading in TTS
   """
+  @expression_category "string"
   @expression_doc expression: "read_digits(\"+271\")", result: "plus two seven one"
   @expression_doc expression: "read_digits(nil)", result: ""
   def read_digits(ctx, binary) do
@@ -1043,6 +1102,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Removes the first word from the given text. The remaining text will be unchanged
   """
+  @expression_category "string"
   @expression_doc expression: "remove_first_word(\"foo bar\")", result: "bar"
   @expression_doc expression: "remove_first_word(\"foo-bar\", \"-\")", result: "bar"
   @expression_doc expression: "remove_first_word(nil)", result: ""
@@ -1058,6 +1118,7 @@ defmodule Expression.Callbacks.Standard do
     |> Enum.join(separator)
   end
 
+  @expression_category "string"
   def remove_first_word(ctx, binary, separator) do
     [binary, separator] = eval_args!([binary, separator], ctx)
 
@@ -1068,6 +1129,7 @@ defmodule Expression.Callbacks.Standard do
     |> Enum.join(separator)
   end
 
+  @expression_category "string"
   @expression_doc doc:
                     "Remove the last word from a list of words, using the specified separator ",
                   expression: ~s{remove_last_word("foo-bar", "-")},
@@ -1088,6 +1150,7 @@ defmodule Expression.Callbacks.Standard do
     |> Enum.join(separator)
   end
 
+  @expression_category "string"
   def remove_last_word(ctx, binary, separator) do
     [binary, separator] = eval_args!([binary, separator], ctx)
 
@@ -1104,6 +1167,7 @@ defmodule Expression.Callbacks.Standard do
   Returns the list of captures in a list.
   Returns `nil` if there was nothing to match
   """
+  @expression_category "string"
   @expression_doc expression: "regex_capture(\"testing\", \"test(.+)\")", result: ["ing"]
   @expression_doc expression: "regex_capture(\"testing\", \"foo(.+)\")", result: nil
   def regex_capture(ctx, binary, pattern) do
@@ -1122,6 +1186,7 @@ defmodule Expression.Callbacks.Standard do
   where the keys are the names of the captures and the
   values are the captured values.
   """
+  @expression_category "string"
   @expression_doc expression: "regex_named_capture(\"testing\", \"test(?P<match>.+)\")",
                   result: %{"match" => "ing"}
   @expression_doc expression: "regex_named_capture(\"testing\", \"foo(?P<match>.+)\")",
@@ -1136,6 +1201,7 @@ defmodule Expression.Callbacks.Standard do
   Wraps each item of the list in a new list with the item itself and its
   index in the original list.
   """
+  @expression_category "enum"
   @expression_doc expression: "with_index([\"A\", \"B\", \"C\"])",
                   result: [["A", 0], ["B", 1], ["C", 2]]
   def with_index(ctx, enumerable) do
@@ -1152,6 +1218,7 @@ defmodule Expression.Callbacks.Standard do
   specified and is `true` then the function splits the text into words only by spaces.
   Otherwise the text is split by punctuation characters as well
   """
+  @expression_category "string"
   @expression_doc expression: "word(\"hello cow-boy\", 2)", result: "cow"
   @expression_doc expression: "word(\"hello cow-boy\", 2, true)", result: "cow-boy"
   @expression_doc expression: "word(\"hello cow-boy\", -1)", result: "boy"
@@ -1172,6 +1239,7 @@ defmodule Expression.Callbacks.Standard do
     part
   end
 
+  @expression_category "string"
   def word(ctx, binary, n, by_spaces) do
     [binary, n, by_spaces] = eval_args!([binary, n, by_spaces], ctx)
     splitter = if(by_spaces, do: " ", else: @punctuation_pattern)
@@ -1196,6 +1264,7 @@ defmodule Expression.Callbacks.Standard do
   You entered 3 words
   ```
   """
+  @expression_category "string"
   @expression_doc expression: "word_count(\"hello cow-boy\")", result: 3
   @expression_doc expression: "word_count(\"hello cow-boy\", true)", result: 2
   @expression_doc expression: "word_count(nil)", result: 0
@@ -1211,6 +1280,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "string"
   def word_count(ctx, binary, by_spaces) do
     text = eval!(binary, ctx)
 
@@ -1233,6 +1303,7 @@ defmodule Expression.Callbacks.Standard do
   If by_spaces is specified and is `true` then the function splits the text into words only by spaces.
   Otherwise the text is split by punctuation characters as well
   """
+  @expression_category "string"
   @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", 2, 4)",
                   result: "expressions are"
   @expression_doc expression: "word_slice(\"FLOIP expressions are fun\", 2)",
@@ -1262,6 +1333,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "string"
   def word_slice(ctx, binary, start, stop) do
     [binary, start, stop] = eval_args!([binary, start, stop], ctx)
 
@@ -1282,6 +1354,7 @@ defmodule Expression.Callbacks.Standard do
     end
   end
 
+  @expression_category "string"
   def word_slice(ctx, binary, start, stop, by_spaces) do
     [binary, start, stop, by_spaces] = eval_args!([binary, start, stop, by_spaces], ctx)
     splitter = if(by_spaces, do: " ", else: @punctuation_pattern)
@@ -1306,6 +1379,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns `true` if the argument is a number.
   """
+  @expression_category "logical"
   @expression_doc expression: "isnumber(1)", result: true
   @expression_doc expression: "isnumber(1.0)", result: true
   @expression_doc expression: "isnumber(\"1.0\")", result: true
@@ -1328,6 +1402,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns `true` if the argument is a boolean.
   """
+  @expression_category "logical"
   @expression_doc expression: "isbool(true)", result: true
   @expression_doc expression: "isbool(false)", result: true
   @expression_doc expression: "isbool(1)", result: false
@@ -1341,6 +1416,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns `true` if the argument is a string.
   """
+  @expression_category "logical"
   @expression_doc expression: "isstring(\"hello\")", result: true
   @expression_doc expression: "isstring(false)", result: false
   @expression_doc expression: "isstring(1)", result: false
@@ -1368,6 +1444,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Return true if a list contains all the provided items
   """
+  @expression_category "enum"
   @expression_doc doc: "Check whether the given list contains all the provided items",
                   expression: ~S|has_all_members(["A", "B", "C"], ["C", "B"])|,
                   result: true
@@ -1381,6 +1458,7 @@ defmodule Expression.Callbacks.Standard do
 
   The words can be in any order and may appear more than once.
   """
+  @expression_category "string"
   @expression_doc expression: "has_all_words(\"the quick brown FOX\", \"the fox\")", result: true
   @expression_doc expression: "has_all_words(\"the quick brown FOX\", \"red fox\")", result: false
   @expression_doc expression: "has_all_words(nil, \"red fox\")", result: false
@@ -1399,6 +1477,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Checks if the given text starts with any of the provided prefixes. The function performs a case-insensitive match.
   """
+  @expression_category "string"
   @expression_doc expression:
                     ~S|has_any_beginning("HEY HOW ARE YOU?", ["hello", "hey how are you"])|,
                   result: true
@@ -1415,6 +1494,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Check whether the given text exactly matches any of the provided phrases. The function performs a case-insensitive exact match.
   """
+  @expression_category "string"
   @expression_doc expression:
                     ~S|has_any_exact_phrase("HEY HOW ARE YOU?", ["hello", "hey how are you?"])|,
                   result: true
@@ -1432,6 +1512,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Return true if a list contains any of the provided items
   """
+  @expression_category "enum"
   @expression_doc doc: "Check whether the given list contains any of the provided items",
                   expression: ~S|has_any_member(["A", "B", "C"], ["Z", "C"])|,
                   result: true
@@ -1440,6 +1521,7 @@ defmodule Expression.Callbacks.Standard do
     Enum.any?(items, &Enum.member?(list, &1))
   end
 
+  @expression_category "string"
   @expression_doc doc:
                     "Check whether the given text ends with the provided string. The function performs a case-insensitive match.",
                   expression: ~S|has_end("I would like to book a vaccine", "vaccine")|,
@@ -1453,6 +1535,7 @@ defmodule Expression.Callbacks.Standard do
     )
   end
 
+  @expression_category "string"
   @expression_doc doc:
                     "Check whether the given text ends with any of the provided strings. The function performs a case-insensitive match.",
                   expression:
@@ -1470,6 +1553,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   URL encode an expression
   """
+  @expression_category "string"
   @expression_doc expression: "url_encode(\"hello world\")",
                   result: URI.encode("hello world")
   def url_encode(ctx, thing) do
@@ -1480,6 +1564,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   URL decode an expression
   """
+  @expression_category "string"
   @expression_doc expression: "url_decode(\"hello%20world\")",
                   result: "hello world"
   def url_decode(ctx, thing) do
@@ -1490,6 +1575,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Base64 encode an expression
   """
+  @expression_category "string"
   @expression_doc expression: "base64_encode(\"hello world\")",
                   result: "aGVsbG8gd29ybGQ="
   def base64_encode(ctx, thing) do
@@ -1500,6 +1586,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Base64 decode an expression
   """
+  @expression_category "string"
   @expression_doc expression: "base64_decode(\"aGVsbG8gd29ybGQ=\")",
                   result: "hello world"
   def base64_decode(ctx, thing) do
@@ -1515,6 +1602,7 @@ defmodule Expression.Callbacks.Standard do
   Rejects elements from a list by returning a new list that contains only the
   elements for which `reject_fun` is truthy.
   """
+  @expression_category "enum"
   @expression_doc expression: "reject([\"A\", \"B\", \"C\", \"B\"], & &1 == \"B\")",
                   result: ["A", "C"]
   def reject(ctx, enumerable, reject_fun) do
@@ -1532,6 +1620,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Removes duplicate values from a list.
   """
+  @expression_category "enum"
   @expression_doc expression: "uniq([\"A\", \"B\", \"C\", \"B\"])", result: ["A", "B", "C"]
   def uniq(ctx, enumerable) do
     [enumerable] = eval_args!([enumerable], ctx)
@@ -1542,6 +1631,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Sorts a list of values using the result of the sorter function
   """
+  @expression_category "enum"
   @expression_doc expression: "sort_by([\"a\", \"b\", \"c\"], &rand_between(1, 5))",
                   fake_result: ["b", "c", "a"]
   def sort_by(ctx, enumerable, sorter_fun) do
@@ -1559,6 +1649,7 @@ defmodule Expression.Callbacks.Standard do
 
   Only one of the words needs to match and it may appear more than once.
   """
+  @expression_category "string"
   @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"fox quick\")",
                   result: %{"__value__" => true, "match" => "Quick Fox"}
   @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"yellow\")",
@@ -1595,6 +1686,7 @@ defmodule Expression.Callbacks.Standard do
   Check whether the given text contains any of the provided strings. The function performs a case-insensitive exact match.
   The second argument expects either a list of strings or a single string with comma-separated phrases.
   """
+  @expression_category "string"
   @expression_doc expression:
                     ~S|has_any_phrase("hey how are you?", ["hello", "bye bye", "how are you"])|,
                   result: true
@@ -1627,6 +1719,7 @@ defmodule Expression.Callbacks.Standard do
   Both text values are trimmed of surrounding whitespace, but otherwise matching is
   strict without any tokenization.
   """
+  @expression_category "string"
   @expression_doc expression: "has_beginning(\"The Quick Brown\", \"the quick\")", result: true
   @expression_doc expression: "has_beginning(\"The Quick Brown\", \"the    quick\")",
                   result: false
@@ -1646,6 +1739,7 @@ defmodule Expression.Callbacks.Standard do
 
   This is very naively implemented with a regular expression.
   """
+  @expression_category "string"
   @expression_doc expression: "has_date(\"the date is 15/01/2017 05:50\")",
                   result: %{
                     "__value__" => true,
@@ -1697,6 +1791,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` is a date equal to `date_string`
   """
+  @expression_category "string"
   @expression_doc expression: "has_date_eq(\"the date is 15/01/2017\", \"2017-01-15\")",
                   result: %{
                     "__value__" => true,
@@ -1733,6 +1828,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` is a date after the date `date_string`
   """
+  @expression_category "string"
   @expression_doc expression: "has_date_gt(\"the date is 15/01/2017\", \"2017-01-01\")",
                   result: %{
                     "__value__" => true,
@@ -1762,6 +1858,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a date before the date `date_string`
   """
+  @expression_category "string"
   @expression_doc expression: "has_date_lt(\"the date is 15/01/2017\", \"2017-06-01\")",
                   result: %{
                     "__value__" => true,
@@ -1814,6 +1911,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether an email is contained in text
   """
+  @expression_category "string"
   @expression_doc expression: "has_email(\"my email is foo1@bar.com, please respond\")",
                   result: %{"__value__" => true, "email" => "foo1@bar.com"}
   @expression_doc expression: "has_email(\"i'm not sharing my email\")",
@@ -1836,6 +1934,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns whether the contact is part of group with the passed in UUID
   """
+  @expression_category "enum"
   @expression_doc expression:
                     "has_group(contact.groups, \"b7cf0d83-f1c9-411c-96fd-c511a4cfa86d\")",
                   context: %{
@@ -1899,8 +1998,10 @@ defmodule Expression.Callbacks.Standard do
     end)
   end
 
+  @expression_category "number"
   def parse_float(number) when is_number(number), do: number
 
+  @expression_category "number"
   def parse_float(binary) when is_binary(binary) do
     case Float.parse(binary) do
       {float, ""} -> float
@@ -1915,6 +2016,7 @@ defmodule Expression.Callbacks.Standard do
   Will return whatever was supplied as is when the given
   argument is not a String.
   """
+  @expression_category "enum"
   @expression_doc expression: "parse_json('[1,2,3]')",
                   result: [1, 2, 3]
   @expression_doc expression: "parse_json('[1,2,3]')",
@@ -1929,6 +2031,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Converts a data structure to JSON
   """
+  @expression_category "enum"
   @expression_doc expression: "json(data)",
                   context: %{"data" => %{"foo" => "bar"}},
                   result: Jason.encode!(%{"foo" => "bar"})
@@ -1940,6 +2043,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Return true if a list has the given item as a member
   """
+  @expression_category "enum"
   @expression_doc doc: "Check whether the given list has the item as a member",
                   expression: ~S|has_member(["A", "B", "C"], "C")|,
                   result: true
@@ -1951,6 +2055,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number
   """
+  @expression_category "string"
   @expression_doc expression: "has_number(\"the number is 42 and 5\")",
                   result: %{"__value__" => true, "number" => 42.0}
   @expression_doc expression: "has_number(\"العدد ٤٢\")",
@@ -1971,7 +2076,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number equal to the value
   """
-
+  @expression_category "string"
   @expression_doc expression: "has_number_eq(\"the number is 42\", 42)", result: true
   @expression_doc expression: "has_number_eq(\"the number is 42\", 42.0)", result: true
   @expression_doc expression: "has_number_eq(\"the number is 42\", \"42\")", result: true
@@ -1995,6 +2100,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number greater than min
   """
+  @expression_category "string"
   @expression_doc expression: "has_number_gt(\"the number is 42\", 40)", result: true
   @expression_doc expression: "has_number_gt(\"the number is 42\", 40.0)", result: true
   @expression_doc expression: "has_number_gt(\"the number is 42\", \"40\")", result: true
@@ -2018,6 +2124,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number greater than or equal to min
   """
+  @expression_category "string"
   @expression_doc expression: "has_number_gte(\"the number is 42\", 42)", result: true
   @expression_doc expression: "has_number_gte(\"the number is 42\", 42.0)", result: true
   @expression_doc expression: "has_number_gte(\"the number is 42\", \"42\")", result: true
@@ -2041,6 +2148,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number less than max
   """
+  @expression_category "string"
   @expression_doc expression: "has_number_lt(\"the number is 42\", 44)", result: true
   @expression_doc expression: "has_number_lt(\"the number is 42\", 44.0)", result: true
   @expression_doc expression: "has_number_lt(\"the number is 42\", \"40\")", result: false
@@ -2064,6 +2172,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a number less than or equal to max
   """
+  @expression_category "string"
   @expression_doc expression: "has_number_lte(\"the number is 42\", 42)", result: true
   @expression_doc expression: "has_number_lte(\"the number is 42\", 42.0)", result: true
   @expression_doc expression: "has_number_lte(\"the number is 42\", \"42\")", result: true
@@ -2091,6 +2200,7 @@ defmodule Expression.Callbacks.Standard do
 
   The phrase must be the only text in the text to match
   """
+  @expression_category "string"
   @expression_doc expression: "has_only_phrase(\"Quick Brown\", \"quick brown\")", result: true
   @expression_doc expression: "has_only_phrase(\"\", \"\")", result: true
   @expression_doc expression: "has_only_phrase(\"The Quick Brown Fox\", \"quick brown\")",
@@ -2110,6 +2220,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Returns whether two text values are equal (case sensitive). In the case that they are, it will return the text as the match.
   """
+  @expression_category "string"
   @expression_doc expression: "has_only_text(\"foo\", \"foo\")", result: true
   @expression_doc expression: "has_only_text(\"\", \"\")", result: true
   @expression_doc expression: "has_only_text(\"foo\", \"FOO\")", result: false
@@ -2123,6 +2234,7 @@ defmodule Expression.Callbacks.Standard do
 
   Both text values are trimmed of surrounding whitespace and matching is case-insensitive.
   """
+  @expression_category "string"
   @expression_doc expression: "has_pattern(\"Buy cheese please\", \"buy (\\w+)\")", result: true
   @expression_doc expression: "has_pattern(\"Sell cheese please\", \"buy (\\w+)\")", result: false
   @expression_doc expression: "has_pattern(nil, \"buy (\\w+)\")", result: false
@@ -2143,6 +2255,7 @@ defmodule Expression.Callbacks.Standard do
   Tests whether `expresssion` contains a phone number.
   The optional country_code argument specifies the country to use for parsing.
   """
+  @expression_category "string"
   @expression_doc expression: "has_phone(\"my number is +12067799294 thanks\")",
                   result: %{"__value__" => true, "phonenumber" => "+12067799294"}
   @expression_doc expression: "has_phone(\"my number is 2067799294 thanks\", \"US\")",
@@ -2157,6 +2270,7 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => false, "phonenumber" => nil}
   @expression_doc expression: "has_phone(\"+27\", \"ZA\")",
                   result: %{"__value__" => false, "phonenumber" => nil}
+  @expression_category "string"
   def has_phone(ctx, expression) do
     [expression] = eval_args!([expression], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, to_string(expression), "")
@@ -2164,6 +2278,7 @@ defmodule Expression.Callbacks.Standard do
     parse_phone_number(letters_removed, "")
   end
 
+  @expression_category "string"
   def has_phone(ctx, expression, country_code) do
     [expression, country_code] = eval_args!([expression, country_code], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, to_string(expression), "")
@@ -2189,6 +2304,7 @@ defmodule Expression.Callbacks.Standard do
 
   The words in the test phrase must appear in the same order with no other words in between.
   """
+  @expression_category "string"
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"brown fox\")", result: true
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"quick fox\")", result: false
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
@@ -2203,6 +2319,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether there the `expression` has any characters in it
   """
+  @expression_category "string"
   @expression_doc expression: "has_text(\"quick brown\")", result: true
   @expression_doc expression: "has_text(\"\")", result: false
   @expression_doc expression: "has_text(\" \n\")", result: false
@@ -2220,6 +2337,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Tests whether `expression` contains a time.
   """
+  @expression_category "string"
   @expression_doc expression: "has_time(\"the time is 10:30\")",
                   result: %{"__value__" => true, "match" => ~T[10:30:00]}
   @expression_doc expression: "has_time(\"the time is 10:00 pm\")",
@@ -2243,6 +2361,7 @@ defmodule Expression.Callbacks.Standard do
   map over a list of items and apply the mapper function to every item, returning
   the result.
   """
+  @expression_category "enum"
   @expression_doc doc: "Map over the range of numbers, create a date in January for every number",
                   expression: "map(1..3, &date(2022, 1, &1))",
                   result: [~D[2022-01-01], ~D[2022-01-02], ~D[2022-01-03]]
@@ -2263,6 +2382,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Generate a random number between `min` and `max`
   """
+  @expression_category "number"
   @expression_doc doc: "Generate a number between 1 and 10",
                   expression: "rand_between(1, 10)",
                   fake_result: 3
@@ -2274,6 +2394,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Return the division remainder of two integers.
   """
+  @expression_category "number"
   @expression_doc expression: "rem(4, 2)",
                   result: 0
   @expression_doc expression: "rem(85, 3)",
@@ -2291,6 +2412,7 @@ defmodule Expression.Callbacks.Standard do
   The first argument to the lambda function is the item from the list,
   the second argument is the accumulator.
   """
+  @expression_category "enum"
   @expression_doc expression: "reduce(1..3, 0, & &1 + &2)", result: 6
   def reduce(ctx, enumerable, accumulator, reducer) do
     [enumerable, accumulator, reducer] = eval_args!([enumerable, accumulator, reducer], ctx)
@@ -2301,6 +2423,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Appends an item or a list of items to a given list.
   """
+  @expression_category "enum"
   @expression_doc expression: "append([\"A\", \"B\"], \"C\")",
                   result: ["A", "B", "C"]
   @expression_doc expression: "append([\"A\", \"B\"], [\"C\", \"B\"])",
@@ -2315,6 +2438,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Deletes an element from a map by the given key.
   """
+  @expression_category "enum"
   @expression_doc expression: "delete(patient, \"gender\")",
                   context: %{"patient" => %{"gender" => "?", "age" => 32}},
                   result: %{"age" => 32}
@@ -2327,6 +2451,7 @@ defmodule Expression.Callbacks.Standard do
   @doc """
   Checks whether `value` is an error
   """
+  @expression_category "logical"
   @expression_doc expression: "is_error(error)",
                   context: %{"error" => Expression.error("the error")},
                   result: true
