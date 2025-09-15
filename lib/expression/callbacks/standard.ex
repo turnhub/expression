@@ -855,7 +855,6 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "fixed(3.7979, 2, false)", result: "3.80"
   @expression_doc expression: "fixed(3.7979, 2)", result: "3.80"
   @expression_doc expression: "fixed(0.0909, 2)", result: "0.09"
-  @expression_category "string"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
     Number.Delimit.number_to_delimited(number, precision: precision)
