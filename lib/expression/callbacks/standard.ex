@@ -860,7 +860,7 @@ defmodule Expression.Callbacks.Standard do
     Number.Delimit.number_to_delimited(number, precision: precision)
   end
 
-  @expression_category "string"
+  @expression_category "number"
   def fixed(ctx, number, precision, no_commas) do
     case eval_args!([number, precision, no_commas], ctx) do
       [number, precision, true] ->
