@@ -2368,14 +2368,22 @@ defmodule Expression.Callbacks.Standard do
                     "Map over the range of numbers, multiple each by itself and return the result",
                   expression: "map(1..3, &(&1 * &1))",
                   result: [1, 4, 9]
+  @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
+                  expression: "map(nil, &(&1 * &1))",
+                  result: Expression.error("Invalid enumerable")
+
   def map(ctx, enumerable, mapper) do
     [enumerable, mapper] = eval_args!([enumerable, mapper], ctx)
 
-    enumerable
-    # wrap in a list to be passed as a list of arguments
-    |> Enum.map(&[&1])
-    # call the mapper with each list of arguments as a single argument
-    |> Enum.map(mapper)
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      Expression.error("Invalid enumerable")
+    else
+      enumerable
+      # wrap in a list to be passed as a list of arguments
+      |> Enum.map(&[&1])
+      # call the mapper with each list of arguments as a single argument
+      |> Enum.map(mapper)
+    end
   end
 
   @doc """
