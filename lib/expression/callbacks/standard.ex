@@ -73,9 +73,17 @@ defmodule Expression.Callbacks.Standard do
                       "the fifth sentence"
                     ]
                   }
+  @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
+                  expression: "chunk_every(nil, 2)",
+                  result: Expression.error("Invalid enumerable")
   def chunk_every(ctx, enumerable, count) do
     [enumerable, count] = eval_args!([enumerable, count], ctx)
-    Enum.chunk_every(enumerable, count)
+
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      Expression.error("Invalid enumerable")
+    else
+      Enum.chunk_every(enumerable, count)
+    end
   end
 
   @doc """
@@ -389,16 +397,23 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "enum"
   @expression_doc expression: "filter([\"A\", \"B\", \"C\", \"B\"], & &1 == \"B\")",
                   result: ["B", "B"]
+  @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
+                  expression: "filter(nil, & &1 == \"B\")",
+                  result: Expression.error("Invalid enumerable")
   def filter(ctx, enumerable, filter_fun) do
     [enumerable, filter_fun] = eval_args!([enumerable, filter_fun], ctx)
 
-    enumerable
-    # Wrap each list item in a list because `filter_fun`
-    # expects a list of arguments
-    |> Enum.map(&[&1])
-    |> Enum.filter(filter_fun)
-    # Unwrap each list item
-    |> Enum.map(fn [item] -> item end)
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      Expression.error("Invalid enumerable")
+    else
+      enumerable
+      # Wrap each list item in a list because `filter_fun`
+      # expects a list of arguments
+      |> Enum.map(&[&1])
+      |> Enum.filter(filter_fun)
+      # Unwrap each list item
+      |> Enum.map(fn [item] -> item end)
+    end
   end
 
   @doc """
@@ -1604,16 +1619,23 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "enum"
   @expression_doc expression: "reject([\"A\", \"B\", \"C\", \"B\"], & &1 == \"B\")",
                   result: ["A", "C"]
+  @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
+                  expression: "reject(nil, & &1 == \"B\")",
+                  result: Expression.error("Invalid enumerable")
   def reject(ctx, enumerable, reject_fun) do
     [enumerable, reject_fun] = eval_args!([enumerable, reject_fun], ctx)
 
-    enumerable
-    # Wrap each list item in a list because `reject_fun`
-    # expects a list of arguments
-    |> Enum.map(&[&1])
-    |> Enum.reject(reject_fun)
-    # Unwrap each list item
-    |> Enum.map(fn [item] -> item end)
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      Expression.error("Invalid enumerable")
+    else
+      enumerable
+      # Wrap each list item in a list because `reject_fun`
+      # expects a list of arguments
+      |> Enum.map(&[&1])
+      |> Enum.reject(reject_fun)
+      # Unwrap each list item
+      |> Enum.map(fn [item] -> item end)
+    end
   end
 
   @doc """
@@ -1633,14 +1655,21 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "enum"
   @expression_doc expression: "sort_by([\"a\", \"b\", \"c\"], &rand_between(1, 5))",
                   fake_result: ["b", "c", "a"]
+  @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
+                  expression: "sort_by(nil, &rand_between(1, 5))",
+                  result: Expression.error("Invalid enumerable")
   def sort_by(ctx, enumerable, sorter_fun) do
     [enumerable, sorter_fun] = eval_args!([enumerable, sorter_fun], ctx)
 
-    enumerable
-    |> Enum.map(&[&1])
-    |> Enum.sort_by(sorter_fun)
-    # Unwrap each list item
-    |> Enum.map(fn [item] -> item end)
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      Expression.error("Invalid enumerable")
+    else
+      enumerable
+      |> Enum.map(&[&1])
+      |> Enum.sort_by(sorter_fun)
+      # Unwrap each list item
+      |> Enum.map(fn [item] -> item end)
+    end
   end
 
   @doc """
@@ -2421,10 +2450,17 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "enum"
   @expression_doc expression: "reduce(1..3, 0, & &1 + &2)", result: 6
+  @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
+                  expression: "reduce(nil, 0, & &1 + &2)",
+                  result: Expression.error("Invalid enumerable")
   def reduce(ctx, enumerable, accumulator, reducer) do
     [enumerable, accumulator, reducer] = eval_args!([enumerable, accumulator, reducer], ctx)
 
-    Enum.reduce(enumerable, accumulator, &reducer.([&1, &2]))
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      Expression.error("Invalid enumerable")
+    else
+      Enum.reduce(enumerable, accumulator, &reducer.([&1, &2]))
+    end
   end
 
   @doc """
