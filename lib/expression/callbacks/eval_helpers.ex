@@ -9,6 +9,7 @@ defmodule Expression.Callbacks.EvalHelpers do
   def eval!(ast, ctx) do
     ast
     |> Expression.Eval.eval!(ctx)
+    |> Expression.Eval.default_value()
     |> Expression.Eval.not_founds_as_nil()
   end
 
