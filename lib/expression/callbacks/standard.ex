@@ -2514,7 +2514,14 @@ defmodule Expression.Callbacks.Standard do
   # Disable credo as the expression function is standardised to has an `is_*` predicate
   # credo:disable-for-next-line Credo.Check.Readability.PredicateFunctionNames
   def is_error(ctx, value) do
-    case eval!(value, ctx, false) do
+    case eval!(
+           value,
+           ctx,
+           # Do not have enums describing errors be casted to the default
+           # value (which is nil), which would make it impossible to
+           # detect errors.
+           false
+         ) do
       %{"__type__" => "expression/v1error"} -> true
       _other -> false
     end

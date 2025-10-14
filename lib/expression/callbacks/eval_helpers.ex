@@ -3,7 +3,10 @@ defmodule Expression.Callbacks.EvalHelpers do
 
   @doc """
   Evaluate the given AST against the context and return the value
-  after evaluation.
+  after evaluation. If `with_defaults` is true (the default), then
+  the value after evaluation is converted to its default value, which
+  is the value as is for non enum fields, and the `__value__` key for
+  enum fields.
   """
   @spec eval!(term, map) :: term
   def eval!(ast, ctx, with_defaults \\ true) do
