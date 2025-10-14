@@ -149,7 +149,7 @@ defmodule Expression.Autodoc do
     end
   end
 
-  def generate_ex_doc(prompt \\ "iex", module, expression, context, expected_result) do
+  def generate_ex_doc(prompt \\ "iex", module, expression, context, result) do
     """
         #{prompt}> import ExUnit.Assertions
         #{prompt}> result = Expression.evaluate_block!(
@@ -157,26 +157,26 @@ defmodule Expression.Autodoc do
         ...>   #{inspect(context || %{})},
         ...>   #{inspect(module)}
         ...> )
-        #{generate_assert(prompt, expected_result)}
+        #{generate_assert(prompt, result)}
         #{prompt}> Expression.evaluate_as_string!(
         ...>   #{inspect("@" <> expression)},
         ...>   #{inspect(context || %{})},
         ...>   #{inspect(module)}
         ...> )
-        #{inspect(stringify(expected_result))}
+        #{inspect(stringify(result))}
     """
   end
 
-  def generate_assert(prompt, expected_result)
-      when is_nil(expected_result) or expected_result == false do
-    Enum.join(["#{prompt}> refute result", "#{inspect(expected_result)}"], "\n    ")
+  def generate_assert(prompt, result)
+      when is_nil(result) or result == false do
+    Enum.join(["#{prompt}> refute result", "#{inspect(result)}"], "\n    ")
   end
 
-  def generate_assert(prompt, expected_result) do
+  def generate_assert(prompt, result) do
     Enum.join(
       [
-        "#{prompt}> assert #{inspect(expected_result)} = result",
-        "#{inspect(expected_result)}"
+        "#{prompt}> assert #{inspect(result)} = result",
+        "#{inspect(result)}"
       ],
       "\n    "
     )
