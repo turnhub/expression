@@ -617,7 +617,7 @@ defmodule ExpressionTest do
 
   describe "evaluate_block! vs evaluate_as_string!" do
     test "todo" do
-      # It is unclear to me what the right behaviour is here, specifically:
+      # It is unclear to me what the right behaviour is here when an error occurs, specifically:
       # - Should the result for evaluate_block! be an error map, or should it be the empty string?
       # - Should the result for evaluate_as_string! be an error map, or should it be the empty string?
       # - In either case, should the result for evaluate_block! and evaluate_as_string! be the same?
