@@ -627,9 +627,28 @@ defmodule ExpressionTest do
   end
 
   describe "evaluate_as_string!" do
-    test "should return a string when an error occurred" do
-      # How is that useful? Should it not rather be the message as contained in the error map?
+    test "should return the empty string when an error occurred" do
+      # This avoids situations where people started accidentally receiving things like
+      # "Your registration is ERROR: TOKEN XXX IS INVALID" which was worse than sending
+      # the empty string.
       assert Expression.evaluate_as_string!("@chunk_every(nil, 2)") == ""
+    end
+  end
+
+  describe "evaluate_block! vs evaluate_as_string!" do
+    test "evaluate_block! should return raw error data map and evaluate_as_string! should return the empty string when an error occurred" do
+      Expression.Autodoc.test_expression(
+        expression: "chunk_every(nil, 2)",
+        expected_block_result: %{
+          "__type__" => "expression/v1error",
+          "__value__" => nil,
+          "error" => true,
+          "message" => "Invalid enumerable"
+        },
+        # This is to avoid end users receiving messages containing internal error details.
+        expected_string_result: "",
+        context: %{}
+      )
     end
   end
 end

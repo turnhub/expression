@@ -29,6 +29,8 @@ defmodule Expression.Autodoc do
      anything so use sparingly.
 
   """
+  import ExUnit.Assertions
+
   defmacro __using__(_args) do
     quote do
       @expression_docs []
@@ -165,6 +167,40 @@ defmodule Expression.Autodoc do
         ...> )
         #{inspect(stringify(result))}
     """
+  end
+
+  @doc """
+  Test evaluation of an expression both as a block and as a string in the same
+  way to how the autodoc generated tests work. This is useful when creating unit
+  tests (instead of doc tests) or when trying to debug doc tests.
+
+  Note that there is a subtle difference here however in that for each eval
+  (evaluate_block! and evaluate_as_string!) an explicit expected result should be
+  provided (instead of result being stringified and used to assert the result of
+  evaluate_as_string!). This is to more clearly separate the two tests and ensure that
+  the expected string result is explicitly defined as exactly what is expected.
+  """
+  def test_expression(
+        expression: expression,
+        expected_block_result: expected_block_result,
+        expected_string_result: expected_string_result,
+        context: context
+      ) do
+    evaluate_block_result =
+      Expression.evaluate_block!(
+        expression,
+        context
+      )
+
+    assert evaluate_block_result == expected_block_result
+
+    evaluate_as_string_result =
+      Expression.evaluate_as_string!(
+        "@" <> expression,
+        context
+      )
+
+    assert evaluate_as_string_result == expected_string_result
   end
 
   def generate_assert(prompt, result) when is_nil(result) or result == false do
