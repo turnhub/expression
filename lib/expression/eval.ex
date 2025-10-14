@@ -301,9 +301,6 @@ defmodule Expression.Eval do
   """
   def default_value(val, opts \\ [])
 
-  def default_value(%{"__type__" => "expression/v1error"} = default_value, _opts),
-    do: default_value
-
   def default_value(%{"__value__" => default_value}, _opts), do: default_value
 
   def default_value({:not_found, attributes}, opts) do

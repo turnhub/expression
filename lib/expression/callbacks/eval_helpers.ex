@@ -6,11 +6,19 @@ defmodule Expression.Callbacks.EvalHelpers do
   after evaluation.
   """
   @spec eval!(term, map) :: term
-  def eval!(ast, ctx) do
-    ast
-    |> Expression.Eval.eval!(ctx)
-    |> Expression.Eval.default_value()
-    |> Expression.Eval.not_founds_as_nil()
+  def eval!(ast, ctx, with_defaults \\ true) do
+    result =
+      ast
+      |> Expression.Eval.eval!(ctx)
+
+    result =
+      if with_defaults do
+        Expression.Eval.default_value(result)
+      else
+        result
+      end
+
+    Expression.Eval.not_founds_as_nil(result)
   end
 
   @doc """

@@ -108,7 +108,6 @@ defmodule Expression do
         opts \\ []
       ) do
     ast = parse_expression!(expression)
-
     Eval.eval!([expression: ast], Context.new(context, opts), mod)
   end
 

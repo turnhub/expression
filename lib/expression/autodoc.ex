@@ -195,23 +195,8 @@ defmodule Expression.Autodoc do
   def type_of(list) when is_list(list),
     do: "List with values " <> Enum.map_join(list, ", ", &type_of/1)
 
-  def stringify(%{"__type__" => "expression/v1error"} = error) do
-    # For expression errors to be able to test them effectively we
-    # need to show the entire error map albeit as a string, see
-    # doctests for is_error. Thus the entire error map is cast to a
-    # string.
-    Expression.stringify(error)
-  end
-
-  def stringify(%{"__value__" => value}) do
-    # For enum types a string representation is casted from the __value__ key.
-    Expression.stringify(value)
-  end
-
-  def stringify(value) do
-    # For all other types the string representation is casted from the value itself.
-    Expression.stringify(value)
-  end
+  def stringify(%{"__value__" => value}), do: Expression.stringify(value)
+  def stringify(value), do: Expression.stringify(value)
 
   def get_existing_docstring(module) do
     case Module.get_attribute(module, :doc) do
