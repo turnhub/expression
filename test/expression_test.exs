@@ -2,6 +2,40 @@ defmodule ExpressionTest do
   use ExUnit.Case, async: true
   doctest Expression
 
+  @doc """
+  Test evaluation of an expression both as a block and as a string in the same
+  way to how the autodoc generated tests work. This is useful when creating unit
+  tests (instead of doc tests) or when trying to debug doc tests.
+
+  Note that there is a subtle difference here however in that for each eval
+  (evaluate_block! and evaluate_as_string!) an explicit expected result should be
+  provided (instead of result being stringified and used to assert the result of
+  evaluate_as_string!). This is to more clearly separate the two tests and ensure that
+  the expected string result is explicitly defined as exactly what is expected.
+  """
+  def test_expression(
+        expression: expression,
+        expected_block_result: expected_block_result,
+        expected_string_result: expected_string_result,
+        context: context
+      ) do
+    evaluate_block_result =
+      Expression.evaluate_block!(
+        expression,
+        context
+      )
+
+    assert evaluate_block_result == expected_block_result
+
+    evaluate_as_string_result =
+      Expression.evaluate_as_string!(
+        "@" <> expression,
+        context
+      )
+
+    assert evaluate_as_string_result == expected_string_result
+  end
+
   describe "evaluate" do
     test "evaluate_as_boolean!" do
       assert true == Expression.evaluate_as_boolean!("@(tRuE)")
@@ -612,6 +646,43 @@ defmodule ExpressionTest do
                  Expression.Callbacks,
                  skip_context_evaluation?: true
                )
+    end
+  end
+
+  describe "evaluate_block!" do
+    test "should return a map with error details when an error occurred" do
+      assert Expression.evaluate_block!("chunk_every(nil, 2)") == %{
+               "__type__" => "expression/v1error",
+               "__value__" => nil,
+               "error" => true,
+               "message" => "Invalid enumerable"
+             }
+    end
+  end
+
+  describe "evaluate_as_string!" do
+    test "should return the empty string when an error occurred" do
+      # This avoids situations where people started accidentally receiving things like
+      # "Your registration is ERROR: TOKEN XXX IS INVALID" which was worse than sending
+      # the empty string.
+      assert Expression.evaluate_as_string!("@chunk_every(nil, 2)") == ""
+    end
+  end
+
+  describe "evaluate_block! vs evaluate_as_string!" do
+    test "evaluate_block! should return raw error data map and evaluate_as_string! should return the empty string when an error occurred" do
+      test_expression(
+        expression: "chunk_every(nil, 2)",
+        expected_block_result: %{
+          "__type__" => "expression/v1error",
+          "__value__" => nil,
+          "error" => true,
+          "message" => "Invalid enumerable"
+        },
+        # This is to avoid end users receiving messages containing internal error details.
+        expected_string_result: "",
+        context: %{}
+      )
     end
   end
 end
