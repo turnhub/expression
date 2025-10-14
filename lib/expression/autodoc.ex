@@ -167,8 +167,7 @@ defmodule Expression.Autodoc do
     """
   end
 
-  def generate_assert(prompt, result)
-      when is_nil(result) or result == false do
+  def generate_assert(prompt, result) when is_nil(result) or result == false do
     Enum.join(["#{prompt}> refute result", "#{inspect(result)}"], "\n    ")
   end
 
