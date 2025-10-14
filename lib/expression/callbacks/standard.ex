@@ -2336,6 +2336,15 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"brown fox\")", result: true
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"quick fox\")", result: false
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
+  @expression_doc expression: "has_phrase(enum, \"__value__ key\")",
+                  context: %{
+                    "enum" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "value for __value__ key"
+                    }
+                  },
+                  result: true
   def has_phrase(ctx, expression, phrase) do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
     lower_expression = String.downcase(to_string(expression))
