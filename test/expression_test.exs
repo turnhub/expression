@@ -615,18 +615,21 @@ defmodule ExpressionTest do
     end
   end
 
-  describe "evaluate_block! vs evaluate_as_string!" do
-    test "todo" do
-      # It is unclear to me what the right behaviour is here when an error occurs, specifically:
-      # - Should the result for evaluate_block! be an error map, or should it be the empty string?
-      # - Should the result for evaluate_as_string! be an error map, or should it be the empty string?
-      # - In either case, should the result for evaluate_block! and evaluate_as_string! be the same?
-      #   If not why not.
-      # - If it should be the empty string, how is that useful? Should it not then rather be the message
-      #   within the error map?
-      expected_result = Expression.error("Invalid enumerable")
-      assert Expression.evaluate_block!("chunk_every(nil, 2)") == expected_result
-      assert Expression.evaluate_as_string!("@chunk_every(nil, 2)") == expected_result
+  describe "evaluate_block!" do
+    test "should return a map with error details when an error occurred" do
+      assert Expression.evaluate_block!("chunk_every(nil, 2)") == %{
+               "__type__" => "expression/v1error",
+               "__value__" => nil,
+               "error" => true,
+               "message" => "Invalid enumerable"
+             }
+    end
+  end
+
+  describe "evaluate_as_string!" do
+    test "should return a string when an error occurred" do
+      # How is that useful? Should it not rather be the message as contained in the error map?
+      assert Expression.evaluate_as_string!("@chunk_every(nil, 2)") == ""
     end
   end
 end
