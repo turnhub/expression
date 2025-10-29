@@ -38,7 +38,19 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "count(\"zoë\")", result: 3
   @expression_doc expression: "count(map)", context: %{"map" => %{"foo" => "bar"}}, result: 1
   @expression_doc expression: "count(nil_value)", context: %{"nil_value" => nil}, result: 0
-  def count(ctx, term) do
+  # @expression_doc expression: "count(enum)",
+  #                context: %{
+  #                  "enum" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => "value for __value__ key"
+  #                  }
+  #                },
+  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
+  #                # - SHOULD IT COUNT THE KEYS IN THE MAP (CURRENT BEHAVIOUR), OR
+  #                # - THE LENGTH OF THE STRING IN THE __value__ KEY
+  #                result: "AMBIGUOUS"
+  def(count(ctx, term)) do
     case eval!(term, ctx) do
       list when is_list(list) -> length(list)
       binary when is_binary(binary) -> String.length(binary)
@@ -76,6 +88,18 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "chunk_every(nil, 2)",
                   result: Expression.error("Invalid enumerable")
+  # @expression_doc expression: "chunk_every(enum, 3)",
+  #                context: %{
+  #                  "enum" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => "value for __value__ key"
+  #                  }
+  #                },
+  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
+  #                # - SHOULD IT TRY TO CHUNK THE MAP (CURRENT BEHAVIOUR, BUT AMBIGUOUS IN ITSELF), OR
+  #                # - SHOULD IT CHUCK THE LIST IN THE __value__ KEY
+  #                result: "AMBIGUOUS"
   def chunk_every(ctx, enumerable, count) do
     [enumerable, count] = eval_args!([enumerable, count], ctx)
 
@@ -107,6 +131,28 @@ defmodule Expression.Callbacks.Standard do
                     "message" => "Invalid date: date(nil, nil, nil)",
                     "__value__" => nil
                   }
+  # @expression_doc expression: "date(year, month, day)",
+  #                context: %{
+  #                  "year" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => 2025
+  #                  },
+  #                  "month" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => 1
+  #                  },
+  #                  "day" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => 15
+  #                  }
+  #                },
+  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
+  #                # - SHOULD IT RETURN AN ERROR, OR
+  #                # - USE THE VALUES IN THE __value__ KEY
+  #                result: "AMBIGUOUS"
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 
@@ -166,6 +212,28 @@ defmodule Expression.Callbacks.Standard do
                     "message" => "Invalid date",
                     "__value__" => nil
                   }
+  # @expression_doc expression: "date(year, month, day)",
+  #                context: %{
+  #                  "year" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => 2025
+  #                  },
+  #                  "month" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => 1
+  #                  },
+  #                  "day" => %{
+  #                    "display" => "value for display key",
+  #                    "value" => "value for value key",
+  #                    "__value__" => 15
+  #                  }
+  #                },
+  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
+  #                # - SHOULD IT RETURN AN ERROR, OR
+  #                # - USE THE VALUES IN THE __value__ KEY
+  #                result: "AMBIGUOUS"
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = DateHelpers.extract_datetimeish(eval!(datetime, ctx))
 
