@@ -38,18 +38,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "count(\"zoë\")", result: 3
   @expression_doc expression: "count(map)", context: %{"map" => %{"foo" => "bar"}}, result: 1
   @expression_doc expression: "count(nil_value)", context: %{"nil_value" => nil}, result: 0
-  # @expression_doc expression: "count(enum)",
-  #                context: %{
-  #                  "enum" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => "value for __value__ key"
-  #                  }
-  #                },
-  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
-  #                # - SHOULD IT COUNT THE KEYS IN THE MAP (CURRENT BEHAVIOUR), OR
-  #                # - THE LENGTH OF THE STRING IN THE __value__ KEY
-  #                result: "AMBIGUOUS"
+  @expression_doc doc: "Count value in __value__ key if complex value is provided.",
+                  expression: "count(enum)",
+                  context: %{
+                    "enum" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "value for __value__ key"
+                    }
+                  },
+                  result: 23
   def(count(ctx, term)) do
     case eval!(term, ctx) do
       list when is_list(list) -> length(list)
@@ -88,18 +86,25 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "chunk_every(nil, 2)",
                   result: Expression.error("Invalid enumerable")
-  # @expression_doc expression: "chunk_every(enum, 3)",
-  #                context: %{
-  #                  "enum" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => "value for __value__ key"
-  #                  }
-  #                },
-  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
-  #                # - SHOULD IT TRY TO CHUNK THE MAP (CURRENT BEHAVIOUR, BUT AMBIGUOUS IN ITSELF), OR
-  #                # - SHOULD IT CHUCK THE LIST IN THE __value__ KEY
-  #                result: "AMBIGUOUS"
+  @expression_doc doc: "Split enum in __value__ key if complex value is provided.",
+                  expression: "chunk_every(complex, 3)",
+                  context: %{
+                    "complex" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => [
+                        "the first sentence",
+                        "the second sentence",
+                        "the third sentence",
+                        "the fourth sentence",
+                        "the fifth sentence"
+                      ]
+                    }
+                  },
+                  result: [
+                    ["the first sentence", "the second sentence", "the third sentence"],
+                    ["the fourth sentence", "the fifth sentence"]
+                  ]
   def chunk_every(ctx, enumerable, count) do
     [enumerable, count] = eval_args!([enumerable, count], ctx)
 
@@ -131,28 +136,28 @@ defmodule Expression.Callbacks.Standard do
                     "message" => "Invalid date: date(nil, nil, nil)",
                     "__value__" => nil
                   }
-  # @expression_doc expression: "date(year, month, day)",
-  #                context: %{
-  #                  "year" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => 2025
-  #                  },
-  #                  "month" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => 1
-  #                  },
-  #                  "day" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => 15
-  #                  }
-  #                },
-  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
-  #                # - SHOULD IT RETURN AN ERROR, OR
-  #                # - USE THE VALUES IN THE __value__ KEY
-  #                result: "AMBIGUOUS"
+  @expression_doc doc:
+                    "Construct date from value in __value__ key if complex values are provided.",
+                  expression: "date(year, month, day)",
+                  context: %{
+                    "year" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2025
+                    },
+                    "month" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    },
+                    "day" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 15
+                    }
+                  },
+                  result: ~D[2025-01-15]
+
   def date(ctx, year, month, day) do
     [year, month, day] = eval_args!([year, month, day], ctx)
 
@@ -212,28 +217,27 @@ defmodule Expression.Callbacks.Standard do
                     "message" => "Invalid date",
                     "__value__" => nil
                   }
-  # @expression_doc expression: "date(year, month, day)",
-  #                context: %{
-  #                  "year" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => 2025
-  #                  },
-  #                  "month" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => 1
-  #                  },
-  #                  "day" => %{
-  #                    "display" => "value for display key",
-  #                    "value" => "value for value key",
-  #                    "__value__" => 15
-  #                  }
-  #                },
-  #                # WHAT IS THE EXPECTED BEHAVIOUR HERE?
-  #                # - SHOULD IT RETURN AN ERROR, OR
-  #                # - USE THE VALUES IN THE __value__ KEY
-  #                result: "AMBIGUOUS"
+  @expression_doc doc:
+                    "Calculates date from value in __value__ key if complex values are provided.",
+                  expression: "datetime_add(datetime, offset, unit)",
+                  context: %{
+                    "datetime" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~U[2022-07-31 00:00:00Z]
+                    },
+                    "offset" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "1"
+                    },
+                    "unit" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "M"
+                    }
+                  },
+                  result: ~U[2022-08-31 00:00:00Z]
   def datetime_add(ctx, datetime, offset, unit) do
     datetime = DateHelpers.extract_datetimeish(eval!(datetime, ctx))
 
@@ -267,6 +271,21 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "datetime_from_unix(\"1701903600\", \"second\")",
                   context: %{},
                   result: DateTime.from_unix!(1_701_903_600, :second)
+  @expression_doc doc: "Parses date from value in __value__ key if complex values are provided.",
+                  expression: "datetime_from_unix(unix_time, unit)",
+                  context: %{
+                    "unix_time" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "1701903600000"
+                    },
+                    "unit" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "millisecond"
+                    }
+                  },
+                  result: DateTime.from_unix!(1_701_903_600_000, :millisecond)
   @spec datetime_from_unix(map, {:literal, String.t() | integer}, {:literal, unit :: String.t()}) ::
           DateTime.t()
   def datetime_from_unix(ctx, unix, unit) do
@@ -292,6 +311,7 @@ defmodule Expression.Callbacks.Standard do
                     ~s[The SWITCH function evaluates one value (called the expression) against a list of values, and returns the result corresponding to the first matching value. If there is no match, an optional default value (the last one in the list if the list is odd) may be returned],
                   expression: ~s[SWITCH(5, 1, "Sunday", 2, "Monday", 3, "Tuesday", "No match")],
                   result: "No match"
+
   def switch_vargs(ctx, arguments) do
     [key | options] = eval_args!(arguments, ctx)
     optional = if rem(length(options), 2) == 1, do: List.last(options), else: nil
@@ -311,6 +331,21 @@ defmodule Expression.Callbacks.Standard do
                     "The ROUND function rounds a number to a specified number of digits. For example, if cell A1 contains 23.7825, and you want to round that value to zero decimal places you can do ROUND(23.7825)",
                   expression: "ROUND(23.7825)",
                   result: "24"
+  @expression_doc doc: "Rounds from value in __value__ key if complex values are provided.",
+                  expression: "round(value, digits)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 23.7825
+                    },
+                    "digits" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    }
+                  },
+                  result: "23.78"
   @expression_category "number"
   def round(ctx, value) do
     [value] = eval_args!([value], ctx)
@@ -352,6 +387,27 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: ~s[MID("Fluid Flow", 20, 5)],
                   result: ""
 
+  @expression_doc doc: "Extract from value in __value__ key if complex values are provided.",
+                  expression: "mid(value, 7, 20)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "Fluid Flow"
+                    },
+                    "start_num" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    },
+                    "num_chars" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 5
+                    }
+                  },
+                  result: "Flow"
+
   def mid(ctx, text, start_num, num_chars) do
     [text, start_num, num_chars] = eval_args!([text, start_num, num_chars], ctx)
     String.slice(to_string(text), start_num - 1, num_chars)
@@ -377,6 +433,16 @@ defmodule Expression.Callbacks.Standard do
                   result: ~D[2022-01-01]
   @expression_doc doc: "Convert a date value and read the date field",
                   expression: "datevalue(date(2022, 1, 1)).date",
+                  result: ~D[2022-01-01]
+  @expression_doc doc: "Convert from value in __value__ key if complex values are provided.",
+                  expression: "datevalue(date).date",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2022-01-01"
+                    }
+                  },
                   result: ~D[2022-01-01]
   def datevalue(ctx, date, format) do
     [date, format] = eval!([date, format], ctx)
@@ -412,6 +478,21 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Attempt to parse a date value and return nil when failing",
                   expression: "parse_datevalue(\"👻👻👻👻\", \"%FT%T%:z\")",
                   result: nil
+  @expression_doc doc: "Parse value in __value__ key if complex values are provided.",
+                  expression: "parse_datevalue(datetime, format)",
+                  context: %{
+                    "datetime" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2016-02-29T22:25:00-00:00"
+                    },
+                    "format" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "%FT%T%:z"
+                    }
+                  },
+                  result: ~U[2016-02-29 22:25:00Z]
   def parse_datevalue(ctx, datetime, format) do
     [datetime, format] = eval_args!([datetime, format], ctx)
 
@@ -434,6 +515,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Getting today's day of the month",
                   expression: "day(now())",
                   fake_result: DateTime.utc_now().day
+  @expression_doc doc: "Return day from date in __value__ key if complex values are provided.",
+                  expression: "day(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~U[2016-02-29 22:25:00Z]
+                    }
+                  },
+                  result: 29
   def day(ctx, date) do
     %{day: day} = eval!(date, ctx)
     day
@@ -453,6 +544,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Move the date store in a piece of text by 1 month",
                   expression: "edate(\"2022-10-10\", 1)",
                   result: ~D[2022-11-10]
+  @expression_doc doc:
+                    "Move the date from value in __value__ key if complex values are provided.",
+                  expression: "edate(date, months)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2022-10-10"
+                    },
+                    "months" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    }
+                  },
+                  result: ~D[2022-11-10]
   def edate(ctx, date, months) do
     [date, months] = eval_args!([date, months], ctx)
     DateHelpers.extract_dateish(date) |> Timex.shift(months: months)
@@ -468,6 +575,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "filter(nil, & &1 == \"B\")",
                   result: Expression.error("Invalid enumerable")
+  @expression_doc doc: "Filter from value in __value__ key if complex values are provided.",
+                  expression: "filter(list, & &1 == \"B\")",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B", "C", "B"]
+                    }
+                  },
+                  result: ["B", "B"]
   def filter(ctx, enumerable, filter_fun) do
     [enumerable, filter_fun] = eval_args!([enumerable, filter_fun], ctx)
 
@@ -491,6 +608,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression:
                     "find([[\"Hello\", \"World\"], [\"Hi\", \"World\"]], & &1[0] == \"Hi\")",
                   result: ["Hi", "World"]
+  @expression_doc doc: "Find from value in __value__ key if complex values are provided.",
+                  expression: "find(list, & &1[0] == \"Hi\")",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => [["Hello", "World"], ["Hi", "World"]]
+                    }
+                  },
+                  result: ["Hi", "World"]
   def find(ctx, enumerable, find_fun) do
     [enumerable, find_fun] = eval_args!([enumerable, find_fun], ctx)
 
@@ -513,6 +640,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Get the current hour",
                   expression: "hour(now())",
                   fake_result: DateTime.utc_now().hour
+  @expression_doc doc: "Get the hour from value in __value__ key if complex values are provided.",
+                  expression: "hour(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~U[2022-07-31 03:00:00Z]
+                    }
+                  },
+                  result: 3
   def hour(ctx, date) do
     %{hour: hour} = eval!(date, ctx)
     hour
@@ -525,6 +662,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Get the current minute",
                   expression: "minute(now())",
                   fake_result: DateTime.utc_now().minute
+  @expression_doc doc:
+                    "Get the minute from value in __value__ key if complex values are provided.",
+                  expression: "minute(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~U[2022-07-31 03:23:00Z]
+                    }
+                  },
+                  result: 23
   def minute(ctx, date) do
     %{minute: minute} = DateHelpers.extract_datetimeish(eval!(date, ctx))
     minute
@@ -537,6 +685,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Get the current month",
                   expression: "month(now())",
                   fake_result: DateTime.utc_now().month
+  @expression_doc doc:
+                    "Get the month from value in __value__ key if complex values are provided.",
+                  expression: "month(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~U[2022-07-31 03:23:00Z]
+                    }
+                  },
+                  result: 7
   def month(ctx, date) do
     %{month: month} = eval!(date, ctx)
     month
@@ -570,6 +729,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "second(now)",
                   context: %{"now" => DateTime.utc_now()},
                   fake_result: DateTime.utc_now().second
+  @expression_doc doc:
+                    "Get the second from value in __value__ key if complex values are provided.",
+                  expression: "second(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~U[2022-07-31 03:23:15Z]
+                    }
+                  },
+                  result: 15
   def second(ctx, date) do
     %{second: second} = eval!(date, ctx)
     second
@@ -581,6 +751,27 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "date"
   @expression_doc expression: "time(12, 13, 14)",
                   result: %Time{hour: 12, minute: 13, second: 14}
+  @expression_doc doc:
+                    "Create a time from value in __value__ key if complex values are provided.",
+                  expression: "time(hour, minute, second)",
+                  context: %{
+                    "hour" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 12
+                    },
+                    "minute" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 13
+                    },
+                    "second" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 14
+                    }
+                  },
+                  result: ~T[12:13:14]
   def time(ctx, hours, minutes, seconds) do
     [hours, minutes, seconds] = eval_args!([hours, minutes, seconds], ctx)
     %Time{hour: hours, minute: minutes, second: seconds}
@@ -594,6 +785,17 @@ defmodule Expression.Callbacks.Standard do
                   result: %Time{hour: 2, minute: 30, second: 0}
   @expression_doc expression: "timevalue(\"2:30:55\")",
                   result: %Time{hour: 2, minute: 30, second: 55}
+  @expression_doc doc:
+                    "Create a time from value in __value__ key if complex values are provided.",
+                  expression: "timevalue(time)",
+                  context: %{
+                    "time" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2:30"
+                    }
+                  },
+                  result: ~T[02:30:00]
   def timevalue(ctx, expression) do
     expression = eval!(expression, ctx)
 
@@ -635,6 +837,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "weekday(today)",
                   context: %{"today" => ~D[2022-11-01]},
                   result: 3
+  @expression_doc doc:
+                    "Return day of week from value in __value__ key if complex values are provided.",
+                  expression: "weekday(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~D[2022-11-06]
+                    }
+                  },
+                  result: 1
   def weekday(ctx, date) do
     iso_week_day = Timex.weekday(eval!(date, ctx))
 
@@ -652,6 +865,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "year(now)",
                   context: %{"now" => DateTime.utc_now()},
                   fake_result: DateTime.utc_now().year
+  @expression_doc doc: "Return year from value in __value__ key if complex values are provided.",
+                  expression: "year(date)",
+                  context: %{
+                    "date" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ~D[2022-11-06]
+                    }
+                  },
+                  result: 2022
   def year(ctx, date) do
     %{year: year} = DateHelpers.extract_dateish(eval!(date, ctx))
     year
@@ -679,6 +902,23 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: false
+  @expression_doc doc:
+                    "Return true if value in __value__ key if complex values are provided evaluates to true.",
+                  expression: "and(gender = \"F\", age >= 18)",
+                  code_expression: "gender = \"F\" and age >= 18",
+                  context: %{
+                    "gender" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "F"
+                    },
+                    "age" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 18
+                    }
+                  },
+                  result: true
   def and_vargs(ctx, arguments) do
     arguments = eval_args!(arguments, ctx)
     Enum.all?(arguments, & &1)
@@ -689,6 +929,17 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "logical"
   @expression_doc expression: "not(false)", result: true
+  @expression_doc doc:
+                    "Return false if value in __value__ key if complex values are provided evaluates to truth-y.",
+                  expression: "not(boolean)",
+                  context: %{
+                    "boolean" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => false
+                    }
+                  },
+                  result: true
   def not_(ctx, argument) do
     !eval!(argument, ctx)
   end
@@ -709,6 +960,25 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "if(false, \"Yes\", \"No\")",
                   code_expression: "# Shorthand\nif(false, do: \"Yes\", else: \"No\")",
                   result: "No"
+  @expression_doc expression: "if(boolean, value1, value2)",
+                  context: %{
+                    "boolean" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => false
+                    },
+                    "value1" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "Yes"
+                    },
+                    "value2" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "No"
+                    }
+                  },
+                  result: "No"
   def if_(ctx, condition, yes, no) do
     result =
       case eval!(condition, ctx) do
@@ -726,6 +996,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "logical"
   @expression_doc doc: "Check whether the given argument is nil or an empty string",
                   expression: ~S|is_nil_or_empty(nil)|,
+                  result: true
+  @expression_doc doc:
+                    "Return true if value in __value__ key if complex values are provided is nil or an empty string.",
+                  expression: "is_nil_or_empty(argument)",
+                  context: %{
+                    "argument" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ""
+                    }
+                  },
                   result: true
   # Skipping the Credo check since this is a Stacks DSL Expression, not an
   # Elixir function in Turn
@@ -768,6 +1049,20 @@ defmodule Expression.Callbacks.Standard do
                   context: %{},
                   code_expression: "b or b",
                   result: false
+  @expression_doc expression: "or(a, b)",
+                  context: %{
+                    "a" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => false
+                    },
+                    "b" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "b"
+                    }
+                  },
+                  result: "b"
   def or_vargs(ctx, arguments) do
     Enum.reduce_while(arguments, false, fn arg, acc ->
       arg = eval!(arg, ctx)
@@ -781,6 +1076,15 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "number"
   @expression_doc expression: "abs(-1)", result: 1
   @expression_doc expression: "abs(-0.5)", result: 0.5
+  @expression_doc expression: "abs(number)",
+                  context: %{
+                    "number" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => -0.5
+                    }
+                  },
+                  result: 0.5
   def abs(ctx, number) do
     abs(eval!(number, ctx))
   end
@@ -791,6 +1095,25 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "number"
   @expression_doc expression: "max(1, 2, 3)",
                   result: 3
+  @expression_doc expression: "max(value1, value2, value3)",
+                  context: %{
+                    "value1" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    },
+                    "value2" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 4
+                    },
+                    "value3" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    }
+                  },
+                  result: 4
   def max_vargs(ctx, arguments) do
     Enum.max(eval_args!(arguments, ctx))
   end
@@ -800,6 +1123,25 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "number"
   @expression_doc expression: "min(1, 2, 3)",
+                  result: 1
+  @expression_doc expression: "min(value1, value2, value3)",
+                  context: %{
+                    "value1" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    },
+                    "value2" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 4
+                    },
+                    "value3" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    }
+                  },
                   result: 1
   def min_vargs(ctx, arguments) do
     Enum.min(eval_args!(arguments, ctx))
@@ -811,6 +1153,20 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "number"
   @expression_doc expression: "power(2, 3)",
                   fake_result: 8.0
+  @expression_doc expression: "power(number, power)",
+                  context: %{
+                    "number" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    },
+                    "power" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 3
+                    }
+                  },
+                  result: 8.0
   def power(ctx, a, b) do
     [a, b] = eval_args!([a, b], ctx)
     :math.pow(a, b)
