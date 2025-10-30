@@ -3990,7 +3990,8 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "delete(patient, \"gender\")",
                   context: %{"patient" => %{"gender" => "?", "age" => 32}},
                   result: %{"age" => 32}
-  @expression_doc doc: "",
+  @expression_doc doc:
+                    "Deletes an element from a map by the given key from __value__ keys if complex values are provided.",
                   expression: "delete(map, key)",
                   context: %{
                     "map" => %{
