@@ -1180,6 +1180,31 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "split(\"testing something\")", result: ["testing", "something"]
   @expression_doc expression: "split(\"testing something\", \"e\")",
                   result: ["t", "sting som", "thing"]
+  @expression_doc doc: "Split from value in __value__ key if complex values are provided.",
+                  expression: "split(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "testing something"
+                    }
+                  },
+                  result: ["testing", "something"]
+  @expression_doc doc: "Split from value in __value__ key if complex values are provided.",
+                  expression: "split(string, pattern)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "testing something"
+                    },
+                    "pattern" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "e"
+                    }
+                  },
+                  result: ["t", "sting som", "thing"]
   def split(ctx, binary),
     do: String.split(eval!(binary, ctx), " ")
 
@@ -1197,6 +1222,26 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "number"
   @expression_doc expression: "sum(1, 2, 3)",
                   result: 6
+  @expression_doc doc: "Sum from value in __value__ key if complex values are provided.",
+                  expression: "sum(val1, val2, val3)",
+                  context: %{
+                    "val1" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    },
+                    "val2" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    },
+                    "val3" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 3
+                    }
+                  },
+                  result: 6
   def sum_vargs(ctx, arguments) do
     Enum.sum(eval_args!(arguments, ctx))
   end
@@ -1212,6 +1257,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "char(65)",
                   result: "A"
+  @expression_doc doc:
+                    "Return character from value in __value__ key if complex values are provided.",
+                  expression: "char(code)",
+                  context: %{
+                    "code" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 65
+                    }
+                  },
+                  result: "A"
   def char(ctx, code) do
     code = eval!(code, ctx)
     <<code>>
@@ -1226,6 +1282,17 @@ defmodule Expression.Callbacks.Standard do
                   result: "ABC"
   @expression_doc expression: "clean(nil)",
                   result: ""
+  @expression_doc doc:
+                    "Return cleaned string from value in __value__ key if complex values are provided.",
+                  expression: "clean(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => <<65, 0, 66, 0, 67>>
+                    }
+                  },
+                  result: "ABC"
   def clean(ctx, binary) do
     binary
     |> eval!(ctx)
@@ -1248,6 +1315,16 @@ defmodule Expression.Callbacks.Standard do
                   result: 65
   @expression_doc expression: "code(nil)",
                   result: nil
+  @expression_doc doc: "Return code from value in __value__ key if complex values are provided.",
+                  expression: "code(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "A"
+                    }
+                  },
+                  result: 65
   def code(ctx, code_ast) do
     code = eval!(code_ast, ctx)
 
@@ -1274,6 +1351,27 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: "name surname"
+  @expression_doc doc:
+                    "Return concatenated string from value in __value__ key if complex values are provided.",
+                  expression: "concatenate(first_name, separator, last_name)",
+                  context: %{
+                    "first_name" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "name"
+                    },
+                    "separator" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => " "
+                    },
+                    "last_name" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "surname"
+                    }
+                  },
+                  result: "name surname"
   def concatenate_vargs(ctx, arguments) do
     arguments
     |> eval_args!(ctx)
@@ -1294,6 +1392,26 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "fixed(3.7979, 2, false)", result: "3.80"
   @expression_doc expression: "fixed(3.7979, 2)", result: "3.80"
   @expression_doc expression: "fixed(0.0909, 2)", result: "0.09"
+  @expression_doc doc: "Format from value in __value__ key if complex values are provided.",
+                  expression: "fixed(number, precision, no_commas)",
+                  context: %{
+                    "number" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 4.209922
+                    },
+                    "precision" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    },
+                    "no_commas" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => false
+                    }
+                  },
+                  result: "4.21"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
     Number.Delimit.number_to_delimited(number, precision: precision)
@@ -1328,6 +1446,21 @@ defmodule Expression.Callbacks.Standard do
                   result: "Умерла Мадлен Олбрай"
   @expression_doc expression: "left(nil, 4)",
                   result: nil
+  @expression_doc doc: "Return left from value in __value__ key if complex values are provided.",
+                  expression: "left(value, size)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foobar"
+                    },
+                    "size" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 4
+                    }
+                  },
+                  result: "foob"
   def left(ctx, binary, size) do
     [binary, size] = eval_args!([binary, size], ctx)
 
@@ -1347,6 +1480,17 @@ defmodule Expression.Callbacks.Standard do
                   result: 3
   @expression_doc expression: "len(nil)",
                   result: 0
+  @expression_doc doc:
+                    "Return length from value in __value__ key if complex values are provided.",
+                  expression: "len(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo"
+                    }
+                  },
+                  result: 3
   def len(ctx, binary) do
     String.length(to_string(eval!(binary, ctx)))
   end
@@ -1359,6 +1503,18 @@ defmodule Expression.Callbacks.Standard do
                   result: "foo bar"
   @expression_doc expression: "lower(nil)",
                   result: nil
+  @expression_doc doc:
+                    "
+                    Return lowercased string from value in __value__ key if complex values are provided.",
+                  expression: "lower(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "Foo Bar"
+                    }
+                  },
+                  result: "foo bar"
   def lower(ctx, binary) do
     text = eval!(binary, ctx)
 
@@ -1375,6 +1531,17 @@ defmodule Expression.Callbacks.Standard do
                   result: "Foo Bar"
   @expression_doc expression: "proper(nil)",
                   result: nil
+  @expression_doc doc:
+                    "Return first letter of every word capitalized string from value in __value__ key if complex values are provided.",
+                  expression: "proper(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo bar"
+                    }
+                  },
+                  result: "Foo Bar"
   def proper(ctx, binary) do
     text = eval!(binary, ctx)
 
@@ -1394,6 +1561,22 @@ defmodule Expression.Callbacks.Standard do
                   result: "**********"
   @expression_doc expression: "rept(nil, 10)",
                   result: nil
+  @expression_doc doc:
+                    "Return repeated string from value in __value__ key if complex values are provided.",
+                  expression: "rept(value, amount)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "*"
+                    },
+                    "amount" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 10
+                    }
+                  },
+                  result: "**********"
   def rept(ctx, value, amount) do
     text = eval!(value, ctx)
 
@@ -1415,6 +1598,21 @@ defmodule Expression.Callbacks.Standard do
                   result: "ту главы Госдепа США"
   @expression_doc expression: "right(nil, 3)",
                   result: nil
+  @expression_doc doc: "Return right from value in __value__ key if complex values are provided.",
+                  expression: "right(string, size)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "testing"
+                    },
+                    "size" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 3
+                    }
+                  },
+                  result: "ing"
   def right(ctx, binary, size) do
     text = eval!(binary, ctx)
 
@@ -1432,6 +1630,27 @@ defmodule Expression.Callbacks.Standard do
                   result: "I can do"
   @expression_doc expression: "substitute(nil, \"can't\", \"can do\")",
                   result: nil
+  @expression_doc doc:
+                    "Return substituted string from value in __value__ key if complex values are provided.",
+                  expression: "substitute(subject, pattern, replacement)",
+                  context: %{
+                    "subject" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "I can't"
+                    },
+                    "pattern" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "can't"
+                    },
+                    "replacement" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "can do"
+                    }
+                  },
+                  result: "I can do"
   def substitute(ctx, subject, pattern, replacement) do
     text = eval!(subject, ctx)
 
@@ -1447,6 +1666,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "unichar(65)", result: "A"
   @expression_doc expression: "unichar(233)", result: "é"
+  @expression_doc doc:
+                    "Return unicode character from value in __value__ key if complex values are provided.",
+                  expression: "unichar(code)",
+                  context: %{
+                    "code" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "233"
+                    }
+                  },
+                  result: "é"
   def unichar(ctx, code) do
     code = eval!(code, ctx)
     <<code::utf8>>
@@ -1458,6 +1688,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "unicode(\"A\")", result: 65
   @expression_doc expression: "unicode(\"é\")", result: 233
+  @expression_doc doc:
+                    "Return unicode code from value in __value__ key if complex values are provided.",
+                  expression: "unicode(char)",
+                  context: %{
+                    "char" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "é"
+                    }
+                  },
+                  result: 233
   def unicode(ctx, letter) do
     <<code::utf8>> = eval!(letter, ctx)
     code
@@ -1471,6 +1712,17 @@ defmodule Expression.Callbacks.Standard do
                   result: "FOO"
   @expression_doc expression: "upper(nil)",
                   result: nil
+  @expression_doc doc:
+                    "Return uppercased string from value in __value__ key if complex values are provided.",
+                  expression: "upper(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo"
+                    }
+                  },
+                  result: "FOO"
   def upper(ctx, binary) do
     text = eval!(binary, ctx)
 
@@ -1487,6 +1739,17 @@ defmodule Expression.Callbacks.Standard do
                   result: "foo"
   @expression_doc expression: "first_word(nil)",
                   result: ""
+  @expression_doc doc:
+                    "Return first word from value in __value__ key if complex values are provided.",
+                  expression: "first_word(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo bar baz"
+                    }
+                  },
+                  result: "foo"
   def first_word(ctx, binary) do
     [word | _] = String.split(to_string(eval!(binary, ctx)), " ")
     word
@@ -1499,6 +1762,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "percent(2/10)", result: "20%"
   @expression_doc expression: "percent(0.2)", result: "20%"
   @expression_doc expression: "percent(d)", context: %{"d" => "0.2"}, result: "20%"
+  @expression_doc doc:
+                    "Return percentage from value in __value__ key if complex values are provided.",
+                  expression: "percent(number)",
+                  context: %{
+                    "number" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2 / 10
+                    }
+                  },
+                  result: "20%"
   def percent(ctx, float) do
     float = eval!(float, ctx)
 
@@ -1513,6 +1787,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "read_digits(\"+271\")", result: "plus two seven one"
   @expression_doc expression: "read_digits(nil)", result: ""
+  @expression_doc doc:
+                    "Return read digits from value in __value__ key if complex values are provided.",
+                  expression: "read_digits(digits)",
+                  context: %{
+                    "digits" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "+271"
+                    }
+                  },
+                  result: "plus two seven one"
   def read_digits(ctx, binary) do
     map = %{
       "+" => "plus",
@@ -1545,6 +1830,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "remove_first_word(\"foo-bar\", \"-\")", result: "bar"
   @expression_doc expression: "remove_first_word(nil)", result: ""
   @expression_doc expression: "remove_first_word(nil, \"-\")", result: ""
+  @expression_doc doc:
+                    "Return string with first word removed from value in __value__ key if complex values are provided.",
+                  expression: "remove_first_word(string, seperator)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo-bar"
+                    },
+                    "seperator" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "-"
+                    }
+                  },
+                  result: "bar"
   def remove_first_word(ctx, binary) do
     separator = " "
 
@@ -1575,6 +1876,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc:
                     "Remove the last word from a list of words, using spaces as separator between words ",
                   expression: "remove_last_word(\"foo bar\")",
+                  result: "foo"
+  @expression_doc doc:
+                    "Return string with last word removed from value in __value__ key if complex values are provided.",
+                  expression: "remove_last_word(string, seperator)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo-bar"
+                    },
+                    "seperator" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "-"
+                    }
+                  },
                   result: "foo"
   def remove_last_word(ctx, binary) do
     [binary] = eval_args!([binary], ctx)
@@ -1608,6 +1925,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "regex_capture(\"testing\", \"test(.+)\")", result: ["ing"]
   @expression_doc expression: "regex_capture(\"testing\", \"foo(.+)\")", result: nil
+  @expression_doc doc:
+                    "Return captures from value in __value__ key if complex values are provided.",
+                  expression: "regex_capture(string, pattern)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "testing"
+                    },
+                    "pattern" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "test(.+)"
+                    }
+                  },
+                  result: ["ing"]
   def regex_capture(ctx, binary, pattern) do
     [binary, pattern] = eval_args!([binary, pattern], ctx)
     regex = Regex.compile!(pattern)
@@ -1629,6 +1962,22 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"match" => "ing"}
   @expression_doc expression: "regex_named_capture(\"testing\", \"foo(?P<match>.+)\")",
                   result: %{}
+  @expression_doc doc:
+                    "Return captures from value in __value__ key if complex values are provided.",
+                  expression: "regex_named_capture(string, pattern)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "testing"
+                    },
+                    "pattern" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "test(?P<match>.+)"
+                    }
+                  },
+                  result: %{"match" => "ing"}
   def regex_named_capture(ctx, binary, pattern) do
     [binary, pattern] = eval_args!([binary, pattern], ctx)
     regex = Regex.compile!(pattern)
@@ -1641,6 +1990,27 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "enum"
   @expression_doc expression: "with_index([\"A\", \"B\", \"C\"])",
+                  result: [["A", 0], ["B", 1], ["C", 2]]
+  @expression_doc doc:
+                    "Return list with indexes from value in __value__ key if complex values are provided.",
+                  expression: "with_index([val1, val2, val3])",
+                  context: %{
+                    "val1" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "A"
+                    },
+                    "val2" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "B"
+                    },
+                    "val3" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "C"
+                    }
+                  },
                   result: [["A", 0], ["B", 1], ["C", 2]]
   def with_index(ctx, enumerable) do
     [enumerable] = eval_args!([enumerable], ctx)
