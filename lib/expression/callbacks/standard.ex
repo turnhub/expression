@@ -3810,6 +3810,17 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => true, "match" => ~T[10:30:45]}
   @expression_doc expression: "has_time(\"there is no time here, just the number 25\")",
                   result: false
+  @expression_doc doc:
+                    "Tests whether expression contains time from value in __value__ key if complex values are provided.",
+                  expression: "has_time(expression)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the time is 10:30"
+                    }
+                  },
+                  result: %{"__value__" => true, "match" => ~T[10:30:00]}
   def has_time(ctx, expression) do
     if time = DateHelpers.extract_timeish(eval!(expression, ctx)) do
       %{
@@ -3836,7 +3847,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "map(nil, &(&1 * &1))",
                   result: Expression.error("Invalid enumerable")
-
+  @expression_doc doc:
+                    "Map over a list of items from value in __value__ key if complex values are provided.",
+                  expression: "map(expression, &date(2022, 1, &1))",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1..3
+                    }
+                  },
+                  result: [~D[2022-01-01], ~D[2022-01-02], ~D[2022-01-03]]
   def map(ctx, enumerable, mapper) do
     [enumerable, mapper] = eval_args!([enumerable, mapper], ctx)
 
@@ -3858,6 +3879,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Generate a number between 1 and 10",
                   expression: "rand_between(1, 10)",
                   fake_result: 3
+  @expression_doc doc:
+                    "Generate a number between min and max from value in __value__ keys if complex values are provided.",
+                  expression: "rand_between(min, max)",
+                  context: %{
+                    "min" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    },
+                    "max" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 10
+                    }
+                  },
+                  fake_result: 3
   def rand_between(ctx, min, max) do
     [min, max] = eval_args!([min, max], ctx)
     Enum.random(min..max)
@@ -3871,6 +3908,22 @@ defmodule Expression.Callbacks.Standard do
                   result: 0
   @expression_doc expression: "rem(85, 3)",
                   result: 1
+  @expression_doc doc:
+                    "Return the division remainder of two integers from value in __value__ keys if complex values are provided.",
+                  expression: "rem(int1, int2)",
+                  context: %{
+                    "int1" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 4
+                    },
+                    "int2" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    }
+                  },
+                  result: 0
   def rem(ctx, integer1, integer2) do
     [integer1, integer2] = eval_args!([integer1, integer2], ctx)
 
@@ -3907,6 +3960,22 @@ defmodule Expression.Callbacks.Standard do
                   result: ["A", "B", "C"]
   @expression_doc expression: "append([\"A\", \"B\"], [\"C\", \"B\"])",
                   result: ["A", "B", "C", "B"]
+  @expression_doc doc:
+                    "Appends an item or a list of items to a given list from __value__ keys if complex values are provided.",
+                  expression: "append(list, payload)",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B"]
+                    },
+                    "payload" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "C"
+                    }
+                  },
+                  result: ["A", "B", "C"]
   def append(ctx, list, payload) do
     [list, payload] = eval_args!([list, payload], ctx)
     enumerable = if is_list(payload), do: payload, else: [payload]
@@ -3920,6 +3989,21 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "enum"
   @expression_doc expression: "delete(patient, \"gender\")",
                   context: %{"patient" => %{"gender" => "?", "age" => 32}},
+                  result: %{"age" => 32}
+  @expression_doc doc: "",
+                  expression: "delete(map, key)",
+                  context: %{
+                    "map" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => %{"gender" => "?", "age" => 32}
+                    },
+                    "key" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "gender"
+                    }
+                  },
                   result: %{"age" => 32}
   def delete(ctx, map, key) do
     [map, key] = eval_args!([map, key], ctx)
