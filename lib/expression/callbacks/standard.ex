@@ -2031,6 +2031,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "word(\"hello cow-boy\", 2, true)", result: "cow-boy"
   @expression_doc expression: "word(\"hello cow-boy\", -1)", result: "boy"
   @expression_doc expression: "word(nil, 1)", result: ""
+  @expression_doc doc:
+                    "Return nth word from value in __value__ key if complex values are provided.",
+                  expression: "word(string, n)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hello cow-boy"
+                    },
+                    "n" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    }
+                  },
+                  result: "cow"
   def word(ctx, binary, n) do
     [binary, n] = eval_args!([binary, n], ctx)
     parts = String.split(to_string(binary), @punctuation_pattern)
@@ -2076,6 +2092,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "word_count(\"hello cow-boy\")", result: 3
   @expression_doc expression: "word_count(\"hello cow-boy\", true)", result: 2
   @expression_doc expression: "word_count(nil)", result: 0
+  @expression_doc doc:
+                    "Return word count from value in __value__ key if complex values are provided.",
+                  expression: "word_count(string, by_spaces)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hello cow-boy"
+                    },
+                    "by_spaces" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => true
+                    }
+                  },
+                  result: 2
   def word_count(ctx, binary) do
     text = eval!(binary, ctx)
 
@@ -2122,6 +2154,27 @@ defmodule Expression.Callbacks.Standard do
                   result: "fun"
   @expression_doc expression: "word_slice(nil, -1)",
                   result: ""
+  @expression_doc doc:
+                    "Return word slice from value in __value__ key if complex values are provided.",
+                  expression: "word_slice(string, start, stop)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "FLOIP expressions are fun"
+                    },
+                    "start" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 2
+                    },
+                    "stop" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 4
+                    }
+                  },
+                  result: "expressions are"
   def word_slice(ctx, binary, start) do
     [binary, start] = eval_args!([binary, start], ctx)
 
@@ -2192,6 +2245,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "isnumber(1.0)", result: true
   @expression_doc expression: "isnumber(\"1.0\")", result: true
   @expression_doc expression: "isnumber(\"a\")", result: false
+  @expression_doc doc:
+                    "Return boolean indicating if value in __value__ key is a number if complex values are provided.",
+                  expression: "isnumber(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "1"
+                    }
+                  },
+                  result: true
   def isnumber(ctx, var) do
     var = eval!(var, ctx)
 
@@ -2217,6 +2281,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "isbool(0)", result: false
   @expression_doc expression: "isbool(\"true\")", result: false
   @expression_doc expression: "isbool(\"false\")", result: false
+  @expression_doc doc:
+                    "Return boolean indicating if value in __value__ key is a boolean if complex values are provided.",
+                  expression: "isbool(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "true"
+                    }
+                  },
+                  result: true
   def isbool(ctx, var) do
     eval!(var, ctx) in [true, false]
   end
@@ -2228,6 +2303,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "isstring(\"hello\")", result: true
   @expression_doc expression: "isstring(false)", result: false
   @expression_doc expression: "isstring(1)", result: false
+  @expression_doc doc:
+                    "Return boolean indicating if value in __value__ key is a string if complex values are provided.",
+                  expression: "isstring(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hello"
+                    }
+                  },
+                  result: true
   def isstring(ctx, binary), do: is_binary(eval!(binary, ctx))
 
   defp search_words(haystack, words) do
@@ -2256,6 +2342,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Check whether the given list contains all the provided items",
                   expression: ~S|has_all_members(["A", "B", "C"], ["C", "B"])|,
                   result: true
+  @expression_doc doc:
+                    "Return boolean indicating if a list contains all items from value in __value__ key if complex values are provided.",
+                  expression: "has_all_members(list, items)",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B", "C"]
+                    },
+                    "items" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["C", "B"]
+                    }
+                  },
+                  result: true
   def has_all_members(ctx, list, items) do
     [list, items] = eval_args!([list, items], ctx)
     Enum.all?(items, &Enum.member?(list, &1))
@@ -2270,6 +2372,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_all_words(\"the quick brown FOX\", \"the fox\")", result: true
   @expression_doc expression: "has_all_words(\"the quick brown FOX\", \"red fox\")", result: false
   @expression_doc expression: "has_all_words(nil, \"red fox\")", result: false
+  @expression_doc doc:
+                    "Return boolean whether all the words are contained in text value in __value__ key if complex values are provided.",
+                  expression: "has_all_words(haystack, words)",
+                  context: %{
+                    "haystack" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the quick brown FOX"
+                    },
+                    "words" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the fox"
+                    }
+                  },
+                  result: true
   def has_all_words(ctx, haystack, words) do
     [haystack, words] = eval_args!([haystack, words], ctx)
 
@@ -2291,6 +2409,22 @@ defmodule Expression.Callbacks.Standard do
                   result: true
   @expression_doc expression: ~S|has_any_beginning("كيف حالك؟", ["كيف حالك", "hey how are you"])|,
                   result: true
+  @expression_doc doc:
+                    "Return boolean indicating if text starts with any of the provided prefixes from value in __value__ key if complex values are provided.",
+                  expression: "has_any_beginning(text, prefixes)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "HEY HOW ARE YOU?"
+                    },
+                    "prefixes" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["hello", "hey how are you"]
+                    }
+                  },
+                  result: true
   def has_any_beginning(ctx, text, prefixes) do
     [text, prefixes] = eval_args!([text, prefixes], ctx)
     parsed_text = String.downcase(to_string(text))
@@ -2309,6 +2443,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression:
                     ~S|has_any_exact_phrase("كيف حالك؟", ["كيف حالك", "hey how are you"])|,
                   result: false
+  @expression_doc doc:
+                    "Return boolean indicating if text exactly matches any of the provided phrases from value in __value__ key if complex values are provided.",
+                  expression: "has_any_exact_phrase(text, phrases)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "HEY HOW ARE YOU?"
+                    },
+                    "phrases" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["hello", "hey how are you?"]
+                    }
+                  },
+                  result: true
   def has_any_exact_phrase(ctx, text, phrases) do
     [text, phrases] = eval_args!([text, phrases], ctx)
 
@@ -2324,6 +2474,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "Check whether the given list contains any of the provided items",
                   expression: ~S|has_any_member(["A", "B", "C"], ["Z", "C"])|,
                   result: true
+  @expression_doc doc:
+                    "Return boolean indicating if a list contains any items from value in __value__ key if complex values are provided.",
+                  expression: "has_any_member(list, items)",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B", "C"]
+                    },
+                    "items" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["Z", "C"]
+                    }
+                  },
+                  result: true
   def has_any_member(ctx, list, items) do
     [list, items] = eval_args!([list, items], ctx)
     Enum.any?(items, &Enum.member?(list, &1))
@@ -2333,6 +2499,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc:
                     "Check whether the given text ends with the provided string. The function performs a case-insensitive match.",
                   expression: ~S|has_end("I would like to book a vaccine", "vaccine")|,
+                  result: true
+  @expression_doc doc:
+                    "Return boolean indicating if text ends with provided string from value in __value__ key if complex values are provided.",
+                  expression: "has_end(text, end_text)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "I would like to book a vaccine"
+                    },
+                    "end_text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "vaccine"
+                    }
+                  },
                   result: true
   def has_end(ctx, text, end_text) do
     [text, end_text] = eval_args!([text, end_text], ctx)
@@ -2349,6 +2531,22 @@ defmodule Expression.Callbacks.Standard do
                   expression:
                     ~S|has_any_end("I would like to book a vaccine", ["appointment", "visit", "vaccine"])|,
                   result: true
+  @expression_doc doc:
+                    "Return boolean indicating if text ends with any of the provided strings from value in __value__ key if complex values are provided.",
+                  expression: "has_any_end(text, end_texts)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "I would like to book a vaccine"
+                    },
+                    "end_texts" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["appointment", "visit", "vaccine"]
+                    }
+                  },
+                  result: true
   def has_any_end(ctx, text, end_texts) do
     [text, end_texts] = eval_args!([text, end_texts], ctx)
 
@@ -2364,6 +2562,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "url_encode(\"hello world\")",
                   result: URI.encode("hello world")
+  @expression_doc doc:
+                    "Return URL encoded string from value in __value__ key if complex values are provided.",
+                  expression: "url_encode(url)",
+                  context: %{
+                    "url" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hello world"
+                    }
+                  },
+                  result: URI.encode("hello world")
   def url_encode(ctx, thing) do
     eval!(thing, ctx)
     |> URI.encode()
@@ -2374,6 +2583,17 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "string"
   @expression_doc expression: "url_decode(\"hello%20world\")",
+                  result: "hello world"
+  @expression_doc doc:
+                    "Return URL decoded string from value in __value__ key if complex values are provided.",
+                  expression: "url_decode(url)",
+                  context: %{
+                    "url" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hello%20world"
+                    }
+                  },
                   result: "hello world"
   def url_decode(ctx, thing) do
     eval!(thing, ctx)
@@ -2386,6 +2606,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "base64_encode(\"hello world\")",
                   result: "aGVsbG8gd29ybGQ="
+  @expression_doc doc:
+                    "Return Base64 encoded string from value in __value__ key if complex values are provided.",
+                  expression: "base64_encode(text)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hello world"
+                    }
+                  },
+                  result: "aGVsbG8gd29ybGQ="
   def base64_encode(ctx, thing) do
     thing = eval!(thing, ctx)
     Base.encode64(thing)
@@ -2396,6 +2627,17 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "string"
   @expression_doc expression: "base64_decode(\"aGVsbG8gd29ybGQ=\")",
+                  result: "hello world"
+  @expression_doc doc:
+                    "Return Base64 decoded string from value in __value__ key if complex values are provided.",
+                  expression: "base64_decode(text)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "aGVsbG8gd29ybGQ="
+                    }
+                  },
                   result: "hello world"
   def base64_decode(ctx, thing) do
     thing = eval!(thing, ctx)
@@ -2416,6 +2658,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "reject(nil, & &1 == \"B\")",
                   result: Expression.error("Invalid enumerable")
+  @expression_doc doc:
+                    "Return list with rejected items from value in __value__ key if complex values are provided.",
+                  expression: "reject(list, & &1 == \"B\")",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B", "C", "B"]
+                    }
+                  },
+                  result: ["A", "C"]
   def reject(ctx, enumerable, reject_fun) do
     [enumerable, reject_fun] = eval_args!([enumerable, reject_fun], ctx)
 
@@ -2437,6 +2690,17 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "enum"
   @expression_doc expression: "uniq([\"A\", \"B\", \"C\", \"B\"])", result: ["A", "B", "C"]
+  @expression_doc doc:
+                    "Return list with unique items from value in __value__ key if complex values are provided.",
+                  expression: "uniq(list)",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B", "C", "B"]
+                    }
+                  },
+                  result: ["A", "B", "C"]
   def uniq(ctx, enumerable) do
     [enumerable] = eval_args!([enumerable], ctx)
 
@@ -2452,6 +2716,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "sort_by(nil, &rand_between(1, 5))",
                   result: Expression.error("Invalid enumerable")
+  @expression_doc doc:
+                    "Return list with unique items from value in __value__ key if complex values are provided.",
+                  expression: "sort_by(list, & &1 < &2)",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["a", "c", "b"]
+                    }
+                  },
+                  result: ["a", "c", "b"]
   def sort_by(ctx, enumerable, sorter_fun) do
     [enumerable, sorter_fun] = eval_args!([enumerable, sorter_fun], ctx)
 
@@ -2476,6 +2751,22 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => true, "match" => "Quick Fox"}
   @expression_doc expression: "has_any_word(\"The Quick Brown Fox\", \"yellow\")",
                   result: %{"__value__" => false, "match" => nil}
+  @expression_doc doc:
+                    "Tests whether any of the words are contained in text value in __value__ key if complex values are provided.",
+                  expression: "has_any_word(haystack, words)",
+                  context: %{
+                    "haystack" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "The Quick Brown Fox"
+                    },
+                    "words" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "fox quick"
+                    }
+                  },
+                  result: %{"__value__" => true, "match" => "Quick Fox"}
   def has_any_word(ctx, haystack, words) do
     haystack = eval!(haystack, ctx)
 
@@ -2517,6 +2808,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression:
                     ~S|has_any_phrase("hey how are you?", "hello, bye bye, how are you")|,
                   result: true
+  @expression_doc doc:
+                    "Return boolean indicating if text contains any of the provided phrases from value in __value__ key if complex values are provided.",
+                  expression: "has_any_phrase(text, phrases)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "hey how are you?"
+                    },
+                    "phrases" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["hello", "bye bye", "how are you"]
+                    }
+                  },
+                  result: true
   def has_any_phrase(ctx, text, phrases) do
     [text, phrases] = eval_args!([text, phrases], ctx)
 
@@ -2546,6 +2853,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_beginning(\"The Quick Brown\", \"the    quick\")",
                   result: false
   @expression_doc expression: "has_beginning(\"The Quick Brown\", \"quick brown\")", result: false
+  @expression_doc doc:
+                    "Tests whether text starts with beginning value in __value__ key if complex values are provided.",
+                  expression: "has_beginning(text, beginning)",
+                  context: %{
+                    "text" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "The Quick Brown"
+                    },
+                    "beginning" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the quick"
+                    }
+                  },
+                  result: true
   def has_beginning(ctx, text, beginning) do
     [text, beginning] = eval_args!([text, beginning], ctx)
 
@@ -2594,6 +2917,22 @@ defmodule Expression.Callbacks.Standard do
                     "datetime" => nil,
                     "match" => nil
                   }
+  @expression_doc doc:
+                    "Tests whether expression contains a date from value in __value__ key if complex values are provided.",
+                  expression: "has_date(expression)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the date is 15/01/2017 05:50"
+                    }
+                  },
+                  result: %{
+                    "__value__" => true,
+                    "date" => ~D[2017-01-15],
+                    "datetime" => ~U[2017-01-15 05:50:00Z],
+                    "match" => ~U[2017-01-15 05:50:00Z]
+                  }
   def has_date(ctx, expression) do
     {date, datetime} =
       if datetime = DateHelpers.extract_datetimeish(eval!(expression, ctx)) do
@@ -2633,6 +2972,27 @@ defmodule Expression.Callbacks.Standard do
                     "match" => nil,
                     "test" => ~D[2017-01-15]
                   }
+
+  @expression_doc doc:
+                    "Tests whether expression is equal to date from value in __value__ key if complex values are provided.",
+                  expression: "has_date_eq(\"the date is 15/01/2017\", \"2017-01-15\")",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the date is 15/01/2017"
+                    },
+                    "date_string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2017-01-15"
+                    }
+                  },
+                  result: %{
+                    "__value__" => true,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-01-15]
+                  }
   def has_date_eq(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = DateHelpers.extract_dateish(expression)
@@ -2663,6 +3023,26 @@ defmodule Expression.Callbacks.Standard do
                     "match" => ~D[2017-01-15],
                     "test" => ~D[2017-03-15]
                   }
+  @expression_doc doc:
+                    "Tests whether expression is greater than date from value in __value__ key if complex values are provided.",
+                  expression: "has_date_gt(expression, date_string)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the date is 15/01/2017"
+                    },
+                    "date_string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2017-01-01"
+                    }
+                  },
+                  result: %{
+                    "__value__" => true,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-01-01]
+                  }
   def has_date_gt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
     found_date = DateHelpers.extract_dateish(expression)
@@ -2692,6 +3072,26 @@ defmodule Expression.Callbacks.Standard do
                     "__value__" => false,
                     "match" => ~D[2021-01-15],
                     "test" => ~D[2017-03-15]
+                  }
+  @expression_doc doc:
+                    "Tests whether expression is less than date from value in __value__ key if complex values are provided.",
+                  expression: "has_date_lt(expression, date_string)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the date is 15/01/2017"
+                    },
+                    "date_string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "2017-06-01"
+                    }
+                  },
+                  result: %{
+                    "__value__" => true,
+                    "match" => ~D[2017-01-15],
+                    "test" => ~D[2017-06-01]
                   }
   def has_date_lt(ctx, expression, date_string) do
     [expression, date_string] = eval_args!([expression, date_string], ctx)
@@ -2740,6 +3140,17 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => false, "email" => nil}
   @expression_doc expression: "has_email(nil)",
                   result: %{"__value__" => false, "email" => nil}
+  @expression_doc doc:
+                    "Tests whether an email is contained in expression from value in __value__ key if complex values are provided.",
+                  expression: "has_email(expression)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "my email is foo1@bar.com, please respond"
+                    }
+                  },
+                  result: %{"__value__" => true, "email" => "foo1@bar.com"}
   def has_email(ctx, expression) do
     expression = eval!(expression, ctx)
 
@@ -2778,6 +3189,26 @@ defmodule Expression.Callbacks.Standard do
                           "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
                         }
                       ]
+                    }
+                  },
+                  result: false
+  @expression_doc doc:
+                    "Returns whether the groups contain the given uuid from value in __value__ key if complex values are provided.",
+                  expression: "has_group(groups, uuid)",
+                  context: %{
+                    "groups" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => [
+                        %{
+                          "uuid" => "b7cf0d83-f1c9-411c-96fd-c511a4cfa86d"
+                        }
+                      ]
+                    },
+                    "uuid" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "00000000-0000-0000-0000-000000000000"
                     }
                   },
                   result: false
@@ -2843,6 +3274,16 @@ defmodule Expression.Callbacks.Standard do
                   result: [1, 2, 3]
   @expression_doc expression: "parse_json('[1,2,3]')",
                   result: [1, 2, 3]
+  @expression_doc doc: "Parses JSON from value in __value__ key if complex values are provided.",
+                  expression: "parse_json(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "[1,2,3]"
+                    }
+                  },
+                  result: [1, 2, 3]
   def parse_json(ctx, data) do
     case eval!(data, ctx) do
       binary when is_binary(binary) -> Jason.decode!(binary)
@@ -2857,6 +3298,16 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "json(data)",
                   context: %{"data" => %{"foo" => "bar"}},
                   result: Jason.encode!(%{"foo" => "bar"})
+  @expression_doc doc: "Converts data from __value__ key to JSON if complex values are provided.",
+                  expression: "json(data)",
+                  context: %{
+                    "data" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => %{"foo" => "bar"}
+                    }
+                  },
+                  result: "{\"foo\":\"bar\"}"
   def json(ctx, data) do
     data = eval!(data, ctx)
     Jason.encode!(data)
@@ -2868,6 +3319,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "enum"
   @expression_doc doc: "Check whether the given list has the item as a member",
                   expression: ~S|has_member(["A", "B", "C"], "C")|,
+                  result: true
+  @expression_doc doc:
+                    "Check whether the given list has the item as a member from __value__ keys if complex values are provided.",
+                  expression: "has_member(list, item)",
+                  context: %{
+                    "list" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => ["A", "B", "C"]
+                    },
+                    "item" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "C"
+                    }
+                  },
                   result: true
   def has_member(ctx, list, item) do
     [list, item] = eval_args!([list, item], ctx)
@@ -2886,7 +3353,17 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"__value__" => true, "number" => 0.5}
   @expression_doc expression: "has_number(\"0.6\")",
                   result: %{"__value__" => true, "number" => 0.6}
-
+  @expression_doc doc:
+                    "Tests whether expression contains a number from value in __value__ key if complex values are provided.",
+                  expression: "has_number(string)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the number is 42 and 5"
+                    }
+                  },
+                  result: %{"__value__" => true, "number" => 42.0}
   def has_number(ctx, expression) do
     expression = eval!(expression, ctx)
     number = extract_numberish(expression)
@@ -2907,6 +3384,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_eq(\"the number is 40\", \"42\")", result: false
   @expression_doc expression: "has_number_eq(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_eq(\"four hundred\", \"foo\")", result: false
+  @expression_doc doc:
+                    "Tests whether expression is equal to number from value in __value__ key if complex values are provided.",
+                  expression: "has_number_eq(string, float)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the number is 42"
+                    },
+                    "float" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 42
+                    }
+                  },
+                  result: true
   def has_number_eq(ctx, expression, float) do
     [expression, float] = eval_args!([expression, float], ctx)
 
@@ -2931,6 +3424,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_gt(\"the number is 40\", \"40\")", result: false
   @expression_doc expression: "has_number_gt(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_gt(\"four hundred\", \"foo\")", result: false
+  @expression_doc doc:
+                    "Tests whether expression is greater than number from value in __value__ key if complex values are provided.",
+                  expression: "has_number_gt(string, float)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the number is 42"
+                    },
+                    "float" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 40
+                    }
+                  },
+                  result: true
   def has_number_gt(ctx, expression, float) do
     [expression, float] = eval_args!([expression, float], ctx)
 
@@ -2955,6 +3464,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_gte(\"the number is 40\", \"45\")", result: false
   @expression_doc expression: "has_number_gte(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_gte(\"four hundred\", \"foo\")", result: false
+  @expression_doc doc:
+                    "Tests whether expression is greater than or equal to number from value in __value__ key if complex values are provided.",
+                  expression: "has_number_gte(string, float)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the number is 42"
+                    },
+                    "float" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 42
+                    }
+                  },
+                  result: true
   def has_number_gte(ctx, expression, float) do
     [expression, float] = eval_args!([expression, float], ctx)
 
@@ -2979,6 +3504,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lt(\"the number is 40\", \"40\")", result: false
   @expression_doc expression: "has_number_lt(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_lt(\"four hundred\", \"foo\")", result: false
+  @expression_doc doc:
+                    "Tests whether expression is less than number from value in __value__ key if complex values are provided.",
+                  expression: "has_number_lt(string, float)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the number is 42"
+                    },
+                    "float" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 44
+                    }
+                  },
+                  result: true
   def has_number_lt(ctx, expression, float) do
     [expression, float] = eval_args!([expression, float], ctx)
 
@@ -3005,6 +3546,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lte(\"@response\", 5)",
                   context: %{"response" => 3},
                   result: true
+  @expression_doc doc:
+                    "Tests whether expression is less or equal than number from value in __value__ key if complex values are provided.",
+                  expression: "has_number_lte(string, float)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "the number is 42"
+                    },
+                    "float" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 42
+                    }
+                  },
+                  result: true
   def has_number_lte(ctx, expression, float) do
     [expression, float] = eval_args!([expression, float], ctx)
 
@@ -3027,7 +3584,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_only_phrase(\"\", \"\")", result: true
   @expression_doc expression: "has_only_phrase(\"The Quick Brown Fox\", \"quick brown\")",
                   result: false
-
+  @expression_doc doc:
+                    "Tests whether expression contains only phrase from value in __value__ keys if complex values are provided.",
+                  expression: "has_only_phrase(string, phrase)",
+                  context: %{
+                    "string" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "Quick Brown"
+                    },
+                    "phrase" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "quick brown"
+                    }
+                  },
+                  result: true
   def has_only_phrase(ctx, expression, phrase) do
     [expression, phrase] = eval_args!([expression, phrase], ctx)
     result = Enum.map([expression, phrase], &String.downcase(String.trim(to_string(&1))))
@@ -3046,6 +3618,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_only_text(\"foo\", \"foo\")", result: true
   @expression_doc expression: "has_only_text(\"\", \"\")", result: true
   @expression_doc expression: "has_only_text(\"foo\", \"FOO\")", result: false
+  @expression_doc doc:
+                    "Returns whether two text values are equal from value in __value__ keys if complex values are provided.",
+                  expression: "has_only_text(string, phrase)",
+                  context: %{
+                    "expression_one" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo"
+                    },
+                    "expression_two" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "foo"
+                    }
+                  },
+                  result: true
   def has_only_text(ctx, expression_one, expression_two) do
     [expression_one, expression_two] = eval_args!([expression_one, expression_two], ctx)
     to_string(expression_one) == to_string(expression_two)
@@ -3060,6 +3648,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_pattern(\"Buy cheese please\", \"buy (\\w+)\")", result: true
   @expression_doc expression: "has_pattern(\"Sell cheese please\", \"buy (\\w+)\")", result: false
   @expression_doc expression: "has_pattern(nil, \"buy (\\w+)\")", result: false
+  @expression_doc doc:
+                    "Returns whether two text values are equal from value in __value__ keys if complex values are provided.",
+                  expression: "has_pattern(expression, pattern)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "Buy cheese please"
+                    },
+                    "pattern" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "buy (\\w+)"
+                    }
+                  },
+                  result: true
   def has_pattern(ctx, expression, pattern) do
     [expression, pattern] = eval_args!([expression, pattern], ctx)
 
@@ -3093,6 +3697,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_phone(\"+27\", \"ZA\")",
                   result: %{"__value__" => false, "phonenumber" => nil}
   @expression_category "string"
+  @expression_doc doc:
+                    "Tests whether expression contains a phone number from value in __value__ key if complex values are provided.",
+                  expression: "has_phone(expression)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "my number is +12067799294 thanks"
+                    }
+                  },
+                  result: %{"__value__" => true, "phonenumber" => "+12067799294"}
   def has_phone(ctx, expression) do
     [expression] = eval_args!([expression], ctx)
     letters_removed = Regex.replace(~r/[a-z]/i, to_string(expression), "")
@@ -3130,12 +3745,19 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"brown fox\")", result: true
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"quick fox\")", result: false
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
-  @expression_doc expression: "has_phrase(enum, \"__value__ key\")",
+  @expression_doc doc:
+                    "Tests whether expression contains phrase from value in __value__ keys if complex values are provided.",
+                  expression: "has_phrase(\"the quick brown fox\", \"brown fox\")",
                   context: %{
-                    "enum" => %{
+                    "expression" => %{
                       "display" => "value for display key",
                       "value" => "value for value key",
-                      "__value__" => "value for __value__ key"
+                      "__value__" => "the quick brown fox"
+                    },
+                    "phrase" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "brown fox"
                     }
                   },
                   result: true
