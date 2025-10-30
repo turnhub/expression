@@ -3747,7 +3747,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_phrase(\"the quick brown fox\", \"\")", result: true
   @expression_doc doc:
                     "Tests whether expression contains phrase from value in __value__ keys if complex values are provided.",
-                  expression: "has_phrase(\"the quick brown fox\", \"brown fox\")",
+                  expression: "has_phrase(expression, phrase)",
                   context: %{
                     "expression" => %{
                       "display" => "value for display key",
@@ -3778,6 +3778,17 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_text(\" \n\")", result: false
   @expression_doc expression: "has_text(123)", result: true
   @expression_doc expression: "has_text(nil)", result: false
+  @expression_doc doc:
+                    "Tests whether expression has text from value in __value__ key if complex values are provided.",
+                  expression: "has_text(expression)",
+                  context: %{
+                    "expression" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "quick brown"
+                    }
+                  },
+                  result: true
   def has_text(ctx, expression) do
     expression =
       expression
