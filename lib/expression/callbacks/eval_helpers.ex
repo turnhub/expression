@@ -3,13 +3,23 @@ defmodule Expression.Callbacks.EvalHelpers do
 
   @doc """
   Evaluate the given AST against the context and return the value
-  after evaluation.
+  after evaluation. If `with_defaults` is true (the default), then
+  the value after evaluation is converted to its default value, which
+  is the value as is for non complex fields, and the `__value__` key for
+  complex fields.
   """
   @spec eval!(term, map) :: term
-  def eval!(ast, ctx) do
-    ast
-    |> Expression.Eval.eval!(ctx)
-    |> Expression.Eval.not_founds_as_nil()
+  def eval!(ast, ctx, with_defaults \\ true) do
+    result = Expression.Eval.eval!(ast, ctx)
+
+    result =
+      if with_defaults do
+        Expression.Eval.default_value(result)
+      else
+        result
+      end
+
+    Expression.Eval.not_founds_as_nil(result)
   end
 
   @doc """
