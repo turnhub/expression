@@ -10,9 +10,7 @@ defmodule Expression.Callbacks.EvalHelpers do
   """
   @spec eval!(term, map) :: term
   def eval!(ast, ctx, with_defaults \\ true) do
-    result =
-      ast
-      |> Expression.Eval.eval!(ctx)
+    result = Expression.Eval.eval!(ast, ctx)
 
     result =
       if with_defaults do
