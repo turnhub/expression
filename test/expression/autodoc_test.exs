@@ -18,6 +18,28 @@ defmodule Expression.AutodocTest do
 
     assert expression_docs == [
              %{
+               context: %{
+                 "day" => %{
+                   "__value__" => 15,
+                   "display" => "value for display key",
+                   "value" => "value for value key"
+                 },
+                 "month" => %{
+                   "__value__" => 1,
+                   "display" => "value for display key",
+                   "value" => "value for value key"
+                 },
+                 "year" => %{
+                   "__value__" => 2025,
+                   "display" => "value for display key",
+                   "value" => "value for value key"
+                 }
+               },
+               doc: "Construct date from value in __value__ key if complex values are provided.",
+               result: ~D[2025-01-15],
+               expression: "date(year, month, day)"
+             },
+             %{
                context: %{},
                doc: "Invalid date inputs",
                result: %{
