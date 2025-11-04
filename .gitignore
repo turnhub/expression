@@ -24,3 +24,6 @@ expression-*.tar
 
 /priv/plts/*.plt
 /priv/plts/*.plt.hash
+
+# Expert LS
+.expert
