@@ -83,8 +83,9 @@ defmodule Expression do
     String.replace(expression, ~r/@([a-z]+)(\(|\.)?/i, "@@\\g{1}\\g{2}")
   end
 
-  @spec parse!(String.t() | Number.t() | Time.t()) :: Keyword.t()
+  @spec parse!(String.t() | Number.t() | Time.t() | boolean()) :: Keyword.t()
   def parse!(expression) when is_number(expression), do: to_string(expression) |> parse!()
+  def parse!(expression) when is_boolean(expression), do: to_string(expression) |> parse!()
 
   def parse!(expression) do
     expression = if time_struct?(expression), do: Time.to_string(expression), else: expression
