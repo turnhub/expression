@@ -204,6 +204,8 @@ defmodule ExpressionTest do
       assert "123" == Expression.evaluate_as_string!("@([1,2,3])")
       assert "1" == Expression.evaluate_as_string!(1)
       assert "1.5" == Expression.evaluate_as_string!(1.5)
+      assert "true" == Expression.evaluate_as_string!(true)
+      assert "false" == Expression.evaluate_as_string!(false)
       assert "" == Expression.evaluate_as_string!(nil)
     end
 
@@ -616,6 +618,27 @@ defmodule ExpressionTest do
     assert "@@bar[0]" == Expression.escape("@bar[0]")
     assert "@@if(foo, bar, baz)" == Expression.escape("@if(foo, bar, baz)")
     assert "@@if(foo, bar.baz, baz)" == Expression.escape("@if(foo, bar.baz, baz)")
+  end
+
+  describe "parse!/1" do
+    test "parses string expressions" do
+      assert [text: "hello"] = Expression.parse!("hello")
+      assert [expression: [atom: "foo"]] = Expression.parse!("@foo")
+    end
+
+    test "parses number primitives by converting to string" do
+      assert [text: "42"] = Expression.parse!(42)
+      assert [text: "3.14"] = Expression.parse!(3.14)
+    end
+
+    test "parses boolean primitives by converting to string" do
+      assert [text: "true"] = Expression.parse!(true)
+      assert [text: "false"] = Expression.parse!(false)
+    end
+
+    test "parses Time struct by converting to string" do
+      assert [text: "11:00:00"] = Expression.parse!(~T[11:00:00])
+    end
   end
 
   describe "context is parsed correctly when using the skip_context_evaluation? option" do
