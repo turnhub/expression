@@ -217,8 +217,8 @@ defmodule Expression.V2.ParserTest do
                 "\nHi there ",
                 [{"__property__", ["contact", "whatsapp_profile_name"]}],
                 "\n\n*HANGMAN*)\n)\n"
-              ], "", _, _,
-              _} = Parser.parse("\nHi there @contact.whatsapp_profile_name\n\n*HANGMAN*)\n)\n")
+              ], "", _, _, _} =
+               Parser.parse("\nHi there @contact.whatsapp_profile_name\n\n*HANGMAN*)\n)\n")
     end
   end
 end
