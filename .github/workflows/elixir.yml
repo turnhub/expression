@@ -13,11 +13,16 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        elixir: ["1.15", "1.18"]
-        otp: ["26", "27"]
-        exclude:
+        include:
           - elixir: "1.15"
+            otp: "26"
+            check_formatting: false
+          - elixir: "1.18"
             otp: "27"
+            check_formatting: false
+          - elixir: "1.19"
+            otp: "28"
+            check_formatting: true
         cache_version: ["3"]
 
     steps:
@@ -41,6 +46,7 @@ jobs:
           mix local.hex --force
           mix deps.get
       - name: Check Formatting
+        if: matrix.check_formatting
         run: mix format --check-formatted
       - name: Credo
         run: mix credo --strict

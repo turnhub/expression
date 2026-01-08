@@ -156,3 +156,7 @@ version.
 Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
 and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
 be found at [https://hexdocs.pm/expression](https://hexdocs.pm/expression).
+
+## Testing & Compatibility
+
+We follow a diagonal testing strategy to ensure backward compatibility while keeping CI manageable. If you encounter issues with a specific version combination within our supported range, please open an issue.
