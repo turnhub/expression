@@ -601,7 +601,7 @@ defmodule ExpressionTest do
                      })
                    end
 
-      assert_raise BadMapError, "expected a map, got: [\"A\", \"B\", \"C\"]", fn ->
+      assert_raise BadMapError, ~r/expected a map, got:.*\["A", "B", "C"\]/s, fn ->
         Expression.evaluate("@delete(map, \"key\")", %{
           "map" => ["A", "B", "C"]
         })
