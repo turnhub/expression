@@ -14,8 +14,8 @@ jobs:
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
         with:
-          elixir-version: "1.16"
-          otp-version: "26"
+          elixir-version: "1.19"
+          otp-version: "28"
       - name: Publish to Hex.pm
         run: |
           mix local.hex --force
