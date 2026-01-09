@@ -7,7 +7,7 @@ defmodule CategoryTest do
     docs = Standard.expression_docs()
 
     # Check that we have docs
-    assert length(docs) > 0
+    assert docs != []
 
     # Check the structure of the first doc
     [first | _] = docs
