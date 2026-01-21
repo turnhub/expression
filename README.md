@@ -148,15 +148,20 @@ end
 
 To publish a new release:
 
-1. Go to the [GitHub Releases page](https://github.com/turnhub/expression/releases)
-2. Click "Draft a new release"
-3. Create a new tag with the version number (e.g., `2.48.0` or `v2.48.0`)
-4. Fill in the release notes and publish
+1. Update the version in `mix.exs` (`@version`) and in this README (the dependency example)
+2. Merge the version bump to `develop` via a Pull Request
+3. Go to the [GitHub Releases page](https://github.com/turnhub/expression/releases)
+4. Click "Draft a new release"
+5. Create a new tag matching the version (e.g., `2.48.0`)
+6. Fill in the release notes and publish
 
-The CI workflow will automatically:
-- Update the version in `mix.exs` and `README.md` if they don't match the release tag
-- Commit those changes back to the repository
-- Publish the package to Hex.pm
+The release workflow will verify that `mix.exs` and `README.md` versions match the release tag, then publish to Hex.pm. If versions don't match, the workflow will fail with an error message.
+
+### Why Not Automate Release Version Updates in Code?
+
+Our branch protection rules require all commits to have verified signatures and be made through pull requests. 
+GitHub Actions workflows cannot satisfy these requirements.
+This is intentional: it ensures all code changes, including version bumps, go through proper review.
 
 ## Documentation
 
