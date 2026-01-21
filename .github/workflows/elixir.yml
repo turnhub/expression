@@ -3,9 +3,15 @@ name: Elixir CI
 on:
   pull_request:
     types: [opened, synchronize]
+    paths-ignore:
+      - "*.md"
+      - ".github/workflows/releases.yml"
   push:
     branches:
       - develop
+    paths-ignore:
+      - "*.md"
+      - ".github/workflows/releases.yml"
 
 jobs:
   build:
@@ -23,6 +29,7 @@ jobs:
           - elixir: "1.19"
             otp: "28"
             check_formatting: true
+        # when updating this, please also see ./releases.yml
         cache_version: ["3"]
 
     steps:
