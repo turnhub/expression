@@ -14,13 +14,12 @@ jobs:
   publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - name: Check out
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.release.target_commitish }}
-          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup BEAM
         uses: erlef/setup-beam@v1
@@ -43,7 +42,7 @@ jobs:
           mix local.hex --force
           mix deps.get
 
-      - name: Verify and update version
+      - name: Verify versions match release tag
         run: |
           # Extract version from release tag (removes 'v' prefix if present)
           RELEASE_VERSION="${{ github.event.release.tag_name }}"
@@ -58,34 +57,19 @@ jobs:
           README_VERSION=$(grep -oP '\{:expression, "~> \K[^"]+' README.md)
           echo "README.md version: $README_VERSION"
 
-          # Track if we need to commit changes
-          NEEDS_UPDATE=false
-
-          # Update mix.exs if version doesn't match
-          if [ "$MIX_VERSION" != "$RELEASE_VERSION" ]; then
-            echo "Updating mix.exs version from $MIX_VERSION to $RELEASE_VERSION"
-            sed -i "s/@version \"$MIX_VERSION\"/@version \"$RELEASE_VERSION\"/" mix.exs
-            NEEDS_UPDATE=true
+          # Verify versions match
+          if [ "$MIX_VERSION" != "$RELEASE_VERSION" ] || [ "$README_VERSION" != "$RELEASE_VERSION" ]; then
+            echo ""
+            echo "ERROR: Version mismatch detected!"
+            echo "  Release tag: $RELEASE_VERSION"
+            echo "  mix.exs:     $MIX_VERSION"
+            echo "  README.md:   $README_VERSION"
+            echo ""
+            echo "Please update mix.exs and README.md to match the release version before publishing."
+            exit 1
           fi
 
-          # Update README.md if version doesn't match
-          if [ "$README_VERSION" != "$RELEASE_VERSION" ]; then
-            echo "Updating README.md version from $README_VERSION to $RELEASE_VERSION"
-            sed -i "s/{:expression, \"~> $README_VERSION\"}/{:expression, \"~> $RELEASE_VERSION\"}/" README.md
-            NEEDS_UPDATE=true
-          fi
-
-          # Commit and push if changes were made
-          if [ "$NEEDS_UPDATE" = true ]; then
-            echo "Committing version updates..."
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add mix.exs README.md
-            git commit -m "Bump version to $RELEASE_VERSION [skip ci]"
-            git push origin HEAD:${{ github.event.release.target_commitish }}
-          else
-            echo "All versions already match $RELEASE_VERSION"
-          fi
+          echo "All versions match $RELEASE_VERSION"
 
       - name: Publish to Hex.pm
         run: |
