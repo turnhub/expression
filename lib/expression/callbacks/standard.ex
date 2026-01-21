@@ -2562,6 +2562,22 @@ defmodule Expression.Callbacks.Standard do
   @expression_category "string"
   @expression_doc expression: "url_encode(\"hello world\")",
                   result: URI.encode("hello world")
+  @expression_doc doc: "URL encode an integer by first converting it to a string.",
+                  expression: "url_encode(42)",
+                  result: "42"
+  @expression_doc doc: "URL encode a float by first converting it to a string.",
+                  expression: "url_encode(3.14)",
+                  result: "3.14"
+  @expression_doc doc: "URL encode a boolean by first converting it to a string.",
+                  expression: "url_encode(true)",
+                  result: "true"
+  @expression_doc doc: "URL encode nil returns an empty string.",
+                  expression: "url_encode(nil)",
+                  result: ""
+  @expression_doc doc: "URL encode a date by first converting it to a string.",
+                  expression: "url_encode(date)",
+                  context: %{"date" => ~D[2024-01-15]},
+                  result: "2024-01-15"
   @expression_doc doc:
                     "Return URL encoded string from value in __value__ key if complex values are provided.",
                   expression: "url_encode(url)",
@@ -2573,8 +2589,20 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: URI.encode("hello world")
+  @expression_doc doc:
+                    "URL encode an integer from value in __value__ key if complex values are provided.",
+                  expression: "url_encode(number)",
+                  context: %{
+                    "number" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    }
+                  },
+                  result: "1"
   def url_encode(ctx, thing) do
     eval!(thing, ctx)
+    |> to_string()
     |> URI.encode()
   end
 
