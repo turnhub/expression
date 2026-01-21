@@ -146,10 +146,17 @@ end
 
 ## Doing releases
 
-Use the Github UI to create a new release and publish it. Make sure to update the
-`mix.exs` and `README.md` version references _before_ publishing otherwise hex.pm
-will complain and prevent you from publishing over an already existing released
-version.
+To publish a new release:
+
+1. Go to the [GitHub Releases page](https://github.com/turnhub/expression/releases)
+2. Click "Draft a new release"
+3. Create a new tag with the version number (e.g., `2.48.0` or `v2.48.0`)
+4. Fill in the release notes and publish
+
+The CI workflow will automatically:
+- Update the version in `mix.exs` and `README.md` if they don't match the release tag
+- Commit those changes back to the repository
+- Publish the package to Hex.pm
 
 ## Documentation
 
