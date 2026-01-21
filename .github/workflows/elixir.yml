@@ -23,6 +23,7 @@ jobs:
           - elixir: "1.19"
             otp: "28"
             check_formatting: true
+        # when updating this, please also see ./releases.yml
         cache_version: ["3"]
 
     steps:
