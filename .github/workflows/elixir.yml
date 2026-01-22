@@ -40,7 +40,7 @@ jobs:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
       - name: Restore dependencies cache
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         id: mix-cache
         with:
           path: deps
@@ -58,7 +58,7 @@ jobs:
       - name: Credo
         run: mix credo --strict
       - name: Retrieve PLT Cache
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v5
         id: plt_cache
         with:
           path: priv/plts
@@ -70,7 +70,7 @@ jobs:
         run: mix dialyzer --plt
       - name: Save PLT cache
         id: plt_cache_save
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: steps.plt_cache.outputs.cache-hit != 'true'
         with:
           key: |
