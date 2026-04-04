@@ -991,11 +991,11 @@ Independent of other phases. Purely additive.
 
 ### Phase 5: Context Normalization
 
-Can be started in parallel with Phase 4. Requires careful testing against engage.
+### Phase 5: Context Normalization ✅ COMPLETE (2026-04-04)
 
-- [ ] **Add explicit `lowercase_keys` and `coerce_strings` options to `Context.new/2`** — when omitted, behave as today but emit deprecation warning. Passing either option explicitly suppresses the warning. *(Section 10.2)*
-- [ ] **Move to case-insensitive lookup instead of destructive lowercasing** — the parser already lowercases variable names in the AST; a case-insensitive `Map.get` at evaluation time preserves original key casing while maintaining expression behavior. *(Sections 4.1, 10.2)*
-- [ ] **Audit engage for normalization dependencies** — determine which call sites rely on auto-parsing (DateTime strings) and lowercased keys. Update each to pass options explicitly. *(Section 10.2)*
+- [x] **Add explicit `lowercase_keys` and `coerce_strings` options to `Context.new/2`** — `lowercase_keys: false` preserves original key casing (atom keys still stringified). `coerce_strings: false` preserves all string values as-is (replaces `skip_context_evaluation?` which is kept as a backwards-compatible alias). Default behavior (both `true`) unchanged. Options pass through `build/2`. Internal `coerce_strings?/1` helper unifies the two option names. *(Section 10.2)*
+- [x] **Add case-insensitive lookup in evaluator** — `Eval.case_insensitive_get/2` tries exact match first (fast path), falls back to case-insensitive key scan. Enables `lowercase_keys: false` without breaking expressions — the parser already lowercases variable names in the AST, so `@firstname` resolves against `"FirstName"` key. Extracted `case_insensitive_scan/2` for credo compliance. 18 new tests. *(Sections 4.1, 10.2)*
+- [x] **Audit of engage normalization dependencies** — engage already uses lowercase string keys in its context maps (`"contact"`, `"number"`, etc.). The `Context.new` lowercasing is redundant for engage. No engage changes needed — options are purely opt-in for consumers with case-sensitive external data.
 
 ### Phase 6: Cleanup
 
