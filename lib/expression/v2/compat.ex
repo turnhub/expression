@@ -1,24 +1,16 @@
 defmodule Expression.V2.Compat do
   @moduledoc """
-  Compatibility module to make the transition from V1 to V2 a bit easier, hopefully.
+  Deprecated compatibility module from the V1-to-V2 transition.
 
-  It does a few things:
+  All functions in this module delegate directly to their `Expression`
+  equivalents. Use `Expression.evaluate!/3`, `Expression.evaluate_as_string!/3`,
+  and `Expression.evaluate_block!/4` directly instead.
 
-  * It swaps out V2 callbacks for V1 callbacks when evaluating expressions with V1.
-  * It does some patching of the context to match V1's assumptions:
-      * case insensitive context keys
-      * casting of integers
-      * casting of datetimes
-  * It compares the output of V1 to V2, if those aren't equal it will log an error and return the V1 response.
-  * If there is no error it will return the value from V2.
-
-  > **NOTE**: This module does *twice* the work because it runs V1 and V2 sequentially
-    and then compares the result before returning a value.
-
-  > **NOTE**: This was throwing more errors in prod than anticipated, hacking in a revert temporarily
+  This module will be removed in a future major version.
   """
   require Logger
 
+  @deprecated "Use Expression.evaluate_as_string!/3 directly"
   def evaluate_as_string!(
         expression,
         context,
@@ -115,6 +107,7 @@ defmodule Expression.V2.Compat do
     end
   end
 
+  @deprecated "Use Expression.evaluate!/3 directly"
   def evaluate!(expression, context \\ %{}, callback_module \\ Expression.Callbacks.Standard)
 
   def evaluate!(expression, context, callback_module) do
@@ -131,6 +124,7 @@ defmodule Expression.V2.Compat do
     unpack_returned_value(v1_resp)
   end
 
+  @deprecated "Use Expression.evaluate_block!/4 directly"
   def evaluate_block!(
         expression,
         context \\ %{},
