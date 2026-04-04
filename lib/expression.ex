@@ -212,7 +212,10 @@ defmodule Expression do
   """
   @deprecated "Use %Expression.Error{type: :function, message: message} instead"
   @spec error(message :: term) :: %{required(String.t()) => term}
-  def error(message),
+  def error(message), do: error_map(message)
+
+  @doc false
+  def error_map(message),
     do: %{
       "__type__" => "expression/v1error",
       "error" => true,
