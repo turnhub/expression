@@ -2,9 +2,13 @@ defmodule Expression.Context do
   @moduledoc """
 
   A helper module for creating a context that can be
-  used with Expression.Eval
+  used with Expression.Eval.
 
-  # Example
+  ## Plain map context
+
+  `new/2` returns a plain map with lowercased string keys and
+  auto-coerced values. This is the legacy format and remains the
+  default for backwards compatibility.
 
     iex> Expression.Context.new(%{foo: "bar"})
     %{"foo" => "bar"}
@@ -31,16 +35,74 @@ defmodule Expression.Context do
     iex> Expression.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
-  """
-  @type t :: map
+  ## Structured context with private state
 
-  @spec new(map, Keyword.t() | nil) :: t
-  def new(ctx, opts \\ []) when is_map(ctx) do
+  `build/2` returns an `%Expression.Context{}` struct that separates
+  user-visible variables from callback-private state.
+
+  Variable resolution (`@foo`) only reads from `vars`.
+  Callbacks receive the full struct and can access `private` for
+  trusted data (database records, tokens, internal IDs) that
+  expression authors must not be able to read.
+
+    iex> ctx = Expression.Context.build(%{name: "Jane"}, private: %{number: %{uuid: "abc"}})
+    iex> ctx.vars["name"]
+    "Jane"
+    iex> ctx.private
+    %{number: %{uuid: "abc"}}
+
+  """
+
+  defstruct vars: %{}, private: %{}
+
+  @type t :: %__MODULE__{
+          vars: map(),
+          private: map()
+        }
+
+  @spec new(map, Keyword.t() | nil) :: map
+  def new(ctx, opts \\ [])
+
+  def new(%__MODULE__{} = ctx, _opts), do: ctx
+
+  def new(ctx, opts) when is_map(ctx) do
     ctx
     # Ensure all keys are lower case strings
     |> Enum.map(&downcase_string_key/1)
     |> Enum.map(&iterate(&1, opts))
     |> Enum.into(%{})
+  end
+
+  @doc """
+  Build a structured context with separate variable and private state compartments.
+
+  Variable resolution (`@foo`) only reads from `vars`. Callbacks receive the
+  full struct and can access `private` for trusted data that expression authors
+  must not be able to read.
+
+  ## Options
+
+    * `:private` - a map of callback-only data (default: `%{}`)
+
+  Any other options are passed through to `new/2` for variable normalization.
+
+  ## Examples
+
+      iex> ctx = Expression.Context.build(%{name: "Jane"}, private: %{token: "secret"})
+      iex> ctx.vars["name"]
+      "Jane"
+      iex> ctx.private.token
+      "secret"
+
+  """
+  @spec build(map, Keyword.t()) :: t
+  def build(vars, opts \\ []) when is_map(vars) do
+    {private, context_opts} = Keyword.pop(opts, :private, %{})
+
+    %__MODULE__{
+      vars: new(vars, context_opts),
+      private: private
+    }
   end
 
   defp downcase_string_key({key, value}), do: {String.downcase(to_string(key)), value}

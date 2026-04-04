@@ -34,7 +34,9 @@ defmodule Expression.Callbacks do
     do: atom_function_name("#{function_name}_")
 
   def atom_function_name(function_name) do
-    String.to_atom(function_name)
+    String.to_existing_atom(function_name)
+  rescue
+    ArgumentError -> nil
   end
 
   @doc """
@@ -62,9 +64,6 @@ defmodule Expression.Callbacks do
   end
 
   def implements(module \\ Standard, function_name, arguments) do
-    exact_function_name = atom_function_name(function_name)
-    vargs_function_name = atom_function_name("#{function_name}_vargs")
-
     # Make sure the module supplied and the default module are compiled
     # & loaded before attempting to find out what functions it may
     # support as part of validation / implementation checks
@@ -73,24 +72,41 @@ defmodule Expression.Callbacks do
     |> Enum.map(&Code.ensure_compiled!/1)
     |> Enum.each(&Code.ensure_loaded!/1)
 
+    exact_function_name = atom_function_name(function_name)
+    vargs_function_name = atom_function_name("#{function_name}_vargs")
+
+    # If neither the exact name nor the vargs name correspond to any
+    # existing atom, this function can't be implemented — fail early
+    # without creating atoms from arbitrary user input
+    if is_nil(exact_function_name) and is_nil(vargs_function_name) do
+      {:error, "#{function_name} is not implemented."}
+    else
+      do_implements(module, function_name, exact_function_name, vargs_function_name, arguments)
+    end
+  end
+
+  # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
+  defp do_implements(module, function_name, exact_function_name, vargs_function_name, arguments) do
     cond do
-      exact_function_name in @built_in_operators ->
+      not is_nil(exact_function_name) and exact_function_name in @built_in_operators ->
         {:exact, module, exact_function_name, 2}
 
       # Check if the exact function signature has been implemented
-      function_exported?(module, exact_function_name, length(arguments) + 1) ->
+      not is_nil(exact_function_name) and
+          function_exported?(module, exact_function_name, length(arguments) + 1) ->
         {:exact, module, exact_function_name, length(arguments) + 1}
 
       # Check if it's been implemented to accept a variable amount of arguments
-      function_exported?(module, vargs_function_name, 2) ->
+      not is_nil(vargs_function_name) and function_exported?(module, vargs_function_name, 2) ->
         {:vargs, module, vargs_function_name, 2}
 
-      # Check if the exact function signature has been implemented
-      function_exported?(Standard, exact_function_name, length(arguments) + 1) ->
+      # Check if the exact function signature has been implemented in Standard
+      not is_nil(exact_function_name) and
+          function_exported?(Standard, exact_function_name, length(arguments) + 1) ->
         {:exact, Standard, exact_function_name, length(arguments) + 1}
 
-      # Check if it's been implemented to accept a variable amount of arguments
-      function_exported?(Standard, vargs_function_name, 2) ->
+      # Check if it's been implemented to accept a variable amount of arguments in Standard
+      not is_nil(vargs_function_name) and function_exported?(Standard, vargs_function_name, 2) ->
         {:vargs, Standard, vargs_function_name, 2}
 
       # Check if the wrong number of arguments was provided
@@ -106,6 +122,8 @@ defmodule Expression.Callbacks do
         {:error, "#{function_name} is not implemented."}
     end
   end
+
+  defp wrong_arity_but_function_exists?(_module, nil), do: false
 
   defp wrong_arity_but_function_exists?(module, function_name)
        when is_atom(module) and is_atom(function_name) do
