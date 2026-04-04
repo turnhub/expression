@@ -35,6 +35,18 @@ defmodule Expression.Context do
     iex> Expression.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
+  ## Options
+
+  `new/2` accepts the following options:
+
+    * `:lowercase_keys` - when `true` (default), all keys are lowercased.
+      Set to `false` to preserve original casing — the evaluator uses
+      case-insensitive lookup so expressions still resolve correctly.
+    * `:coerce_strings` - when `true` (default), string values are
+      auto-parsed to their typed equivalents (dates, booleans, numbers).
+      Set to `false` to preserve all string values as-is.
+    * `:skip_context_evaluation?` - legacy alias for `coerce_strings: false`.
+
   ## Structured context with private state
 
   `build/2` returns an `%Expression.Context{}` struct that separates
@@ -66,9 +78,10 @@ defmodule Expression.Context do
   def new(%__MODULE__{} = ctx, _opts), do: ctx
 
   def new(ctx, opts) when is_map(ctx) do
+    lowercase? = Keyword.get(opts, :lowercase_keys, true)
+
     ctx
-    # Ensure all keys are lower case strings
-    |> Enum.map(&downcase_string_key/1)
+    |> Enum.map(if lowercase?, do: &downcase_string_key/1, else: &stringify_key/1)
     |> Enum.map(&iterate(&1, opts))
     |> Enum.into(%{})
   end
@@ -106,21 +119,37 @@ defmodule Expression.Context do
   end
 
   defp downcase_string_key({key, value}), do: {String.downcase(to_string(key)), value}
+  defp stringify_key({key, value}), do: {to_string(key), value}
+
+  defp coerce_strings?(opts) do
+    # coerce_strings option takes precedence; fall back to legacy skip_context_evaluation?
+    case Keyword.get(opts, :coerce_strings) do
+      nil -> not Keyword.get(opts, :skip_context_evaluation?, false)
+      value -> value
+    end
+  end
 
   defp iterate({key, value}, opts) when is_map(value) or is_list(value) do
     {key, evaluate!(value, opts)}
   end
 
-  # Implictly convert the string "0" as a number
-  defp iterate({key, "0"}, _opts), do: {key, 0}
+  # Implicitly convert the string "0" as a number
+  defp iterate({key, "0"}, opts) do
+    if coerce_strings?(opts), do: {key, 0}, else: {key, "0"}
+  end
 
   defp iterate({key, value}, opts) when is_binary(value) do
     cond do
+      not coerce_strings?(opts) ->
+        {key, value}
+
       # Prevent implicitly converting numbers starting with a zero
       # Only allows strings fully made of digits or decimals
-      String.starts_with?(value, "0") and String.match?(value, ~r/^\d+(\.\d+)?$/) -> {key, value}
-      Keyword.get(opts, :skip_context_evaluation?, false) -> {key, value}
-      true -> {key, evaluate!(value, opts)}
+      String.starts_with?(value, "0") and String.match?(value, ~r/^\d+(\.\d+)?$/) ->
+        {key, value}
+
+      true ->
+        {key, evaluate!(value, opts)}
     end
   end
 

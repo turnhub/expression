@@ -45,11 +45,11 @@ defmodule Expression.Eval do
 
   # Structured context: variable resolution reads from vars only
   def eval!({:atom, atom}, %Expression.Context{vars: vars}, _mod) do
-    Map.get(vars, atom, {:not_found, [atom]})
+    case_insensitive_get(vars, atom)
   end
 
   def eval!({:atom, atom}, context, _mod) when is_map(context) do
-    Map.get(context, atom, {:not_found, [atom]})
+    case_insensitive_get(context, atom)
   end
 
   def eval!({:atom, _atom}, _context, _mod), do: nil
@@ -362,4 +362,29 @@ defmodule Expression.Eval do
 
   defp args_reducer(function, _function_name, _context, _mod, acc),
     do: {:cont, acc ++ [function]}
+
+  @doc """
+  Case-insensitive map lookup. Tries exact match first (fast path),
+  then falls back to case-insensitive key scan.
+
+  This enables `lowercase_keys: false` in Context — the parser lowercases
+  variable names in the AST, so `@Contact.Name` becomes a lookup for
+  `"contact"` which should match a key `"Contact"` in the context.
+  """
+  def case_insensitive_get(map, key) when is_map(map) and is_binary(key) do
+    case Map.fetch(map, key) do
+      {:ok, value} -> value
+      :error -> case_insensitive_scan(map, key)
+    end
+  end
+
+  def case_insensitive_get(_non_map, key) when is_binary(key), do: {:not_found, [key]}
+
+  defp case_insensitive_scan(map, key) do
+    downcased = String.downcase(key)
+
+    Enum.find_value(map, {:not_found, [key]}, fn {k, v} ->
+      if is_binary(k) and String.downcase(k) == downcased, do: v
+    end)
+  end
 end
