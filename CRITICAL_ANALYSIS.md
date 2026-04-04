@@ -1003,13 +1003,11 @@ Independent of other phases. Purely additive.
 - [x] **Document the AST format as public API** — new `Expression.AST` module with typespecs for all node types: `literal`, `variable`, `attribute`, `key`, `function_call`, `binary_op`, `list_node`, `range`, `lambda`, `capture`. Top-level `template` and `block` types. Full operator precedence docs. Examples for every AST shape. *(Section 10.4)*
 - [ ] **Split `Standard` callbacks into category modules** — deferred. 4000+ line refactor with limited immediate value. `Standard` works as-is and the `defexpr` macro provides better ergonomics for new callbacks going forward. *(Section 10.11)*
 
-### Phase 7: Careful Deprecations
+### Phase 7: Careful Deprecations — PARTIALLY COMPLETE (2026-04-04)
 
-These change existing behavior. Only after consumers have migrated.
-
-- [ ] **Add explicit `evaluate_template/3` function** — extracts the binary literal re-evaluation into a named function. Add `nested_literal_evaluation: false` option defaulting to `true`. Log deprecation when implicit path is hit. *(Section 10.5)*
-- [ ] **Flip `coerce_strings` and `lowercase_keys` defaults to `false`** — only in a major version, after all consumers pass options explicitly. *(Section 10.2)*
-- [ ] **Remove `nested_literal_evaluation` implicit path** — only in a major version, after consumers have migrated to explicit `evaluate_template/3`. *(Section 10.5)*
+- [x] **Add explicit `evaluate_template/3` function** — `Expression.evaluate_template/3` added as the named, explicit way to resolve `@variable` references in strings. Delegates to `evaluate_as_string!/3`. The implicit behavior in `Eval.eval!({:literal, binary}, ...)` remains unchanged for backwards compatibility — consumers can migrate to the explicit function over time. *(Section 10.5)*
+- [ ] **Flip `coerce_strings` and `lowercase_keys` defaults to `false`** — future major version only, after all consumers pass options explicitly. *(Section 10.2)*
+- [ ] **Remove `nested_literal_evaluation` implicit path** — future major version only, after consumers have migrated to explicit `evaluate_template/3`. *(Section 10.5)*
 
 ---
 

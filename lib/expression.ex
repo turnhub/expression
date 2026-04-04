@@ -223,6 +223,29 @@ defmodule Expression do
       "__value__" => nil
     }
 
+  @doc """
+  Evaluate a string as an expression template, resolving any `@variable`
+  references and `@(expression)` blocks within it.
+
+  This is the explicit version of the behavior that occurs implicitly when
+  a string literal appears inside an expression (e.g., `"hello @name"`
+  as an argument to a function). Use this when you need template resolution
+  and want to be explicit about it.
+
+  ## Examples
+
+      iex> Expression.evaluate_template("hello @name", %{"name" => "world"})
+      "hello world"
+
+      iex> Expression.evaluate_template("1 + 1 = @(1 + 1)", %{})
+      "1 + 1 = 2"
+
+  """
+  @spec evaluate_template(String.t(), map(), module()) :: String.t()
+  def evaluate_template(template, context \\ %{}, mod \\ Expression.Callbacks) do
+    evaluate_as_string!(template, context, mod)
+  end
+
   defdelegate prewalk(ast, fun), to: Macro
   defdelegate traverse(ast, acc, pre, post), to: Macro
 end
