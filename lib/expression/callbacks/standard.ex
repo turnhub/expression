@@ -85,7 +85,7 @@ defmodule Expression.Callbacks.Standard do
                   }
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "chunk_every(nil, 2)",
-                  result: Expression.error("Invalid enumerable")
+                  result: Expression.error_map("Invalid enumerable")
   @expression_doc doc: "Split enum in __value__ key if complex value is provided.",
                   expression: "chunk_every(complex, 3)",
                   context: %{
@@ -109,7 +109,7 @@ defmodule Expression.Callbacks.Standard do
     [enumerable, count] = eval_args!([enumerable, count], ctx)
 
     if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
-      Expression.error("Invalid enumerable")
+      Expression.error_map("Invalid enumerable")
     else
       Enum.chunk_every(enumerable, count)
     end
@@ -168,7 +168,7 @@ defmodule Expression.Callbacks.Standard do
       date
     else
       _ ->
-        Expression.error(
+        Expression.error_map(
           "Invalid date: date(#{inspect(year)}, #{inspect(month)}, #{inspect(day)})"
         )
     end
@@ -254,7 +254,7 @@ defmodule Expression.Callbacks.Standard do
         "s" -> Timex.shift(datetime, seconds: offset)
       end
     else
-      Expression.error("Invalid date")
+      Expression.error_map("Invalid date")
     end
   end
 
@@ -574,7 +574,7 @@ defmodule Expression.Callbacks.Standard do
                   result: ["B", "B"]
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "filter(nil, & &1 == \"B\")",
-                  result: Expression.error("Invalid enumerable")
+                  result: Expression.error_map("Invalid enumerable")
   @expression_doc doc: "Filter from value in __value__ key if complex values are provided.",
                   expression: "filter(list, & &1 == \"B\")",
                   context: %{
@@ -589,7 +589,7 @@ defmodule Expression.Callbacks.Standard do
     [enumerable, filter_fun] = eval_args!([enumerable, filter_fun], ctx)
 
     if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
-      Expression.error("Invalid enumerable")
+      Expression.error_map("Invalid enumerable")
     else
       enumerable
       # Wrap each list item in a list because `filter_fun`
@@ -2672,7 +2672,7 @@ defmodule Expression.Callbacks.Standard do
 
     case Base.decode64(thing) do
       {:ok, decoded_thing} -> decoded_thing
-      :error -> Expression.error("Unable to decode")
+      :error -> Expression.error_map("Unable to decode")
     end
   end
 
@@ -2685,7 +2685,7 @@ defmodule Expression.Callbacks.Standard do
                   result: ["A", "C"]
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "reject(nil, & &1 == \"B\")",
-                  result: Expression.error("Invalid enumerable")
+                  result: Expression.error_map("Invalid enumerable")
   @expression_doc doc:
                     "Return list with rejected items from value in __value__ key if complex values are provided.",
                   expression: "reject(list, & &1 == \"B\")",
@@ -2701,7 +2701,7 @@ defmodule Expression.Callbacks.Standard do
     [enumerable, reject_fun] = eval_args!([enumerable, reject_fun], ctx)
 
     if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
-      Expression.error("Invalid enumerable")
+      Expression.error_map("Invalid enumerable")
     else
       enumerable
       # Wrap each list item in a list because `reject_fun`
@@ -2743,7 +2743,7 @@ defmodule Expression.Callbacks.Standard do
                   fake_result: ["b", "c", "a"]
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "sort_by(nil, &rand_between(1, 5))",
-                  result: Expression.error("Invalid enumerable")
+                  result: Expression.error_map("Invalid enumerable")
   @expression_doc doc:
                     "Return list with unique items from value in __value__ key if complex values are provided.",
                   expression: "sort_by(list, & &1 < &2)",
@@ -2759,7 +2759,7 @@ defmodule Expression.Callbacks.Standard do
     [enumerable, sorter_fun] = eval_args!([enumerable, sorter_fun], ctx)
 
     if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
-      Expression.error("Invalid enumerable")
+      Expression.error_map("Invalid enumerable")
     else
       enumerable
       |> Enum.map(&[&1])
@@ -3154,8 +3154,8 @@ defmodule Expression.Callbacks.Standard do
   @spec date_compare(DateTime.t() | nil, DateTime.t() | nil) ::
           {:ok, :gt | :lt | :eq}
           | {:error, %{required(String.t()) => term}}
-  defp date_compare(nil, _date2), do: {:error, Expression.error("The first argument is nil")}
-  defp date_compare(_date1, nil), do: {:error, Expression.error("The second argument is nil")}
+  defp date_compare(nil, _date2), do: {:error, Expression.error_map("The first argument is nil")}
+  defp date_compare(_date1, nil), do: {:error, Expression.error_map("The second argument is nil")}
   defp date_compare(date1, date2), do: {:ok, Date.compare(date1, date2)}
 
   @doc """
@@ -3874,7 +3874,7 @@ defmodule Expression.Callbacks.Standard do
                   result: [1, 4, 9]
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "map(nil, &(&1 * &1))",
-                  result: Expression.error("Invalid enumerable")
+                  result: Expression.error_map("Invalid enumerable")
   @expression_doc doc:
                     "Map over a list of items from value in __value__ key if complex values are provided.",
                   expression: "map(expression, &date(2022, 1, &1))",
@@ -3890,7 +3890,7 @@ defmodule Expression.Callbacks.Standard do
     [enumerable, mapper] = eval_args!([enumerable, mapper], ctx)
 
     if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
-      Expression.error("Invalid enumerable")
+      Expression.error_map("Invalid enumerable")
     else
       enumerable
       # wrap in a list to be passed as a list of arguments
@@ -3969,12 +3969,12 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "reduce(1..3, 0, & &1 + &2)", result: 6
   @expression_doc doc: "If an invalid, non-enumerable value is passed, return an error",
                   expression: "reduce(nil, 0, & &1 + &2)",
-                  result: Expression.error("Invalid enumerable")
+                  result: Expression.error_map("Invalid enumerable")
   def reduce(ctx, enumerable, accumulator, reducer) do
     [enumerable, accumulator, reducer] = eval_args!([enumerable, accumulator, reducer], ctx)
 
     if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
-      Expression.error("Invalid enumerable")
+      Expression.error_map("Invalid enumerable")
     else
       Enum.reduce(enumerable, accumulator, &reducer.([&1, &2]))
     end
@@ -4045,7 +4045,7 @@ defmodule Expression.Callbacks.Standard do
   """
   @expression_category "logical"
   @expression_doc expression: "is_error(error)",
-                  context: %{"error" => Expression.error("the error")},
+                  context: %{"error" => Expression.error_map("the error")},
                   result: true
   @expression_doc expression: "is_error(\"not an error\")",
                   context: %{},

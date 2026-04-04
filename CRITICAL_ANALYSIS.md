@@ -983,8 +983,11 @@ The `defexpr` macro and related ergonomics.
 
 Independent of other phases. Purely additive.
 
-- [ ] **Add infix `and`/`or`/`not` operator support** — new precedence level below comparison operators. Existing `and(a, b)` function call syntax unchanged. Both produce the same AST. *(Section 10.6)*
-- [ ] **Add `~EXPR` sigil** — compile-time syntax validation, optional pre-parsing with `c` modifier. Purely opt-in. *(Sections 8.3, 10.9)*
+### Phase 4: Parser Improvements ✅ COMPLETE (2026-04-04)
+
+- [x] **Add infix `and`/`or`/`not` operator support** — new precedence chain: `aexpr` (or) → `aexpr_and` → `aexpr_not` (prefix unary) → `aexpr_compare` (was `aexpr`). Infix `a and b` produces `{:function, [name: "and", args: [a, b]]}` — same AST as `and(a, b)` function call. Operators use `lookahead_not` on word characters to avoid matching inside `android`/`order`/`nothing`. `fold_logical/1` and `fold_not/1` convert to function-call AST. 22 new tests including precedence and backwards compat. *(Section 10.6)*
+- [x] **Add `~EXPR` sigil** — `Expression.Sigil` module with `sigil_EXPR/2`. Default: validates syntax, returns string. `c` modifier: returns pre-parsed AST via `Macro.escape`. Invalid syntax raises `CompileError` at compile time. 6 new tests. *(Sections 8.3, 10.9)*
+- Also: **Fixed Phase 3 deprecation warnings** — internal `Standard` callbacks now use `Expression.error_map/1` (non-deprecated) instead of `Expression.error/1`. Zero compiler warnings.
 
 ### Phase 5: Context Normalization
 
