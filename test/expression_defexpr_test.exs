@@ -32,9 +32,8 @@ defmodule ExpressionDefexprTest do
     # Variadic function
     @variadic true
     defexpr concat(args), ctx do
-      args
-      |> Enum.map(&Expression.Callbacks.EvalHelpers.eval!(&1, ctx))
-      |> Enum.join("")
+      alias Expression.Callbacks.EvalHelpers
+      Enum.map_join(args, "", &EvalHelpers.eval!(&1, ctx))
     end
   end
 
@@ -122,14 +121,14 @@ defmodule ExpressionDefexprTest do
 
     test "or with truthy first argument" do
       assert {:ok, "yes"} =
-               Expression.evaluate("@(or(\"yes\", \"no\"))", %{}, DefexprCallbacks)
+               Expression.evaluate(~s|@(or("yes", "no"))|, %{}, DefexprCallbacks)
     end
   end
 
   describe "@variadic" do
     test "variadic function receives argument list" do
       assert {:ok, "abc"} =
-               Expression.evaluate("@concat(\"a\", \"b\", \"c\")", %{}, DefexprCallbacks)
+               Expression.evaluate(~s|@concat("a", "b", "c")|, %{}, DefexprCallbacks)
     end
   end
 
