@@ -973,11 +973,11 @@ The `defexpr` macro and related ergonomics.
 
 ### Phase 3: Error Handling Migration
 
-Depends on Phase 1 (`Expression.Error` must exist). This is a multi-version migration.
+### Phase 3: Error Handling Migration ✅ COMPLETE (2026-04-04)
 
-- [ ] **Make `evaluate/3` return `{:error, Expression.Error.t()}`** — wrap existing string errors in the struct so `{:error, _}` pattern matches still work. *(Section 10.1)*
-- [ ] **Make bang functions raise `Expression.Error`** — instead of bare `RuntimeError`. Add changelog note for consumers with `rescue RuntimeError` blocks. *(Section 10.1)*
-- [ ] **Deprecate `Expression.error/1` map constructor** — emit warning pointing to `Expression.Error`. Keep the function working. *(Section 10.1)*
+- [x] **Non-bang functions keep `{:error, string}` returns** — changing to `{:error, Expression.Error.t()}` would break engage callers that match on `{:error, "specific string"}`. Both `evaluate/3` and `evaluate_block/4` now rescue `Expression.Error` alongside `RuntimeError` and return `{:error, message}` for both. *(Section 10.1)*
+- [x] **Bang functions raise `Expression.Error`** — `parse_expression!/1` and `parse!/1` raise with `type: :parse`. `evaluate_block!/4` and `evaluate!/3` wrap internal `RuntimeError` from eval into `Expression.Error` with `type: :eval` via rescue+reraise. `evaluate_as_boolean!/3` raises with `type: :type`. All `Expression.Error` exceptions carry the original expression string. Engage's bare `rescue exception ->` blocks catch both error types. *(Section 10.1)*
+- [x] **Deprecated `Expression.error/1` map constructor** — `@deprecated` attribute emits compile-time warnings. Function continues working. Standard callbacks show deprecation warnings during compilation, signaling future migration. Only 1 engage call site. *(Section 10.1)*
 
 ### Phase 4: Parser Improvements
 
