@@ -954,13 +954,13 @@ The test suite has 247 tests across 15 files (~3,800 lines). Coverage is solid f
 
 Ordered by priority. Items within the same phase can be worked on in parallel. Each item references the section with the full design and backwards compatibility analysis.
 
-### Phase 1: Safety and Foundation
+### Phase 1: Safety and Foundation ✅ COMPLETE (2026-04-03)
 
-These are production safety fixes and the structural foundation everything else builds on. Do these first.
+These are production safety fixes and the structural foundation everything else builds on.
 
-- [ ] **Fix `String.to_atom/1` in callback dispatch** — replace with `String.to_existing_atom/1` + fallback. Safe change, no consumer impact. *(Section 10.3)*
-- [ ] **Add `%Expression.Context{}` struct with private state** — dual path: struct for new callers, plain map for existing. Evaluator accepts both. This unblocks `defexpr` context access and private state isolation. *(Sections 8.4, 10.8)*
-- [ ] **Define `Expression.Error` exception struct** — `type`, `message`, `expression`, `position` fields. Does not change existing API yet, just adds the type. *(Section 10.1)*
+- [x] **Fix `String.to_atom/1` in callback dispatch** — `atom_function_name/1` now uses `String.to_existing_atom/1` with rescue fallback returning `nil`. `implements/3` restructured with nil-safe guards. Extracted `do_implements/5`. All expression tests (558 doctests + 255 tests) and engage tests (301 tests) pass. *(Section 10.3)*
+- [x] **Add `%Expression.Context{}` struct with private state** — struct with `vars` and `private` fields. `Context.new/2` unchanged (returns plain map, passes through existing struct). New `Context.build/2` returns struct with `private:` option. Eval dual-path: struct reads from `vars`, map path unchanged. Lambdas/captures work with struct. 8 new tests verify private state isolation (`@secret` in private is not resolvable via expressions). *(Sections 8.4, 10.8)*
+- [x] **Define `Expression.Error` exception struct** — `lib/expression/error.ex` with `type`, `message`, `expression`, `position` fields. Purely additive, no existing code uses it yet. *(Section 10.1)*
 
 ### Phase 2: Developer Experience
 
