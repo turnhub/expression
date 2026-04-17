@@ -962,14 +962,14 @@ These are production safety fixes and the structural foundation everything else 
 - [x] **Add `%Expression.Context{}` struct with private state** — struct with `vars` and `private` fields. `Context.new/2` unchanged (returns plain map, passes through existing struct). New `Context.build/2` returns struct with `private:` option. Eval dual-path: struct reads from `vars`, map path unchanged. Lambdas/captures work with struct. 8 new tests verify private state isolation (`@secret` in private is not resolvable via expressions). *(Sections 8.4, 10.8)*
 - [x] **Define `Expression.Error` exception struct** — `lib/expression/error.ex` with `type`, `message`, `expression`, `position` fields. Purely additive, no existing code uses it yet. *(Section 10.1)*
 
-### Phase 2: Developer Experience
+### Phase 2: Developer Experience ✅ COMPLETE (2026-04-04)
 
-The `defexpr` macro and related ergonomics. Depends on Phase 1 (`%Expression.Context{}` must exist for context access to work).
+The `defexpr` macro and related ergonomics.
 
-- [ ] **Implement `defexpr` macro** — auto-evaluates arguments, optional context injection, compile-time function registration via `@before_compile`. Generates standard `def` under the hood. *(Sections 9.3, 9.4, 10.10)*
-- [ ] **Add compile-time consistency validation** — ensure all clauses of a `defexpr` function agree on context usage. Modeled on Lua's `validate_func!`. *(Section 9.4)*
-- [ ] **Add `@variadic true` attribute support** — replaces the `_vargs` suffix convention with an explicit attribute that auto-resets per function. *(Section 9.4)*
-- [ ] **Add `use Expression.Callbacks` composition options** — `stdlib: false` to opt out of Standard, `also: [ModuleA, ModuleB]` for multi-module dispatch. Default behavior unchanged. *(Section 9.5)*
+- [x] **Implement `defexpr` macro** — `defexpr/2` (no context) and `defexpr/3` (with context). Auto-evaluates arguments via generated `eval!` calls. Generates standard `def` under the hood. Reserved words handled: `defexpr or_(a, b)` registers as expression name `:or`. 21 new tests in `test/expression_defexpr_test.exs`. *(Sections 9.3, 9.4, 10.10)*
+- [x] **Add compile-time consistency validation** — `validate_expression_func!/3` ensures all clauses agree on context usage. `@expression_function` accumulated attribute. `@before_compile` generates `__expression_functions__/0`. *(Section 9.4)*
+- [x] **Add `@variadic true` attribute support** — read at caller's compile time via `Module.delete_attribute` inside `quote` (Lua pattern). Generates `name_vargs/2` under the hood. User's first argument name bound to raw args list. *(Section 9.4)*
+- [x] **Add `use Expression.Callbacks` composition options** — `stdlib: false` disables Standard fallback. `also: [ModuleA, ModuleB]` for multi-module dispatch via `handle_chain/4`. Default behavior unchanged. *(Section 9.5)*
 
 ### Phase 3: Error Handling Migration
 
