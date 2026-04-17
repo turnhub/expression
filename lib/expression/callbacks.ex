@@ -465,6 +465,18 @@ defmodule Expression.Callbacks do
   #       Enum.chunk_every(enumerable, count)
   #     end
   #
+  # The `@expression_function` attribute is an accumulating module
+  # attribute that registers metadata about each defexpr function.
+  # The tuple `{:chunk_every, true, false}` means:
+  #   - :chunk_every  — the expression-facing function name
+  #   - true          — this function uses context (defexpr/3)
+  #   - false         — this is NOT a variadic function
+  #
+  # At compile time, `@before_compile` collects all these tuples and
+  # generates `__expression_functions__/0`, which returns the full
+  # list. This enables introspection — e.g. listing all registered
+  # callbacks, checking context usage, or building documentation.
+  #
   # The key transformation: each user argument (e.g. `enumerable`) gets
   # a hidden `_ast__` parameter in the actual function signature, and a
   # binding at the top of the body that evaluates it. The user's code
@@ -507,6 +519,7 @@ defmodule Expression.Callbacks do
   # Generates this output:
   #
   #     @expression_function {:concat, true, true}
+  #                          # ↑ name   ↑ ctx  ↑ variadic=true
   #     def concat_vargs(expr_ctx__, args) do
   #       ctx = expr_ctx__
   #       Enum.map_join(args, "", &EvalHelpers.eval!(&1, ctx))
