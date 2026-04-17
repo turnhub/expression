@@ -149,15 +149,15 @@ defmodule ExpressionTest do
       assert true == Expression.evaluate_as_boolean!("@(\"1. A\" == x)", %{"x" => "1. A"})
       assert false == Expression.evaluate_as_boolean!("@(\"1. A wrong\" == x)", %{"x" => "1. A"})
 
-      assert_raise RuntimeError, "expression is not a number: `\"NaN\"`", fn ->
+      assert_raise Expression.Error, "expression is not a number: `\"NaN\"`", fn ->
         Expression.evaluate_as_boolean!("@(1 * \"NaN\" == 2)")
       end
 
-      assert_raise RuntimeError, "expression is not a number: `\"NaN\"`", fn ->
+      assert_raise Expression.Error, "expression is not a number: `\"NaN\"`", fn ->
         Expression.evaluate_as_boolean!("@(\"1\" * a == 2)", %{"a" => "NaN"})
       end
 
-      assert_raise RuntimeError, "expression is not a number: `\"NaN\"`", fn ->
+      assert_raise Expression.Error, "expression is not a number: `\"NaN\"`", fn ->
         Expression.evaluate_as_boolean!("@(\"NaN\" * 0.2 == 0.02)")
       end
     end
@@ -584,13 +584,13 @@ defmodule ExpressionTest do
     end
 
     test "throw an error when variables are not defined" do
-      assert_raise RuntimeError, "attribute is not found: `value`", fn ->
+      assert_raise Expression.Error, "attribute is not found: `value`", fn ->
         Expression.evaluate_block!("block.value > 0", %{"block" => %{}})
       end
     end
 
     test "throw an error" do
-      assert_raise RuntimeError, "expression is not a number: `\"not a number\"`", fn ->
+      assert_raise Expression.Error, "expression is not a number: `\"not a number\"`", fn ->
         Expression.evaluate_block!("block.value > 0", %{"block" => %{"value" => "not a number"}})
       end
 
