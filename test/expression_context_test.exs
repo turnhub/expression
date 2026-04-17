@@ -68,8 +68,7 @@ defmodule ExpressionContextTest do
       ctx =
         Expression.Context.build(%{items: [1, 2, 3]}, private: %{secret: "hidden"})
 
-      result = Expression.evaluate!("@(map(items, &(&1 + 1)))", ctx)
-      assert result == [2, 3, 4]
+      assert Expression.evaluate!("@(map(items, &(&1 + 1)))", ctx) == [2, 3, 4]
     end
   end
 end
