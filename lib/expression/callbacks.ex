@@ -150,7 +150,7 @@ defmodule Expression.Callbacks do
     if is_nil(exact_function_name) and is_nil(vargs_function_name) do
       {:error, "#{function_name} is not implemented."}
     else
-      find_in_chain(
+      apply_first_in_chain(
         modules,
         function_name,
         exact_function_name,
@@ -173,12 +173,13 @@ defmodule Expression.Callbacks do
   Returns `{:ok, result}` from the first match, or `{:error, reason}`
   when the list is exhausted.
   """
-  @spec find_in_chain([module], String.t(), atom | nil, atom | nil, [any], map) :: handle_result
-  def find_in_chain([], function_name, _exact, _vargs, _arguments, _context) do
+  @spec apply_first_in_chain([module], String.t(), atom | nil, atom | nil, [any], map) ::
+          handle_result
+  def apply_first_in_chain([], function_name, _exact, _vargs, _arguments, _context) do
     {:error, "#{function_name} is not implemented."}
   end
 
-  def find_in_chain([mod | rest], function_name, exact, vargs, arguments, context) do
+  def apply_first_in_chain([mod | rest], function_name, exact, vargs, arguments, context) do
     cond do
       not is_nil(exact) and exact in @built_in_operators ->
         evaluated_args = Enum.map(arguments, &Expression.Eval.eval!(&1, context))
@@ -191,7 +192,7 @@ defmodule Expression.Callbacks do
         {:ok, apply(mod, vargs, [context, arguments])}
 
       true ->
-        find_in_chain(rest, function_name, exact, vargs, arguments, context)
+        apply_first_in_chain(rest, function_name, exact, vargs, arguments, context)
     end
   end
 
@@ -413,9 +414,6 @@ defmodule Expression.Callbacks do
     vargs_def_name = :"#{def_name}_vargs"
     user_args_var = List.first(args)
 
-    variadic_ast =
-      gen_variadic_def(vargs_def_name, expr_name, user_args_var, ctx_var, with_ctx?, body)
-
     # ── Why Module.delete_attribute is inside `quote` ──────────────
     #
     # Code inside `quote do ... end` runs at the *caller module's*
@@ -434,7 +432,9 @@ defmodule Expression.Callbacks do
     #
     quote do
       if Module.delete_attribute(__MODULE__, :variadic) do
-        unquote(variadic_ast)
+        unquote(
+          gen_variadic_def(vargs_def_name, expr_name, user_args_var, ctx_var, with_ctx?, body)
+        )
       else
         unquote(exact_ast)
       end
@@ -618,7 +618,7 @@ defmodule Expression.Callbacks do
   def validate_expression_func!({name, with_ctx?, variadic?}, module, existing) do
     conflict =
       Enum.find(existing, fn
-        {^name, other_ctx?, _} -> other_ctx? != with_ctx?
+        {^name, other_with_ctx?, _} -> other_with_ctx? != with_ctx?
         _ -> false
       end)
 
