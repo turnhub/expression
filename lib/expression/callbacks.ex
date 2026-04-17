@@ -144,7 +144,8 @@ defmodule Expression.Callbacks do
 
     cond do
       not is_nil(exact) and exact in @built_in_operators ->
-        {:ok, apply(Kernel, exact, arguments |> Enum.map(&Expression.Eval.eval!(&1, context)))}
+        evaluated_args = Enum.map(arguments, &Expression.Eval.eval!(&1, context))
+        {:ok, apply(Kernel, exact, evaluated_args)}
 
       not is_nil(exact) and function_exported?(mod, exact, length(arguments) + 1) ->
         {:ok, apply(mod, exact, [context] ++ arguments)}
@@ -260,31 +261,29 @@ defmodule Expression.Callbacks do
   `or`, `not`) are automatically suffixed with `_` in the generated
   function name.
   """
-  defmacro defexpr(fa, ctx_var, rest) do
-    define_expr(fa, ctx_var, rest)
+  defmacro defexpr(function_head, ctx_var, rest) do
+    define_expr(function_head, ctx_var, rest)
   end
 
-  defmacro defexpr(fa, rest) do
-    define_expr(fa, nil, rest)
+  defmacro defexpr(function_head, rest) do
+    define_expr(function_head, nil, rest)
   end
 
-  defp define_expr(fa, ctx_var, do: body) do
-    {name, args} = decompose_fa(fa)
-    with_ctx? = ctx_var != nil
-
+  defp define_expr(function_head, ctx_var, do: body) do
     # The Elixir def name is what the user writes (e.g., or_, if_, and_, not_)
-    def_name = name
+    {def_name, args} = decompose_function_head(function_head)
+    with_ctx? = ctx_var != nil
 
     # The expression-facing name strips the _ suffix for reserved words
     # so `defexpr or_(a, b)` registers as expression function `or`
-    name_str = to_string(name)
+    name_str = to_string(def_name)
 
     expr_name =
       if String.ends_with?(name_str, "_") and
            String.trim_trailing(name_str, "_") in @reserved_words do
         String.trim_trailing(name_str, "_") |> String.to_atom()
       else
-        name
+        def_name
       end
 
     exact_ast = gen_exact_def(def_name, expr_name, args, ctx_var, with_ctx?, body)
@@ -304,11 +303,11 @@ defmodule Expression.Callbacks do
     end
   end
 
-  defp decompose_fa({:when, _, [{name, _, args} | _guards]}) do
+  defp decompose_function_head({:when, _, [{name, _, args} | _guards]}) do
     {name, args || []}
   end
 
-  defp decompose_fa({name, _, args}) do
+  defp decompose_function_head({name, _, args}) do
     {name, args || []}
   end
 
