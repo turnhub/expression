@@ -43,6 +43,11 @@ defmodule Expression.Eval do
   def eval!({:atom, atom}, {:not_found, history}, _mod),
     do: {:not_found, history ++ [atom]}
 
+  # Structured context: variable resolution reads from vars only
+  def eval!({:atom, atom}, %Expression.Context{vars: vars}, _mod) do
+    Map.get(vars, atom, {:not_found, [atom]})
+  end
+
   def eval!({:atom, atom}, context, _mod) when is_map(context) do
     Map.get(context, atom, {:not_found, [atom]})
   end
@@ -63,6 +68,13 @@ defmodule Expression.Eval do
     eval!({:attribute, [{:attribute, ast}, atom: to_string(literal)]}, context, mod)
   end
 
+  # Structured context: attribute chains resolve against vars
+  def eval!({:attribute, ast}, %Expression.Context{vars: vars} = ctx, mod) do
+    result = Enum.reduce(ast, vars, &eval!(&1, &2, mod))
+    # If the result is the vars map itself (no resolution happened), return the struct
+    if result == vars, do: ctx, else: result
+  end
+
   def eval!({:attribute, ast}, context, mod) do
     Enum.reduce(ast, context, &eval!(&1, &2, mod))
   end
@@ -78,12 +90,25 @@ defmodule Expression.Eval do
     end
   end
 
+  # Structured context: store captures in vars
+  def eval!({:lambda, [{:args, ast}]}, %Expression.Context{} = context, mod) do
+    fn arguments ->
+      lambda_context = %{context | vars: Map.put(context.vars, "__captures", arguments)}
+      eval!(ast, lambda_context, mod)
+    end
+  end
+
   def eval!({:lambda, [{:args, ast}]}, context, mod) do
     fn arguments ->
       lambda_context = Map.put(context, "__captures", arguments)
 
       eval!(ast, lambda_context, mod)
     end
+  end
+
+  # Structured context: read captures from vars
+  def eval!({:capture, index}, %Expression.Context{vars: vars}, _mod) do
+    Enum.at(Map.get(vars, "__captures"), index - 1)
   end
 
   def eval!({:capture, index}, context, _mod) do
