@@ -90,7 +90,22 @@ defmodule Expression.Callbacks do
     end
   end
 
-  @doc false
+  @typedoc "The result of a callback function dispatch"
+  @type handle_result :: {:ok, any} | {:error, String.t()}
+
+  @typedoc "The result of checking whether a function is implemented"
+  @type implements_result ::
+          {:exact, module, atom, arity}
+          | {:vargs, module, atom, arity}
+          | {:error, String.t()}
+
+  @doc """
+  Handle a function call without falling back to `Standard`.
+
+  Used when a callback module is configured with `stdlib: false`.
+  Only checks the given module for exact-arity and vargs implementations.
+  """
+  @spec handle_without_stdlib(module, String.t(), [any], map) :: handle_result
   def handle_without_stdlib(module, function_name, arguments, context) do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
@@ -98,23 +113,29 @@ defmodule Expression.Callbacks do
     Code.ensure_compiled!(module)
     Code.ensure_loaded!(module)
 
-    result =
-      cond do
-        not is_nil(exact_function_name) and
-            function_exported?(module, exact_function_name, length(arguments) + 1) ->
-          {:ok, apply(module, exact_function_name, [context] ++ arguments)}
+    cond do
+      not is_nil(exact_function_name) and
+          function_exported?(module, exact_function_name, length(arguments) + 1) ->
+        {:ok, apply(module, exact_function_name, [context] ++ arguments)}
 
-        not is_nil(vargs_function_name) and function_exported?(module, vargs_function_name, 2) ->
-          {:ok, apply(module, vargs_function_name, [context, arguments])}
+      not is_nil(vargs_function_name) and function_exported?(module, vargs_function_name, 2) ->
+        {:ok, apply(module, vargs_function_name, [context, arguments])}
 
-        true ->
-          {:error, "#{function_name} is not implemented."}
-      end
-
-    result
+      true ->
+        {:error, "#{function_name} is not implemented."}
+    end
   end
 
-  @doc false
+  @doc """
+  Handle a function call by searching through a chain of callback modules.
+
+  Checks each module in order for an exact-arity or vargs implementation.
+  Returns `{:ok, result}` from the first module that implements the function,
+  or `{:error, reason}` if no module in the chain implements it.
+
+  Used when a callback module is configured with `also: [ModA, ModB]`.
+  """
+  @spec handle_chain([module], String.t(), [any], map) :: handle_result
   def handle_chain(modules, function_name, arguments, context) do
     exact_function_name = atom_function_name(function_name)
     vargs_function_name = atom_function_name("#{function_name}_vargs")
@@ -129,19 +150,35 @@ defmodule Expression.Callbacks do
     if is_nil(exact_function_name) and is_nil(vargs_function_name) do
       {:error, "#{function_name} is not implemented."}
     else
-      find_in_chain(modules, function_name, exact_function_name, vargs_function_name, arguments,
-        context: context
+      find_in_chain(
+        modules,
+        function_name,
+        exact_function_name,
+        vargs_function_name,
+        arguments,
+        context
       )
     end
   end
 
-  defp find_in_chain([], function_name, _exact, _vargs, _arguments, _opts) do
+  @doc """
+  Walk a list of callback modules looking for one that implements the
+  given function.
+
+  Tries each module in order. For each module, checks:
+  1. Built-in operators (`:+`, `:-`, etc.) — dispatched to `Kernel`
+  2. Exact-arity match — `module.function(ctx, arg1, arg2, ...)`
+  3. Variable-args match — `module.function_vargs(ctx, [arg1, arg2, ...])`
+
+  Returns `{:ok, result}` from the first match, or `{:error, reason}`
+  when the list is exhausted.
+  """
+  @spec find_in_chain([module], String.t(), atom | nil, atom | nil, [any], map) :: handle_result
+  def find_in_chain([], function_name, _exact, _vargs, _arguments, _context) do
     {:error, "#{function_name} is not implemented."}
   end
 
-  defp find_in_chain([mod | rest], function_name, exact, vargs, arguments, opts) do
-    context = Keyword.fetch!(opts, :context)
-
+  def find_in_chain([mod | rest], function_name, exact, vargs, arguments, context) do
     cond do
       not is_nil(exact) and exact in @built_in_operators ->
         evaluated_args = Enum.map(arguments, &Expression.Eval.eval!(&1, context))
@@ -154,10 +191,19 @@ defmodule Expression.Callbacks do
         {:ok, apply(mod, vargs, [context, arguments])}
 
       true ->
-        find_in_chain(rest, function_name, exact, vargs, arguments, opts)
+        find_in_chain(rest, function_name, exact, vargs, arguments, context)
     end
   end
 
+  @doc """
+  Check whether a function is implemented in the given module or in `Standard`.
+
+  Returns a tagged tuple describing where and how the function is implemented:
+  - `{:exact, module, function_atom, arity}` — exact arity match
+  - `{:vargs, module, function_atom, 2}` — variable arguments match
+  - `{:error, reason}` — not found or wrong arity
+  """
+  @spec implements(module, String.t(), [any]) :: implements_result
   def implements(module \\ Standard, function_name, arguments) do
     # Make sure the module supplied and the default module are compiled
     # & loaded before attempting to find out what functions it may
@@ -176,12 +222,38 @@ defmodule Expression.Callbacks do
     if is_nil(exact_function_name) and is_nil(vargs_function_name) do
       {:error, "#{function_name} is not implemented."}
     else
-      do_implements(module, function_name, exact_function_name, vargs_function_name, arguments)
+      resolve_implementation(
+        module,
+        function_name,
+        exact_function_name,
+        vargs_function_name,
+        arguments
+      )
     end
   end
 
+  @doc """
+  Resolve which module and calling convention implements a function.
+
+  Checks in priority order:
+  1. Built-in operators in the custom module
+  2. Exact-arity in the custom module
+  3. Variable-args in the custom module
+  4. Exact-arity in `Standard`
+  5. Variable-args in `Standard`
+  6. Wrong-arity error (function exists but with different arity)
+  7. Not implemented error
+  """
+  @spec resolve_implementation(module, String.t(), atom | nil, atom | nil, [any]) ::
+          implements_result
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
-  defp do_implements(module, function_name, exact_function_name, vargs_function_name, arguments) do
+  def resolve_implementation(
+        module,
+        function_name,
+        exact_function_name,
+        vargs_function_name,
+        arguments
+      ) do
     cond do
       not is_nil(exact_function_name) and exact_function_name in @built_in_operators ->
         {:exact, module, exact_function_name, 2}
@@ -218,10 +290,18 @@ defmodule Expression.Callbacks do
     end
   end
 
-  defp wrong_arity_but_function_exists?(_module, nil), do: false
+  @doc """
+  Check whether a module defines a function with the given name at any arity,
+  even if the specific arity being requested doesn't match.
 
-  defp wrong_arity_but_function_exists?(module, function_name)
-       when is_atom(module) and is_atom(function_name) do
+  Used to produce "wrong number of arguments" errors instead of
+  "not implemented" errors.
+  """
+  @spec wrong_arity_but_function_exists?(module, atom | nil) :: boolean
+  def wrong_arity_but_function_exists?(_module, nil), do: false
+
+  def wrong_arity_but_function_exists?(module, function_name)
+      when is_atom(module) and is_atom(function_name) do
     module.__info__(:functions)[function_name] != nil
   end
 
