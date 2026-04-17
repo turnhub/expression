@@ -365,6 +365,27 @@ defmodule Expression.Callbacks do
   Expression function names that are Elixir reserved words (`and`, `if`,
   `or`, `not`) are automatically suffixed with `_` in the generated
   function name.
+
+  ## When NOT to use `defexpr`
+
+  `defexpr` eagerly evaluates **all** arguments before the body runs.
+  This is wrong for functions that need lazy or short-circuit evaluation:
+
+    - `if_(condition, yes, no)` — must only evaluate the matching branch
+    - `or_(a, b)` — must stop at the first truthy value
+
+  These functions must use plain `def` with manual `eval!` calls to
+  control when each argument is evaluated:
+
+      def if_(ctx, condition, yes, no) do
+        if eval!(condition, ctx),
+          do: eval!(yes, ctx),
+          else: eval!(no, ctx)
+      end
+
+  As a rule: if the function might skip evaluating some arguments
+  depending on the value of others, use `def`. If all arguments are
+  always needed, use `defexpr`.
   """
   defmacro defexpr(function_head, ctx_var, rest) do
     define_expr(function_head, ctx_var, rest)

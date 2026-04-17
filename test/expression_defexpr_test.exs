@@ -24,9 +24,9 @@ defmodule ExpressionDefexprTest do
       "#{prefix}, #{name}!"
     end
 
-    # Reserved word: user writes `or_`, macro registers as expression name `or`
-    defexpr or_(a, b) do
-      a || b
+    # Reserved word: user writes `not_`, macro registers as expression name `not`
+    defexpr not_(value) do
+      !value
     end
 
     # Variadic function
@@ -114,14 +114,14 @@ defmodule ExpressionDefexprTest do
   end
 
   describe "reserved words" do
-    test "or function works through defexpr" do
+    test "not function works through defexpr" do
       assert {:ok, true} =
-               Expression.evaluate("@(or(false, true))", %{}, DefexprCallbacks)
+               Expression.evaluate("@(not(false))", %{}, DefexprCallbacks)
     end
 
-    test "or with truthy first argument" do
-      assert {:ok, "yes"} =
-               Expression.evaluate(~s|@(or("yes", "no"))|, %{}, DefexprCallbacks)
+    test "not negates truthy value" do
+      assert {:ok, false} =
+               Expression.evaluate("@(not(true))", %{}, DefexprCallbacks)
     end
   end
 
@@ -185,7 +185,7 @@ defmodule ExpressionDefexprTest do
       assert :shout in names
       assert :add in names
       assert :greet in names
-      assert :or in names
+      assert :not in names
       assert :concat in names
     end
 
