@@ -18,8 +18,7 @@ defmodule ExpressionSigilTest do
 
   describe "~EXPR with c modifier (pre-parsed)" do
     test "returns pre-parsed AST" do
-      ast = ~EXPR"SUM(1, 2)"c
-      assert [{:function, [name: "sum", args: [literal: 1, literal: 2]]}] = ast
+      assert [{:function, [name: "sum", args: [literal: 1, literal: 2]]}] = ~EXPR"SUM(1, 2)"c
     end
 
     test "pre-parsed AST can be used directly with Eval" do
@@ -29,8 +28,7 @@ defmodule ExpressionSigilTest do
     end
 
     test "pre-parsed AST with variables" do
-      ast = ~EXPR"upper(name)"c
-      assert [{:function, _}] = ast
+      assert [{:function, _}] = ~EXPR"upper(name)"c
     end
   end
 
