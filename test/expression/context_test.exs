@@ -150,6 +150,11 @@ defmodule Expression.ContextTest do
       assert ctx["zero"] == "0"
     end
 
+    test "coerce_strings: true coerces datetime strings" do
+      ctx = Context.new(%{"date" => "2020-12-13T23:34:45"}, coerce_strings: true)
+      assert %DateTime{} = ctx["date"]
+    end
+
     test "coerce_strings: false preserves datetime strings" do
       ctx = Context.new(%{"date" => "2020-12-13T23:34:45"}, coerce_strings: false)
       assert ctx["date"] == "2020-12-13T23:34:45"
