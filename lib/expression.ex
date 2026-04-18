@@ -232,17 +232,19 @@ defmodule Expression do
   as an argument to a function). Use this when you need template resolution
   and want to be explicit about it.
 
+  Raises `Expression.Error` on parse or evaluation failures.
+
   ## Examples
 
-      iex> Expression.evaluate_template("hello @name", %{"name" => "world"})
+      iex> Expression.evaluate_template!("hello @name", %{"name" => "world"})
       "hello world"
 
-      iex> Expression.evaluate_template("1 + 1 = @(1 + 1)", %{})
+      iex> Expression.evaluate_template!("1 + 1 = @(1 + 1)", %{})
       "1 + 1 = 2"
 
   """
-  @spec evaluate_template(String.t(), map(), module()) :: String.t()
-  def evaluate_template(template, context \\ %{}, mod \\ Expression.Callbacks) do
+  @spec evaluate_template!(String.t(), map(), module()) :: String.t()
+  def evaluate_template!(template, context \\ %{}, mod \\ Expression.Callbacks) do
     evaluate_as_string!(template, context, mod)
   end
 
