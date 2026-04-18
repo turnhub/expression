@@ -56,8 +56,7 @@ defmodule ExpressionContextTest do
       ctx = Expression.Context.build(%{name: "Jane"}, private: %{token: "secret"})
       # Evaluating a function passes the struct to the callback module
       # The standard callbacks work with both maps and structs
-      result = Expression.evaluate_as_string!("@(upper(name))", ctx)
-      assert result == "JANE"
+      assert Expression.evaluate_as_string!("@(upper(name))", ctx) == "JANE"
     end
 
     test "Context.new passes through an existing struct unchanged" do
@@ -69,8 +68,7 @@ defmodule ExpressionContextTest do
       ctx =
         Expression.Context.build(%{items: [1, 2, 3]}, private: %{secret: "hidden"})
 
-      result = Expression.evaluate!("@(map(items, &(&1 + 1)))", ctx)
-      assert result == [2, 3, 4]
+      assert Expression.evaluate!("@(map(items, &(&1 + 1)))", ctx) == [2, 3, 4]
     end
   end
 end
