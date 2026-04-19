@@ -71,10 +71,18 @@ defmodule Expression do
         ast
 
       {:ok, _ast, remainder, _, _, _} ->
-        raise "Unable to parse block: #{inspect(expression_block)}, remainder: #{inspect(remainder)}"
+        raise Expression.Error,
+          type: :parse,
+          message:
+            "Unable to parse block: #{inspect(expression_block)}, remainder: #{inspect(remainder)}",
+          expression: expression_block
 
       {:error, reason, problematic, _, _, _} ->
-        raise "Unable to parse block: #{inspect(expression_block)}, reason: #{reason} in #{inspect(problematic)}"
+        raise Expression.Error,
+          type: :parse,
+          message:
+            "Unable to parse block: #{inspect(expression_block)}, reason: #{reason} in #{inspect(problematic)}",
+          expression: expression_block
     end
   end
 
@@ -95,7 +103,10 @@ defmodule Expression do
         ast
 
       {:ok, _ast, remainder, _, _, _} ->
-        raise "Unable to parse expression: #{expression}, remainder: #{inspect(remainder)}"
+        raise Expression.Error,
+          type: :parse,
+          message: "Unable to parse expression: #{expression}, remainder: #{inspect(remainder)}",
+          expression: to_string(expression)
     end
   end
 
@@ -110,11 +121,20 @@ defmodule Expression do
       ) do
     ast = parse_expression!(expression)
     Eval.eval!([expression: ast], Context.new(context, opts), mod)
+  rescue
+    e in Expression.Error ->
+      reraise e, __STACKTRACE__
+
+    e in RuntimeError ->
+      reraise Expression.Error,
+              [type: :eval, message: e.message, expression: expression],
+              __STACKTRACE__
   end
 
   def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks, opts \\ []) do
     {:ok, evaluate_block!(expression, context, mod, opts)}
   rescue
+    e in Expression.Error -> {:error, e.message}
     e in RuntimeError -> {:error, e.message}
   end
 
@@ -123,6 +143,14 @@ defmodule Expression do
     |> parse!
     |> Eval.eval!(Context.new(context), mod)
     |> Eval.default_value()
+  rescue
+    e in Expression.Error ->
+      reraise e, __STACKTRACE__
+
+    e in RuntimeError ->
+      reraise Expression.Error,
+              [type: :eval, message: e.message, expression: expression],
+              __STACKTRACE__
   end
 
   @spec evaluate_as_string!(
@@ -148,7 +176,11 @@ defmodule Expression do
         boolean
 
       other ->
-        raise "Expression #{inspect(expression)} did not return a boolean!, got #{inspect(other)} instead"
+        raise Expression.Error,
+          type: :type,
+          message:
+            "Expression #{inspect(expression)} did not return a boolean!, got #{inspect(other)} instead",
+          expression: expression
     end
   end
 
@@ -168,14 +200,22 @@ defmodule Expression do
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}
   rescue
+    e in Expression.Error -> {:error, e.message}
     e in RuntimeError -> {:error, e.message}
   end
 
   @doc """
-  Generate an error map
+  Generate an error map.
+
+  Deprecated: use `Expression.Error` exception struct instead.
+  This function will be removed in a future major version.
   """
+  @deprecated "Use %Expression.Error{type: :function, message: message} instead"
   @spec error(message :: term) :: %{required(String.t()) => term}
-  def error(message),
+  def error(message), do: error_map(message)
+
+  @doc false
+  def error_map(message),
     do: %{
       "__type__" => "expression/v1error",
       "error" => true,

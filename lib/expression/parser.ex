@@ -161,7 +161,7 @@ defmodule Expression.Parser do
   )
 
   defparsec(
-    :aexpr,
+    :aexpr_compare,
     parsec(:aexpr_term)
     |> repeat(
       choice([
@@ -180,6 +180,53 @@ defmodule Expression.Parser do
     )
     |> reduce(:fold_infixl)
   )
+
+  defparsec(
+    :aexpr_not,
+    choice([
+      not_op()
+      |> ignore(repeat(whitespace))
+      |> parsec(:aexpr_compare)
+      |> reduce(:fold_not),
+      parsec(:aexpr_compare)
+    ])
+  )
+
+  defparsec(
+    :aexpr_and,
+    parsec(:aexpr_not)
+    |> repeat(
+      and_op()
+      |> ignore_surrounding_whitespace.()
+      |> parsec(:aexpr_not)
+    )
+    |> reduce(:fold_logical)
+  )
+
+  defparsec(
+    :aexpr,
+    parsec(:aexpr_and)
+    |> repeat(
+      or_op()
+      |> ignore_surrounding_whitespace.()
+      |> parsec(:aexpr_and)
+    )
+    |> reduce(:fold_logical)
+  )
+
+  def fold_not([:not, expr]) do
+    {:function, [name: "not", args: [expr]]}
+  end
+
+  def fold_logical(acc) do
+    acc
+    |> Enum.reverse()
+    |> Enum.chunk_every(2)
+    |> List.foldr([], fn
+      [l], [] -> l
+      [r, op], l -> {:function, [name: to_string(op), args: [l, r]]}
+    end)
+  end
 
   def fold_infixl(acc) do
     acc

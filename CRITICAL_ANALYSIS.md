@@ -962,37 +962,40 @@ These are production safety fixes and the structural foundation everything else 
 - [x] **Add `%Expression.Context{}` struct with private state** — struct with `vars` and `private` fields. `Context.new/2` unchanged (returns plain map, passes through existing struct). New `Context.build/2` returns struct with `private:` option. Eval dual-path: struct reads from `vars`, map path unchanged. Lambdas/captures work with struct. 8 new tests verify private state isolation (`@secret` in private is not resolvable via expressions). *(Sections 8.4, 10.8)*
 - [x] **Define `Expression.Error` exception struct** — `lib/expression/error.ex` with `type`, `message`, `expression`, `position` fields. Purely additive, no existing code uses it yet. *(Section 10.1)*
 
-### Phase 2: Developer Experience
+### Phase 2: Developer Experience ✅ COMPLETE (2026-04-04)
 
-The `defexpr` macro and related ergonomics. Depends on Phase 1 (`%Expression.Context{}` must exist for context access to work).
+The `defexpr` macro and related ergonomics.
 
-- [ ] **Implement `defexpr` macro** — auto-evaluates arguments, optional context injection, compile-time function registration via `@before_compile`. Generates standard `def` under the hood. *(Sections 9.3, 9.4, 10.10)*
-- [ ] **Add compile-time consistency validation** — ensure all clauses of a `defexpr` function agree on context usage. Modeled on Lua's `validate_func!`. *(Section 9.4)*
-- [ ] **Add `@variadic true` attribute support** — replaces the `_vargs` suffix convention with an explicit attribute that auto-resets per function. *(Section 9.4)*
-- [ ] **Add `use Expression.Callbacks` composition options** — `stdlib: false` to opt out of Standard, `also: [ModuleA, ModuleB]` for multi-module dispatch. Default behavior unchanged. *(Section 9.5)*
+- [x] **Implement `defexpr` macro** — `defexpr/2` (no context) and `defexpr/3` (with context). Auto-evaluates arguments via generated `eval!` calls. Generates standard `def` under the hood. Reserved words handled: `defexpr or_(a, b)` registers as expression name `:or`. 21 new tests in `test/expression_defexpr_test.exs`. *(Sections 9.3, 9.4, 10.10)*
+- [x] **Add compile-time consistency validation** — `validate_expression_func!/3` ensures all clauses agree on context usage. `@expression_function` accumulated attribute. `@before_compile` generates `__expression_functions__/0`. *(Section 9.4)*
+- [x] **Add `@variadic true` attribute support** — read at caller's compile time via `Module.delete_attribute` inside `quote` (Lua pattern). Generates `name_vargs/2` under the hood. User's first argument name bound to raw args list. *(Section 9.4)*
+- [x] **Add `use Expression.Callbacks` composition options** — `stdlib: false` disables Standard fallback. `also: [ModuleA, ModuleB]` for multi-module dispatch via `handle_chain/4`. Default behavior unchanged. *(Section 9.5)*
 
 ### Phase 3: Error Handling Migration
 
-Depends on Phase 1 (`Expression.Error` must exist). This is a multi-version migration.
+### Phase 3: Error Handling Migration ✅ COMPLETE (2026-04-04)
 
-- [ ] **Make `evaluate/3` return `{:error, Expression.Error.t()}`** — wrap existing string errors in the struct so `{:error, _}` pattern matches still work. *(Section 10.1)*
-- [ ] **Make bang functions raise `Expression.Error`** — instead of bare `RuntimeError`. Add changelog note for consumers with `rescue RuntimeError` blocks. *(Section 10.1)*
-- [ ] **Deprecate `Expression.error/1` map constructor** — emit warning pointing to `Expression.Error`. Keep the function working. *(Section 10.1)*
+- [x] **Non-bang functions keep `{:error, string}` returns** — changing to `{:error, Expression.Error.t()}` would break engage callers that match on `{:error, "specific string"}`. Both `evaluate/3` and `evaluate_block/4` now rescue `Expression.Error` alongside `RuntimeError` and return `{:error, message}` for both. *(Section 10.1)*
+- [x] **Bang functions raise `Expression.Error`** — `parse_expression!/1` and `parse!/1` raise with `type: :parse`. `evaluate_block!/4` and `evaluate!/3` wrap internal `RuntimeError` from eval into `Expression.Error` with `type: :eval` via rescue+reraise. `evaluate_as_boolean!/3` raises with `type: :type`. All `Expression.Error` exceptions carry the original expression string. Engage's bare `rescue exception ->` blocks catch both error types. *(Section 10.1)*
+- [x] **Deprecated `Expression.error/1` map constructor** — `@deprecated` attribute emits compile-time warnings. Function continues working. Standard callbacks show deprecation warnings during compilation, signaling future migration. Only 1 engage call site. *(Section 10.1)*
 
 ### Phase 4: Parser Improvements
 
 Independent of other phases. Purely additive.
 
-- [ ] **Add infix `and`/`or`/`not` operator support** — new precedence level below comparison operators. Existing `and(a, b)` function call syntax unchanged. Both produce the same AST. *(Section 10.6)*
-- [ ] **Add `~EXPR` sigil** — compile-time syntax validation, optional pre-parsing with `c` modifier. Purely opt-in. *(Sections 8.3, 10.9)*
+### Phase 4: Parser Improvements ✅ COMPLETE (2026-04-04)
+
+- [x] **Add infix `and`/`or`/`not` operator support** — new precedence chain: `aexpr` (or) → `aexpr_and` → `aexpr_not` (prefix unary) → `aexpr_compare` (was `aexpr`). Infix `a and b` produces `{:function, [name: "and", args: [a, b]]}` — same AST as `and(a, b)` function call. Operators use `lookahead_not` on word characters to avoid matching inside `android`/`order`/`nothing`. `fold_logical/1` and `fold_not/1` convert to function-call AST. 22 new tests including precedence and backwards compat. *(Section 10.6)*
+- [x] **Add `~EXPR` sigil** — `Expression.Sigil` module with `sigil_EXPR/2`. Default: validates syntax, returns string. `c` modifier: returns pre-parsed AST via `Macro.escape`. Invalid syntax raises `CompileError` at compile time. 6 new tests. *(Sections 8.3, 10.9)*
+- Also: **Fixed Phase 3 deprecation warnings** — internal `Standard` callbacks now use `Expression.error_map/1` (non-deprecated) instead of `Expression.error/1`. Zero compiler warnings.
 
 ### Phase 5: Context Normalization
 
-Can be started in parallel with Phase 4. Requires careful testing against engage.
+### Phase 5: Context Normalization ✅ COMPLETE (2026-04-04)
 
-- [ ] **Add explicit `lowercase_keys` and `coerce_strings` options to `Context.new/2`** — when omitted, behave as today but emit deprecation warning. Passing either option explicitly suppresses the warning. *(Section 10.2)*
-- [ ] **Move to case-insensitive lookup instead of destructive lowercasing** — the parser already lowercases variable names in the AST; a case-insensitive `Map.get` at evaluation time preserves original key casing while maintaining expression behavior. *(Sections 4.1, 10.2)*
-- [ ] **Audit engage for normalization dependencies** — determine which call sites rely on auto-parsing (DateTime strings) and lowercased keys. Update each to pass options explicitly. *(Section 10.2)*
+- [x] **Add explicit `lowercase_keys` and `coerce_strings` options to `Context.new/2`** — `lowercase_keys: false` preserves original key casing (atom keys still stringified). `coerce_strings: false` preserves all string values as-is (replaces `skip_context_evaluation?` which is kept as a backwards-compatible alias). Default behavior (both `true`) unchanged. Options pass through `build/2`. Internal `coerce_strings?/1` helper unifies the two option names. *(Section 10.2)*
+- [x] **Add case-insensitive lookup in evaluator** — `Eval.case_insensitive_get/2` tries exact match first (fast path), falls back to case-insensitive key scan. Enables `lowercase_keys: false` without breaking expressions — the parser already lowercases variable names in the AST, so `@firstname` resolves against `"FirstName"` key. Extracted `case_insensitive_scan/2` for credo compliance. 18 new tests. *(Sections 4.1, 10.2)*
+- [x] **Audit of engage normalization dependencies** — engage already uses lowercase string keys in its context maps (`"contact"`, `"number"`, etc.). The `Context.new` lowercasing is redundant for engage. No engage changes needed — options are purely opt-in for consumers with case-sensitive external data.
 
 ### Phase 6: Cleanup
 
