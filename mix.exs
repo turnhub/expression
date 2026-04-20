@@ -1,7 +1,7 @@
 defmodule Expression.MixProject do
   use Mix.Project
 
-  @version "2.48.0"
+  @version "3.0.0"
 
   def project do
     [
@@ -42,7 +42,6 @@ defmodule Expression.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:benchee, "~> 1.0", only: :dev},
       {:credo, "~> 1.5", only: [:dev], runtime: false},
       {:dialyxir, "~> 1.0", only: [:dev], runtime: false},
       {:ex_doc, ">= 0.28.2", only: :dev, runtime: false},

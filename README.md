@@ -139,7 +139,7 @@ by adding `expression` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:expression, "~> 2.48.0"}
+    {:expression, "~> 3.0.0"}
   ]
 end
 ```
@@ -152,7 +152,7 @@ To publish a new release:
 2. Merge the version bump to `develop` via a Pull Request
 3. Go to the [GitHub Releases page](https://github.com/turnhub/expression/releases)
 4. Click "Draft a new release"
-5. Create a new tag matching the version (e.g., `2.48.0`)
+5. Create a new tag matching the version (e.g., `3.0.0`)
 6. Fill in the release notes and publish
 
 The release workflow will verify that `mix.exs` and `README.md` versions match the release tag, then publish to Hex.pm. If versions don't match, the workflow will fail with an error message.
