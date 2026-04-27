@@ -1177,6 +1177,7 @@ defmodule Expression.Callbacks.Standard do
   Defaults to split the string using a space.
   """
   @expression_category "string"
+  @expression_doc expression: "split(nil)", result: []
   @expression_doc expression: "split(\"testing something\")", result: ["testing", "something"]
   @expression_doc expression: "split(\"testing something\", \"e\")",
                   result: ["t", "sting som", "thing"]
@@ -1205,12 +1206,26 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: ["t", "sting som", "thing"]
-  def split(ctx, binary),
-    do: String.split(eval!(binary, ctx), " ")
+  def split(ctx, binary) do
+    text = eval!(binary, ctx)
+
+    if is_nil(text) do
+      []
+    else
+      String.split(eval!(binary, ctx), " ")
+    end
+  end
 
   @expression_category "string"
-  def split(ctx, binary, pattern),
-    do: String.split(eval!(binary, ctx), eval!(pattern, ctx))
+  def split(ctx, binary, pattern) do
+    text = eval!(binary, ctx)
+
+    if is_nil(text) do
+      []
+    else
+      String.split(eval!(binary, ctx), eval!(pattern, ctx))
+    end
+  end
 
   @doc """
   Returns the sum of all arguments, equivalent to the + operator
