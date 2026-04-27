@@ -1212,7 +1212,7 @@ defmodule Expression.Callbacks.Standard do
     if is_nil(text) do
       []
     else
-      String.split(eval!(binary, ctx), " ")
+      String.split(text, " ")
     end
   end
 
@@ -1223,7 +1223,7 @@ defmodule Expression.Callbacks.Standard do
     if is_nil(text) do
       []
     else
-      String.split(eval!(binary, ctx), eval!(pattern, ctx))
+      String.split(text, eval!(pattern, ctx))
     end
   end
 
