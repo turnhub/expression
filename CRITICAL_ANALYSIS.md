@@ -997,21 +997,17 @@ Independent of other phases. Purely additive.
 - [x] **Add case-insensitive lookup in evaluator** — `Eval.case_insensitive_get/2` tries exact match first (fast path), falls back to case-insensitive key scan. Enables `lowercase_keys: false` without breaking expressions — the parser already lowercases variable names in the AST, so `@firstname` resolves against `"FirstName"` key. Extracted `case_insensitive_scan/2` for credo compliance. 18 new tests. *(Sections 4.1, 10.2)*
 - [x] **Audit of engage normalization dependencies** — engage already uses lowercase string keys in its context maps (`"contact"`, `"number"`, etc.). The `Context.new` lowercasing is redundant for engage. No engage changes needed — options are purely opt-in for consumers with case-sensitive external data.
 
-### Phase 6: Cleanup
+### Phase 6: Cleanup ✅ COMPLETE (2026-04-04)
 
-Low-risk housekeeping. Do when convenient.
+- [x] **Deprecate `Expression.V2.Compat`** — `@deprecated` on `evaluate_as_string!/3`, `evaluate!/3`, `evaluate_block!/4`. Can't remove yet — `flow_runner` dependency uses it (verified: 136 tests pass with deprecation warnings). Engage does NOT call Compat directly — it uses V2 parser/compiler for validation (different modules). Moduledoc updated to point to `Expression` equivalents. *(Section 10.7)*
+- [x] **Document the AST format as public API** — new `Expression.AST` module with typespecs for all node types: `literal`, `variable`, `attribute`, `key`, `function_call`, `binary_op`, `list_node`, `range`, `lambda`, `capture`. Top-level `template` and `block` types. Full operator precedence docs. Examples for every AST shape. *(Section 10.4)*
+- [ ] **Split `Standard` callbacks into category modules** — deferred. 4000+ line refactor with limited immediate value. `Standard` works as-is and the `defexpr` macro provides better ergonomics for new callbacks going forward. *(Section 10.11)*
 
-- [ ] **Remove `Expression.V2.Compat` dead code** — audit engage for references first, update call sites to use `Expression` directly, then deprecate and remove the compat module. *(Section 10.7)*
-- [ ] **Document the AST format as public API** — add typespecs for AST nodes. No runtime changes. Formalizes what engage's `ElasticsearchConverter` already depends on. *(Section 10.4)*
-- [ ] **Split `Standard` callbacks into category modules** — `Standard` continues to exist and export everything, delegating to `Expression.Callbacks.String`, `.Math`, `.DateTime`, `.Collection`, `.Logic`. No consumer impact. *(Section 10.11)*
+### Phase 7: Careful Deprecations — PARTIALLY COMPLETE (2026-04-04)
 
-### Phase 7: Careful Deprecations
-
-These change existing behavior. Only after consumers have migrated.
-
-- [ ] **Add explicit `evaluate_template/3` function** — extracts the binary literal re-evaluation into a named function. Add `nested_literal_evaluation: false` option defaulting to `true`. Log deprecation when implicit path is hit. *(Section 10.5)*
-- [ ] **Flip `coerce_strings` and `lowercase_keys` defaults to `false`** — only in a major version, after all consumers pass options explicitly. *(Section 10.2)*
-- [ ] **Remove `nested_literal_evaluation` implicit path** — only in a major version, after consumers have migrated to explicit `evaluate_template/3`. *(Section 10.5)*
+- [x] **Add explicit `evaluate_template/3` function** — `Expression.evaluate_template/3` added as the named, explicit way to resolve `@variable` references in strings. Delegates to `evaluate_as_string!/3`. The implicit behavior in `Eval.eval!({:literal, binary}, ...)` remains unchanged for backwards compatibility — consumers can migrate to the explicit function over time. *(Section 10.5)*
+- [ ] **Flip `coerce_strings` and `lowercase_keys` defaults to `false`** — future major version only, after all consumers pass options explicitly. *(Section 10.2)*
+- [ ] **Remove `nested_literal_evaluation` implicit path** — future major version only, after consumers have migrated to explicit `evaluate_template/3`. *(Section 10.5)*
 
 ---
 

@@ -48,7 +48,7 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 23
-  def(count(ctx, term)) do
+  def count(ctx, term) do
     case eval!(term, ctx) do
       list when is_list(list) -> length(list)
       binary when is_binary(binary) -> String.length(binary)
