@@ -137,10 +137,6 @@ defmodule Expression.Eval do
     read_key_from_subject(subject, key)
   end
 
-  def eval!({:literal, literal}, context, mod) when is_binary(literal) do
-    Expression.evaluate_as_string!(literal, context, mod)
-  end
-
   def eval!({:literal, literal}, _context, _mod), do: literal
 
   def eval!({:text, text}, _context, _mod), do: text
@@ -205,7 +201,7 @@ defmodule Expression.Eval do
     do: DateTime.compare(a, b) == :eq
 
   def op(:=, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
-    do: Date.compare(a, b) == :eq
+    do: DateTime.compare(a, b) == :eq
 
   def op(:>, a, b) when is_struct(a, Date) and is_struct(b, Date),
     do: Date.compare(a, b) == :gt

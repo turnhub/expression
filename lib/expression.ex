@@ -205,16 +205,13 @@ defmodule Expression do
   end
 
   @doc """
-  Generate an error map.
+  Build the legacy error map shape used by callbacks to signal recoverable
+  errors that should flow through evaluation as a value.
 
-  Deprecated: use `Expression.Error` exception struct instead.
-  This function will be removed in a future major version.
+  New code should raise `Expression.Error` instead. This helper exists for
+  callbacks that need to return an error sentinel without halting evaluation.
   """
-  @deprecated "Use %Expression.Error{type: :function, message: message} instead"
-  @spec error(message :: term) :: %{required(String.t()) => term}
-  def error(message), do: error_map(message)
-
-  @doc false
+  @spec error_map(message :: term) :: %{required(String.t()) => term}
   def error_map(message),
     do: %{
       "__type__" => "expression/v1error",

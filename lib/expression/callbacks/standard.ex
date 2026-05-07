@@ -195,7 +195,7 @@ defmodule Expression.Callbacks.Standard do
                   expression: "datetime_add(datetime, offset, unit)",
                   context: %{
                     "datetime" => ~U[2022-07-31 00:00:00Z],
-                    "offset" => "1",
+                    "offset" => 1,
                     "unit" => "M"
                   },
                   result: ~U[2022-08-31 00:00:00Z]
@@ -229,7 +229,7 @@ defmodule Expression.Callbacks.Standard do
                     "offset" => %{
                       "display" => "value for display key",
                       "value" => "value for value key",
-                      "__value__" => "1"
+                      "__value__" => 1
                     },
                     "unit" => %{
                       "display" => "value for display key",
@@ -1673,7 +1673,7 @@ defmodule Expression.Callbacks.Standard do
                     "code" => %{
                       "display" => "value for display key",
                       "value" => "value for value key",
-                      "__value__" => "233"
+                      "__value__" => 233
                     }
                   },
                   result: "é"
@@ -2252,7 +2252,7 @@ defmodule Expression.Callbacks.Standard do
                     "string" => %{
                       "display" => "value for display key",
                       "value" => "value for value key",
-                      "__value__" => "1"
+                      "__value__" => 1
                     }
                   },
                   result: true
@@ -2288,7 +2288,7 @@ defmodule Expression.Callbacks.Standard do
                     "string" => %{
                       "display" => "value for display key",
                       "value" => "value for value key",
-                      "__value__" => "true"
+                      "__value__" => true
                     }
                   },
                   result: true
@@ -3571,7 +3571,7 @@ defmodule Expression.Callbacks.Standard do
   @expression_doc expression: "has_number_lte(\"the number is 42.0\", \"40\")", result: false
   @expression_doc expression: "has_number_lte(\"the number is 40\", \"foo\")", result: false
   @expression_doc expression: "has_number_lte(\"four hundred\", \"foo\")", result: false
-  @expression_doc expression: "has_number_lte(\"@response\", 5)",
+  @expression_doc expression: "has_number_lte(response, 5)",
                   context: %{"response" => 3},
                   result: true
   @expression_doc doc:

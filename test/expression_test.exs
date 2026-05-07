@@ -190,7 +190,9 @@ defmodule ExpressionTest do
                      "body" => ["hello", "bye"]
                    },
                    "current_activity" => "0"
-                 }
+                 },
+                 Expression.Callbacks,
+                 coerce_strings: true
                )
     end
 

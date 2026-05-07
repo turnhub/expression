@@ -7,51 +7,41 @@ defmodule Expression.EvalTest do
     assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
-  test "substitutions in substitutions" do
+  test "string literals are not re-evaluated as templates (v3)" do
+    # In v3, string literals inside expressions are inert. Use
+    # Expression.evaluate_template/3 for explicit template resolution.
     assert "string with quotes \" inside" ==
              Expression.evaluate_block!(~S("string with quotes \" inside"))
 
-    # Note the escaping of the @IF here with an @
-    # credo:disable-for-lines:2 Credo.Check.Readability.StringSigils
-    assert true ==
-             Expression.evaluate_block!(
-               "block.response = \"@@IF(cursor + 1 < total_items, \\\"Next article ➡️\\\", \\\"⏮ First article\\\")\"",
-               %{
-                 "block" => %{
-                   "response" =>
-                     "@IF(cursor + 1 < total_items, \"Next article ➡️\", \"⏮ First article\")"
-                 },
-                 "cursor" => "1",
-                 "total_items" => "10"
-               }
-             )
+    # Inner @-references inside a string literal are NOT resolved.
+    ctx = %{
+      "conditional" => true,
+      "confirm" => "successful",
+      "deny" => "unsuccessful"
+    }
 
-    assert "Your application was successful" ==
+    assert "was @confirm" ==
              Expression.evaluate_as_string!(
-               ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
-               %{
-                 "conditional" => true,
-                 "confirm" => "successful",
-                 "deny" => "unsuccessful"
-               }
+               ~s|@if(conditional, "was @confirm", "was @deny")|,
+               ctx
              )
 
-    assert "Your application was unsuccessful" ==
-             Expression.evaluate_as_string!(
-               ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
-               %{
-                 "conditional" => false,
-                 "confirm" => "successful",
-                 "deny" => "unsuccessful"
-               }
-             )
+    # Callers that want nested template resolution wrap the result in
+    # evaluate_template/3 explicitly.
+    inner =
+      Expression.evaluate_as_string!(
+        ~s|@if(conditional, "was @confirm", "was @deny")|,
+        ctx
+      )
 
+    assert "was successful" == Expression.evaluate_template!(inner, ctx)
+
+    # `or` with `answer == 1` requires coercing "1" -> 1, which is now
+    # opt-in via Context.new/2.
     assert "true" ==
              Expression.evaluate_as_string!(
                ~s|@or(answer == 1, has_all_words(answer, "red fox"))|,
-               %{
-                 "answer" => "1"
-               }
+               Expression.Context.new(%{"answer" => "1"}, coerce_strings: true)
              )
   end
 
