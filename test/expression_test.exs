@@ -64,6 +64,36 @@ defmodule ExpressionTest do
       assert false ==
                Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
 
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_phrase('hello', phrases)",
+                 %{"phrases" => nil}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_all_members(list, items)",
+                 %{"list" => nil, "items" => ["a"]}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_all_members(list, items)",
+                 %{"list" => ["a"], "items" => nil}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_member(list, items)",
+                 %{"list" => nil, "items" => ["a"]}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_member(list, items)",
+                 %{"list" => ["a"], "items" => nil}
+               )
+
       assert true ==
                Expression.evaluate_as_boolean!("@has_beginning(contact.number, \"123\")", %{
                  "contact" => %{"number" => 123_456}
@@ -706,6 +736,36 @@ defmodule ExpressionTest do
         expected_string_result: "",
         context: %{}
       )
+    end
+  end
+
+  describe "nil safety for callbacks" do
+    test "with_index returns empty list for nil" do
+      assert [] == Expression.evaluate!("@with_index(items)", %{"items" => nil})
+    end
+
+    test "uniq returns empty list for nil" do
+      assert [] == Expression.evaluate!("@uniq(items)", %{"items" => nil})
+    end
+
+    test "regex_capture returns nil for nil input" do
+      assert nil == Expression.evaluate!("@regex_capture(text, \"test(.+)\")", %{"text" => nil})
+    end
+
+    test "regex_named_capture returns empty map for nil input" do
+      assert %{} ==
+               Expression.evaluate!(
+                 "@regex_named_capture(text, \"test(?P<match>.+)\")",
+                 %{"text" => nil}
+               )
+    end
+
+    test "has_any_word returns false for nil words" do
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_word('hello world', words)",
+                 %{"words" => nil}
+               )
     end
   end
 end
