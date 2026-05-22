@@ -7,37 +7,28 @@ defmodule Expression.EvalTest do
     assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
-  test "string literals are not re-evaluated as templates (v3)" do
-    # In v3, string literals inside expressions are inert. Use
-    # Expression.evaluate_template/3 for explicit template resolution.
+  test "string literals containing @variable references are evaluated as templates" do
+    assert "hello" == Expression.evaluate_block!(~S("@my_var"), %{"my_var" => "hello"})
+  end
+
+  test "string literals without @references are returned as-is" do
     assert "string with quotes \" inside" ==
              Expression.evaluate_block!(~S("string with quotes \" inside"))
+  end
 
-    # Inner @-references inside a string literal are NOT resolved.
+  test "string literals in function args resolve @references" do
     ctx = %{
       "conditional" => true,
       "confirm" => "successful",
       "deny" => "unsuccessful"
     }
 
-    assert "was @confirm" ==
+    assert "was successful" ==
              Expression.evaluate_as_string!(
                ~s|@if(conditional, "was @confirm", "was @deny")|,
                ctx
              )
 
-    # Callers that want nested template resolution wrap the result in
-    # evaluate_template/3 explicitly.
-    inner =
-      Expression.evaluate_as_string!(
-        ~s|@if(conditional, "was @confirm", "was @deny")|,
-        ctx
-      )
-
-    assert "was successful" == Expression.evaluate_template!(inner, ctx)
-
-    # `or` with `answer == 1` requires coercing "1" -> 1, which is now
-    # opt-in via Context.new/2.
     assert "true" ==
              Expression.evaluate_as_string!(
                ~s|@or(answer == 1, has_all_words(answer, "red fox"))|,

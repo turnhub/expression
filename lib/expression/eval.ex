@@ -137,6 +137,10 @@ defmodule Expression.Eval do
     read_key_from_subject(subject, key)
   end
 
+  def eval!({:literal, literal}, context, mod) when is_binary(literal) do
+    Expression.evaluate_as_string!(literal, context, mod)
+  end
+
   def eval!({:literal, literal}, _context, _mod), do: literal
 
   def eval!({:text, text}, _context, _mod), do: text
