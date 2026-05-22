@@ -571,17 +571,18 @@ defmodule ExpressionTest do
     end
 
     test "return an error tuple" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("block.value > 0", %{
                  "block" => %{"value" => "not a number"}
                })
     end
 
     test "return an error tuple when variables are not defined" do
-      assert {:error, "attribute is not found: `value`"} =
+      assert {:error, %Expression.Error{message: "attribute is not found: `value`"}} =
                Expression.evaluate_block("block.value > 0", %{"block" => %{}})
 
-      assert {:error, "attribute is not found: `block.value`"} =
+      assert {:error, %Expression.Error{message: "attribute is not found: `block.value`"}} =
                Expression.evaluate_block("block.value > 0", %{})
     end
 

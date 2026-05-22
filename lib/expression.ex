@@ -134,8 +134,7 @@ defmodule Expression do
   def evaluate_block(expression, context \\ %{}, mod \\ Expression.Callbacks, opts \\ []) do
     {:ok, evaluate_block!(expression, context, mod, opts)}
   rescue
-    e in Expression.Error -> {:error, e.message}
-    e in RuntimeError -> {:error, e.message}
+    e in Expression.Error -> {:error, e}
   end
 
   def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
@@ -200,8 +199,7 @@ defmodule Expression do
   def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
     {:ok, evaluate!(expression, context, mod)}
   rescue
-    e in Expression.Error -> {:error, e.message}
-    e in RuntimeError -> {:error, e.message}
+    e in Expression.Error -> {:error, e}
   end
 
   @doc """
