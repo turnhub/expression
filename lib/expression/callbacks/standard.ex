@@ -2316,6 +2316,213 @@ defmodule Expression.Callbacks.Standard do
                   result: true
   def isstring(ctx, binary), do: is_binary(eval!(binary, ctx))
 
+  @doc """
+  Converts a value to an integer.
+
+  Strings are parsed as integers, floats are truncated,
+  booleans become 1 or 0, and nil becomes 0.
+
+  Returns an error map if the value cannot be converted.
+  """
+  @expression_category "number"
+  @expression_doc doc: "Convert a string to an integer",
+                  expression: "int(\"5\")",
+                  result: 5
+  @expression_doc doc: "Truncate a float to an integer",
+                  expression: "int(5.7)",
+                  result: 5
+  @expression_doc doc: "Convert a boolean to an integer",
+                  expression: "int(true)",
+                  result: 1
+  @expression_doc doc: "Convert false to 0",
+                  expression: "int(false)",
+                  result: 0
+  @expression_doc doc: "Convert nil to 0",
+                  expression: "int(nil)",
+                  result: 0
+  @expression_doc doc: "Return an error for non-numeric strings",
+                  expression: "int(\"abc\")",
+                  result: Expression.error_map("Unable to convert \"abc\" to an integer")
+  @expression_doc doc: "Convert from value in __value__ key if complex values are provided.",
+                  expression: "int(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "42"
+                    }
+                  },
+                  result: 42
+  def int(ctx, value) do
+    value
+    |> eval!(ctx)
+    |> to_integer()
+  end
+
+  @doc """
+  Converts a value to a floating-point number.
+
+  Strings are parsed as floats, integers are promoted,
+  booleans become 1.0 or 0.0, and nil becomes 0.0.
+
+  Returns an error map if the value cannot be converted.
+  """
+  @expression_category "number"
+  @expression_doc doc: "Convert a string to a float",
+                  expression: "number(\"5.5\")",
+                  result: 5.5
+  @expression_doc doc: "Convert an integer string to a float",
+                  expression: "number(\"5\")",
+                  result: 5.0
+  @expression_doc doc: "Convert an integer to a float",
+                  expression: "number(5)",
+                  result: 5.0
+  @expression_doc doc: "Convert a boolean to a float",
+                  expression: "number(true)",
+                  result: 1.0
+  @expression_doc doc: "Convert nil to a number",
+                  expression: "number(nil)",
+                  result: 0
+  @expression_doc doc: "Return an error for non-numeric strings",
+                  expression: "number(\"abc\")",
+                  result: Expression.error_map("Unable to convert \"abc\" to a number")
+  @expression_doc doc: "Convert from value in __value__ key if complex values are provided.",
+                  expression: "number(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => "3.14"
+                    }
+                  },
+                  result: 3.14
+  def number(ctx, value) do
+    value
+    |> eval!(ctx)
+    |> to_number()
+  end
+
+  @doc """
+  Converts a value to a string.
+
+  Numbers, booleans, dates, and other values are converted to their
+  string representation. Nil becomes an empty string.
+  """
+  @expression_category "string"
+  @expression_doc doc: "Convert an integer to a string",
+                  expression: "text(5)",
+                  result: "5"
+  @expression_doc doc: "Convert a float to a string",
+                  expression: "text(3.14)",
+                  result: "3.14"
+  @expression_doc doc: "Convert a boolean to a string",
+                  expression: "text(true)",
+                  result: "true"
+  @expression_doc doc: "Convert nil to an empty string",
+                  expression: "text(nil)",
+                  result: ""
+  @expression_doc doc: "A string is returned as-is",
+                  expression: "text(\"hello\")",
+                  result: "hello"
+  @expression_doc doc: "Convert from value in __value__ key if complex values are provided.",
+                  expression: "text(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 42
+                    }
+                  },
+                  result: "42"
+  def text(ctx, value) do
+    value = eval!(value, ctx)
+
+    case value do
+      nil -> ""
+      v when is_binary(v) -> v
+      v -> to_string(v)
+    end
+  end
+
+  @doc """
+  Converts a value to a boolean.
+
+  Nil, false, 0, 0.0, and empty string become false.
+  Everything else becomes true.
+  """
+  @expression_category "logical"
+  @expression_doc doc: "Nil is false",
+                  expression: "boolean(nil)",
+                  result: false
+  @expression_doc doc: "Zero is false",
+                  expression: "boolean(0)",
+                  result: false
+  @expression_doc doc: "Empty string is false",
+                  expression: "boolean(\"\")",
+                  result: false
+  @expression_doc doc: "Non-zero number is true",
+                  expression: "boolean(1)",
+                  result: true
+  @expression_doc doc: "Non-empty string is true",
+                  expression: "boolean(\"hello\")",
+                  result: true
+  @expression_doc doc: "A boolean passes through",
+                  expression: "boolean(true)",
+                  result: true
+  @expression_doc doc: "Convert from value in __value__ key if complex values are provided.",
+                  expression: "boolean(value)",
+                  context: %{
+                    "value" => %{
+                      "display" => "value for display key",
+                      "value" => "value for value key",
+                      "__value__" => 1
+                    }
+                  },
+                  result: true
+  def boolean(ctx, value) do
+    value = eval!(value, ctx)
+
+    case value do
+      nil -> false
+      false -> false
+      0 -> false
+      +0.0 -> false
+      "" -> false
+      _ -> true
+    end
+  end
+
+  defp to_integer(v) when is_integer(v), do: v
+  defp to_integer(v) when is_float(v), do: trunc(v)
+  defp to_integer(true), do: 1
+  defp to_integer(false), do: 0
+  defp to_integer(nil), do: 0
+
+  defp to_integer(v) when is_binary(v) do
+    case Integer.parse(v) do
+      {int, ""} -> int
+      {int, "." <> _} -> int
+      _ -> Expression.error_map("Unable to convert #{inspect(v)} to an integer")
+    end
+  end
+
+  defp to_integer(v), do: Expression.error_map("Unable to convert #{inspect(v)} to an integer")
+
+  defp to_number(v) when is_float(v), do: v
+  defp to_number(v) when is_integer(v), do: v / 1
+  defp to_number(true), do: 1.0
+  defp to_number(false), do: 0.0
+  defp to_number(nil), do: 0
+
+  defp to_number(v) when is_binary(v) do
+    case Float.parse(v) do
+      {float, ""} -> float
+      _ -> Expression.error_map("Unable to convert #{inspect(v)} to a number")
+    end
+  end
+
+  defp to_number(v), do: Expression.error_map("Unable to convert #{inspect(v)} to a number")
+
   defp search_words(haystack, words) do
     patterns =
       words

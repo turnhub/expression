@@ -40,6 +40,33 @@ defmodule Expression.EvalTest do
     assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
   end
 
+  test "string index on list coerces to integer" do
+    assert %{"name" => "c"} ==
+             Expression.evaluate_block!(
+               "items[index]",
+               %{
+                 "items" => [%{"name" => "a"}, %{"name" => "b"}, %{"name" => "c"}],
+                 "index" => "2"
+               }
+             )
+  end
+
+  test "float index on list truncates to integer" do
+    assert "b" ==
+             Expression.evaluate_block!(
+               "items[index]",
+               %{"items" => ["a", "b", "c"], "index" => 1.0}
+             )
+  end
+
+  test "non-numeric string index on list returns nil" do
+    assert nil ==
+             Expression.evaluate_block!(
+               "items[index]",
+               %{"items" => ["a", "b"], "index" => "not_a_number"}
+             )
+  end
+
   test "attributes on things that cannot have attributes should return nil" do
     assert nil == Expression.evaluate_block!("foo.bar", %{"foo" => "not a map"})
   end
