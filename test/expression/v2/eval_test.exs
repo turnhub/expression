@@ -41,13 +41,26 @@ defmodule Expression.V2.EvalTest do
 
   describe "eval_as_string" do
     test "with missing vars" do
-      assert "hello @one.two.three" == Expression.V2.eval_as_string("hello @one.two.three")
+      assert "hello @one.two.three" == V2.eval_as_string("hello @one.two.three")
+    end
+
+    test "stringifies a time reached via context substitution" do
+      assert "11:00:00" ==
+               V2.eval_as_string("@appointment", Context.new(%{"appointment" => ~T[11:00:00]}))
+    end
+
+    test "stringifies a time embedded in surrounding text" do
+      assert "Your slot is 11:00:00 today" ==
+               V2.eval_as_string(
+                 "Your slot is @appointment today",
+                 Context.new(%{"appointment" => ~T[11:00:00]})
+               )
     end
   end
 
   describe "eval" do
     test "with missing vars" do
-      assert nil == Expression.V2.eval_block("one.two.three")
+      assert nil == V2.eval_block("one.two.three")
     end
 
     test "vars" do

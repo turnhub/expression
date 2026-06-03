@@ -249,6 +249,19 @@ defmodule ExpressionTest do
                Expression.evaluate_as_string!(~T[11:00:00])
     end
 
+    test "stringify time reached via context substitution" do
+      assert "11:00:00" ==
+               Expression.evaluate_as_string!("@appointment", %{"appointment" => ~T[11:00:00]})
+    end
+
+    test "stringify time embedded in surrounding text" do
+      assert "Your slot is 11:00:00 today" ==
+               Expression.evaluate_as_string!(
+                 "Your slot is @appointment today",
+                 %{"appointment" => ~T[11:00:00]}
+               )
+    end
+
     test "list with out of bound indicess" do
       assert nil ==
                Expression.evaluate!("@foo[cursor]", %{"foo" => ["baz", "bar"], "cursor" => 100})
