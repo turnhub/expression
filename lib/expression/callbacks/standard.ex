@@ -1414,23 +1414,41 @@ defmodule Expression.Callbacks.Standard do
                   result: "4.21"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
-    Number.Delimit.number_to_delimited(number, precision: precision)
+    Number.Delimit.number_to_delimited(coerce_to_number!(number), precision: precision)
   end
 
   @expression_category "number"
   def fixed(ctx, number, precision, no_commas) do
     case eval_args!([number, precision, no_commas], ctx) do
       [number, precision, true] ->
-        Number.Delimit.number_to_delimited(number,
+        Number.Delimit.number_to_delimited(coerce_to_number!(number),
           precision: precision,
           delimiter: "",
           separator: "."
         )
 
       [number, precision, false] ->
-        Number.Delimit.number_to_delimited(number, precision: precision)
+        Number.Delimit.number_to_delimited(coerce_to_number!(number), precision: precision)
     end
   end
+
+  # `Number.Delimit.number_to_delimited/2` raises an uncaught `ArgumentError`
+  # when handed a value it cannot convert to a float (for example a `nil` or a
+  # non-numeric string that has bubbled up from a failed sub-expression).
+  # Coerce numeric strings to numbers and otherwise raise the library's
+  # standard "expression is not a number" error, so callers using
+  # `Expression.evaluate_block/4` receive a graceful `{:error, _}` tuple instead
+  # of a crash.
+  defp coerce_to_number!(number) when is_number(number), do: number
+
+  defp coerce_to_number!(value) when is_binary(value) do
+    case Expression.Eval.parse_number(value) do
+      number when is_number(number) -> number
+      _not_a_number -> raise "expression is not a number: `#{inspect(value)}`"
+    end
+  end
+
+  defp coerce_to_number!(value), do: raise("expression is not a number: `#{inspect(value)}`")
 
   @doc """
   Returns the first characters in a text string. This is Unicode safe.
