@@ -652,6 +652,25 @@ defmodule ExpressionTest do
         })
       end
     end
+
+    test "fixed/2 with a numeric string still formats the number" do
+      assert {:ok, "4.21"} == Expression.evaluate_block("fixed(value, 2)", %{"value" => "4.209"})
+    end
+
+    test "fixed/2 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error, "expression is not a number: `\"not a number\"`"} =
+               Expression.evaluate_block("fixed(value, 2)", %{"value" => "not a number"})
+    end
+
+    test "fixed/2 with a nil value returns an error tuple instead of crashing" do
+      assert {:error, "expression is not a number: `nil`"} =
+               Expression.evaluate_block("fixed(value, 2)", %{"value" => nil})
+    end
+
+    test "fixed/3 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error, "expression is not a number: `\"not a number\"`"} =
+               Expression.evaluate_block("fixed(value, 2, true)", %{"value" => "not a number"})
+    end
   end
 
   test "escaping" do
