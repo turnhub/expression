@@ -1,0 +1,51 @@
+name: Fuzz
+
+# Property-based fuzz tests (tagged :fuzz) run on a schedule rather than as a
+# PR/push gate. They use a fresh random seed each run to DISCOVER inputs that
+# crash a function, so they can legitimately go red — which makes them a poor
+# merge gate but a good nightly signal. When this job fails, ExUnit prints the
+# seed and StreamData prints the shrunk failing input; reproduce locally with
+# `mix test --only fuzz --seed <N>`.
+on:
+  schedule:
+    # 03:00 UTC daily
+    - cron: "0 3 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  fuzz:
+    name: Run fuzz tests
+    runs-on: ubuntu-latest
+    env:
+      # Explore more of the input space than the local default (100); this job
+      # is not latency-bound.
+      FUZZ_MAX_RUNS: "1000"
+    strategy:
+      matrix:
+        include:
+          - elixir: "1.19"
+            otp: "28"
+        cache_version: ["4"]
+
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - name: Set up Elixir
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1
+        with:
+          elixir-version: ${{ matrix.elixir }}
+          otp-version: ${{ matrix.otp }}
+      - name: Restore dependencies cache
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
+        id: mix-cache
+        with:
+          path: deps
+          key: ${{matrix.cache_version}}-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-${{ hashFiles('**/mix.lock') }}
+          restore-keys: ${{matrix.cache_version}}-${{ runner.os }}-${{ matrix.otp }}-${{ matrix.elixir }}-mix-
+      - name: Install Mix Dependencies
+        if: steps.mix-cache.outputs.cache-hit != 'true'
+        run: |
+          mix local.rebar --force
+          mix local.hex --force
+          mix deps.get
+      - name: Run fuzz tests
+        run: mix test --only fuzz

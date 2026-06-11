@@ -115,13 +115,24 @@ whole type matrix. The functions that currently *do* crash are listed in the
 file's moduledoc as a hardening backlog; each is pinned with its exact exception
 in the relevant `*_functions_type_test.exs` file.
 
-These tests are **not** run in CI. They use a random seed each run and exist to
-*discover* new crashing inputs, so they can legitimately go red when they find
-one — useful locally, but a poor fit for a branch-protection gate. Run them
-manually:
+These tests are **not** a merge gate. They use a random seed each run and exist
+to *discover* new crashing inputs, so they can legitimately go red when they
+find one — useful as a signal, but a poor fit for a branch-protection check.
+Instead they run on a schedule via `.github/workflows/fuzz.yml` (nightly, plus a
+manual "Run workflow" button). Run them locally with:
 
 ```bash
 mix test --only fuzz
+
+# Search deeper (the scheduled job uses 1000 generations per property):
+FUZZ_MAX_RUNS=1000 mix test --only fuzz
+```
+
+When a run fails, ExUnit prints the seed and StreamData prints the shrunk
+failing input. Reproduce it deterministically with:
+
+```bash
+mix test --only fuzz --seed <N>
 ```
 
 If you harden a known-crashing function so it returns an error map instead of

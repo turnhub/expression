@@ -39,7 +39,22 @@ defmodule ExpressionFuzzTest do
     enum    — find, has_member, delete, append, filter, map, reduce, reject,
               sort_by, chunk_every, concatenate
 
-  Run this suite with: `mix test --only fuzz`
+  ## Running
+
+  These tests are excluded from the default suite and are NOT a merge gate (a
+  property test uses a fresh random seed each run, so it can legitimately go red
+  when it discovers a new crashing input — unsuitable for blocking PRs). They
+  run on a schedule instead, via `.github/workflows/fuzz.yml`. Run locally with:
+
+      mix test --only fuzz
+
+  Generations per property default to 100; set `FUZZ_MAX_RUNS` higher for a
+  deeper search (the scheduled job uses 1000):
+
+      FUZZ_MAX_RUNS=1000 mix test --only fuzz
+
+  When a run fails, ExUnit prints the seed and StreamData prints the shrunk
+  failing input; reproduce with `mix test --only fuzz --seed <N>`.
   """
   use ExUnit.Case, async: true
   use ExUnitProperties
@@ -47,6 +62,11 @@ defmodule ExpressionFuzzTest do
   import Expression.Test.FuzzHelpers
 
   @moduletag :fuzz
+
+  # Number of generations StreamData runs per property. Defaults to 100 for a
+  # fast local run; the scheduled CI fuzz job sets FUZZ_MAX_RUNS higher (e.g.
+  # 1000) to explore more of the input space, since it is not latency-bound.
+  defp max_runs, do: String.to_integer(System.get_env("FUZZ_MAX_RUNS", "100"))
 
   # Functions confirmed crash-safe across the entire type matrix. Each entry is
   # {label, expression} where `value` is the fuzzed argument bound in context.
@@ -89,7 +109,7 @@ defmodule ExpressionFuzzTest do
   describe "string functions never crash on arbitrary input" do
     for {label, expr} <- @crash_safe_string do
       property "#{label}/1" do
-        check all(value <- any_value()) do
+        check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
         end
       end
@@ -99,7 +119,7 @@ defmodule ExpressionFuzzTest do
   describe "logical functions never crash on arbitrary input" do
     for {label, expr} <- @crash_safe_logical do
       property "#{label}" do
-        check all(value <- any_value()) do
+        check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
         end
       end
@@ -109,7 +129,7 @@ defmodule ExpressionFuzzTest do
   describe "number functions never crash on arbitrary input" do
     for {label, expr} <- @crash_safe_number do
       property "#{label}" do
-        check all(value <- any_value()) do
+        check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
         end
       end
@@ -119,7 +139,7 @@ defmodule ExpressionFuzzTest do
   describe "enum functions never crash on arbitrary input" do
     for {label, expr} <- @crash_safe_enum do
       property "#{label}" do
-        check all(value <- any_value()) do
+        check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
         end
       end
@@ -129,7 +149,7 @@ defmodule ExpressionFuzzTest do
   describe "other functions never crash on arbitrary input" do
     for {label, expr} <- @crash_safe_other do
       property "#{label}" do
-        check all(value <- any_value()) do
+        check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
         end
       end
