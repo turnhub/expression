@@ -800,4 +800,170 @@ defmodule ExpressionTest do
                )
     end
   end
+
+  # Pilot type-matrix tests. These document the *current* behavior of five
+  # representative functions across input types, including behaviors that are
+  # arguably bugs (raises instead of error maps). See TESTING.md.
+
+  describe "upper/1 type handling" do
+    import Expression.Test.TypeTestMatrix
+
+    test "uppercases plain strings" do
+      assert "HELLO" == evaluate_with_value("upper(value)", "hello")
+      assert "" == evaluate_with_value("upper(value)", "")
+    end
+
+    test "numeric strings are coerced to numbers by the context, yielding nil" do
+      # Expression.Context parses "123" into the integer 123 before the
+      # callback runs, so upper/1 sees a number and returns nil.
+      assert nil == evaluate_with_value("upper(value)", "123")
+    end
+
+    test "uppercases unicode and preserves emoji" do
+      assert "HÉLLO WÖRLD" == evaluate_with_value("upper(value)", "héllo wörld")
+      assert "👋🌍" == evaluate_with_value("upper(value)", "👋🌍")
+    end
+
+    test "returns nil for nil and all non-string types" do
+      for value <- [nil, 42, 3.14, true, false, [1, 2], %{"k" => "v"}] do
+        assert nil == evaluate_with_value("upper(value)", value),
+               "expected upper(#{inspect(value)}) to be nil"
+      end
+    end
+
+    test "extracts __value__ from complex values" do
+      assert "HELLO" == evaluate_with_value("upper(value)", complex_value("hello"))
+    end
+  end
+
+  describe "lower/1 type handling" do
+    import Expression.Test.TypeTestMatrix
+
+    test "lowercases plain strings" do
+      assert "hello" == evaluate_with_value("lower(value)", "HELLO")
+      assert "" == evaluate_with_value("lower(value)", "")
+    end
+
+    test "lowercases unicode" do
+      assert "héllo wörld" == evaluate_with_value("lower(value)", "HÉLLO WÖRLD")
+    end
+
+    test "returns nil for nil and all non-string types" do
+      for value <- [nil, 42, 3.14, true, [1, 2], %{"k" => "v"}] do
+        assert nil == evaluate_with_value("lower(value)", value),
+               "expected lower(#{inspect(value)}) to be nil"
+      end
+    end
+
+    test "extracts __value__ from complex values" do
+      assert "hello" == evaluate_with_value("lower(value)", complex_value("HELLO"))
+    end
+  end
+
+  describe "abs/1 type handling" do
+    import Expression.Test.TypeTestMatrix
+
+    test "returns absolute value for integers and floats" do
+      assert 5 == evaluate_with_value("abs(value)", -5)
+      assert 5 == evaluate_with_value("abs(value)", 5)
+      assert 0 == evaluate_with_value("abs(value)", 0)
+      assert 5.5 == evaluate_with_value("abs(value)", -5.5)
+      assert 10_000_000_000_000_000_000 == evaluate_with_value("abs(value)", -(10 ** 19))
+    end
+
+    test "coerces numeric strings" do
+      assert 12 == evaluate_with_value("abs(value)", "-12")
+      assert 3.5 == evaluate_with_value("abs(value)", "-3.5")
+    end
+
+    test "extracts __value__ from complex values" do
+      assert 3 == evaluate_with_value("abs(value)", complex_value(-3))
+    end
+
+    test "currently raises ArgumentError for nil and non-numeric input" do
+      # Known crash behavior, documented not endorsed: abs/1 does not guard
+      # against non-numbers and raises instead of returning an error map.
+      for value <- [nil, "hello", true, [1], %{"k" => "v"}] do
+        assert_raise ArgumentError, fn ->
+          evaluate_with_value("abs(value)", value)
+        end
+      end
+    end
+  end
+
+  describe "round/1 and round/2 type handling" do
+    import Expression.Test.TypeTestMatrix
+
+    test "rounds floats and returns a string" do
+      assert "4" == evaluate_with_value("round(value)", 3.7)
+      assert "-4" == evaluate_with_value("round(value)", -3.7)
+      assert "3.14" == evaluate_with_value("round(value, 2)", 3.14159)
+    end
+
+    test "coerces numeric strings" do
+      assert "4" == evaluate_with_value("round(value)", "3.7")
+    end
+
+    test "extracts __value__ from complex values" do
+      assert "3" == evaluate_with_value("round(value)", complex_value(2.5))
+    end
+
+    test "currently raises FunctionClauseError for nil, integers and non-numeric input" do
+      # Known crash behavior, documented not endorsed: round/1 funnels
+      # everything through Decimal.from_float/1, which only accepts floats —
+      # plain integers, nil and unparseable strings all crash.
+      for value <- [nil, 5, "abc", [1], %{"k" => "v"}] do
+        assert_raise FunctionClauseError, fn ->
+          evaluate_with_value("round(value)", value)
+        end
+      end
+    end
+  end
+
+  describe "date/3 type handling" do
+    import Expression.Test.TypeTestMatrix
+
+    test "builds a Date from integers" do
+      assert ~D[2023-06-15] == Expression.evaluate_block!("date(2023, 6, 15)")
+    end
+
+    test "coerces numeric strings" do
+      assert ~D[2023-06-15] ==
+               Expression.evaluate_block!(
+                 "date(y, m, d)",
+                 %{"y" => "2023", "m" => "6", "d" => "15"}
+               )
+    end
+
+    test "extracts __value__ from complex values" do
+      assert ~D[2023-06-15] ==
+               Expression.evaluate_block!(
+                 "date(y, m, d)",
+                 %{"y" => complex_value(2023), "m" => 6, "d" => 15}
+               )
+    end
+
+    test "returns an error map for nil arguments" do
+      assert %{
+               "__type__" => "expression/v1error",
+               "error" => true,
+               "message" => "Invalid date: date(nil, 6, 15)"
+             } = Expression.evaluate_block!("date(y, 6, 15)", %{"y" => nil})
+    end
+
+    test "returns an error map for impossible dates" do
+      assert %{"__type__" => "expression/v1error", "error" => true} =
+               Expression.evaluate_block!("date(2023, 2, 30)")
+
+      assert %{"__type__" => "expression/v1error", "error" => true} =
+               Expression.evaluate_block!("date(2023, 13, 1)")
+    end
+
+    test "handles leap years" do
+      assert ~D[2024-02-29] == Expression.evaluate_block!("date(2024, 2, 29)")
+
+      assert %{"__type__" => "expression/v1error", "error" => true} =
+               Expression.evaluate_block!("date(2023, 2, 29)")
+    end
+  end
 end
