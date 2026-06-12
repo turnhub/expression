@@ -26,6 +26,20 @@ defmodule Expression.Test.FuzzHelpers do
     ])
   end
 
+  @doc """
+  Generates values biased toward enumerables (lists and maps), with occasional
+  non-enumerable scalars mixed in. Used to fuzz enum-category functions, whose
+  interesting code paths only run on lists/maps — `any_value/0` would mostly hit
+  the trivial guard branch, overstating coverage relative to the run count.
+  """
+  def enumerable_value do
+    StreamData.frequency([
+      {6, list_value()},
+      {3, map_value()},
+      {2, any_value()}
+    ])
+  end
+
   @doc "Generates strings: printable utf8, including empty and numeric-looking."
   def string_value do
     StreamData.one_of([
@@ -104,6 +118,15 @@ defmodule Expression.Test.FuzzHelpers do
       Expression: #{inspect(expression)}
       Context: #{inspect(context)}
       Raised: #{Exception.format(:error, exception, __STACKTRACE__)}
+      """)
+  catch
+    kind, reason ->
+      flunk("""
+      Expression #{kind} instead of returning a value or an error map.
+
+      Expression: #{inspect(expression)}
+      Context: #{inspect(context)}
+      Caught: #{Exception.format(kind, reason, __STACKTRACE__)}
       """)
   end
 end

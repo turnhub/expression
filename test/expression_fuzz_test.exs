@@ -18,26 +18,16 @@ defmodule ExpressionFuzzTest do
   Instead this suite fuzzes only the functions that were empirically confirmed
   crash-safe across the full type matrix (nil, booleans, numbers, strings,
   lists, maps, complex `__value__` maps, Dates/DateTimes, Decimals, error maps).
-  For those functions the property below is a genuine regression guard: if a
-  future change makes one of them crash on some input, the property fails.
+  That set lives in `Expression.Test.CrashSafe` — a single source shared with
+  `CrashSafeClassificationTest`, which pins the same classification
+  deterministically against the type matrix on every CI run. This suite adds
+  random exploration on top: if a future change makes one of those functions
+  crash on some input, the property fails.
 
-  ## Known crashers (intentionally excluded — the hardening backlog)
-
-  The following functions currently RAISE on at least some matrix inputs and
-  are deliberately not fuzzed for no-crash here. Each is pinned, with the exact
-  exception, in the corresponding `*_functions_type_test.exs` file. Moving one
-  into `@crash_safe` below should happen only once it has been hardened to
-  return an error map instead of raising:
-
-    string  — len, clean, first_word, remove_first_word, remove_last_word,
-              word_count, read_digits, url_encode, url_decode, unicode, code,
-              char, unichar, left, right, mid, word, word_slice, rept,
-              substitute, regex_capture, regex_named_capture
-    number  — abs, round, fixed, power, rem, rand_between, percent, sum
-    date    — day, month, year, hour, minute, second, weekday, datevalue,
-              parse_datevalue, datetime_add, datetime_from_unix, edate, time
-    enum    — find, has_member, delete, append, filter, map, reduce, reject,
-              sort_by, chunk_every, concatenate
+  Functions NOT in `Expression.Test.CrashSafe` currently raise on at least some
+  inputs; each such crash is pinned, with its exact exception, in the
+  corresponding `*_functions_type_test.exs` file. Moving a function into the
+  crash-safe set is only valid once it returns an error map instead of raising.
 
   ## Running
 
@@ -60,54 +50,29 @@ defmodule ExpressionFuzzTest do
   use ExUnitProperties
 
   import Expression.Test.FuzzHelpers
+  alias Expression.Test.CrashSafe
 
   @moduletag :fuzz
 
   # Number of generations StreamData runs per property. Defaults to 100 for a
   # fast local run; the scheduled CI fuzz job sets FUZZ_MAX_RUNS higher (e.g.
   # 1000) to explore more of the input space, since it is not latency-bound.
-  defp max_runs, do: String.to_integer(System.get_env("FUZZ_MAX_RUNS", "100"))
+  # A non-numeric or unset value falls back to the default rather than crashing
+  # every property at setup.
+  defp max_runs do
+    case Integer.parse(System.get_env("FUZZ_MAX_RUNS", "100")) do
+      {n, _} when n > 0 -> n
+      _ -> 100
+    end
+  end
 
-  # Functions confirmed crash-safe across the entire type matrix. Each entry is
-  # {label, expression} where `value` is the fuzzed argument bound in context.
-  # Multi-argument functions fuzz the first argument and hold the rest fixed.
-  @crash_safe_string [
-    {"upper", "upper(value)"},
-    {"lower", "lower(value)"},
-    {"proper", "proper(value)"},
-    {"trim", "trim(value)"}
-  ]
-
-  @crash_safe_logical [
-    {"not", "not(value)"},
-    {"if", "if(value, 1, 2)"},
-    {"and", "and(value, true)"},
-    {"or", "or(value, false)"},
-    {"isnumber", "isnumber(value)"},
-    {"isbool", "isbool(value)"},
-    {"isstring", "isstring(value)"},
-    {"is_error", "is_error(value)"},
-    {"is_nil_or_empty", "is_nil_or_empty(value)"}
-  ]
-
-  @crash_safe_number [
-    {"max", "max(value, 1)"},
-    {"min", "min(value, 1)"}
-  ]
-
-  @crash_safe_enum [
-    {"uniq", "uniq(value)"},
-    {"with_index", "with_index(value)"},
-    {"has_all_members", "has_all_members(value, [1])"},
-    {"has_any_member", "has_any_member(value, [1])"}
-  ]
-
-  @crash_safe_other [
-    {"json", "json(value)"}
-  ]
+  # Crash-safe function lists come from Expression.Test.CrashSafe (single source,
+  # shared with CrashSafeClassificationTest). Enum functions are fuzzed with an
+  # enumerable-biased generator so the list/map code paths actually get
+  # exercised; the others use any_value/0.
 
   describe "string functions never crash on arbitrary input" do
-    for {label, expr} <- @crash_safe_string do
+    for {label, expr} <- CrashSafe.group("string") do
       property "#{label}/1" do
         check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
@@ -117,7 +82,7 @@ defmodule ExpressionFuzzTest do
   end
 
   describe "logical functions never crash on arbitrary input" do
-    for {label, expr} <- @crash_safe_logical do
+    for {label, expr} <- CrashSafe.group("logical") do
       property "#{label}" do
         check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
@@ -127,7 +92,7 @@ defmodule ExpressionFuzzTest do
   end
 
   describe "number functions never crash on arbitrary input" do
-    for {label, expr} <- @crash_safe_number do
+    for {label, expr} <- CrashSafe.group("number") do
       property "#{label}" do
         check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
@@ -137,9 +102,9 @@ defmodule ExpressionFuzzTest do
   end
 
   describe "enum functions never crash on arbitrary input" do
-    for {label, expr} <- @crash_safe_enum do
+    for {label, expr} <- CrashSafe.group("enum") do
       property "#{label}" do
-        check all(value <- any_value(), max_runs: max_runs()) do
+        check all(value <- enumerable_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
         end
       end
@@ -147,7 +112,7 @@ defmodule ExpressionFuzzTest do
   end
 
   describe "other functions never crash on arbitrary input" do
-    for {label, expr} <- @crash_safe_other do
+    for {label, expr} <- CrashSafe.group("other") do
       property "#{label}" do
         check all(value <- any_value(), max_runs: max_runs()) do
           assert_no_crash(unquote(expr), %{"value" => value})
