@@ -9,6 +9,7 @@ defmodule Expression.MixProject do
       aliases: aliases(),
       version: @version,
       elixir: "~> 1.13",
+      elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
@@ -32,6 +33,10 @@ defmodule Expression.MixProject do
     [plt_file: {:no_warn, "priv/plts/expression.plt"}, ignore_warnings: ".dialyzer_ignore.exs"]
   end
 
+  # Test support modules live in test/support and are only compiled for :test.
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
+
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
@@ -51,6 +56,7 @@ defmodule Expression.MixProject do
       {:mix_test_watch, "~> 1.0", only: :dev, runtime: false},
       {:nimble_parsec, "~> 1.1"},
       {:number, "~> 1.0"},
+      {:stream_data, "~> 1.0", only: [:test, :dev]},
       {:decimal, "~> 2.0"},
       {:timex, "~> 3.7"}
     ]
