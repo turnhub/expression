@@ -119,6 +119,7 @@ defmodule NumberFunctionsTypeTest do
       assert_raise ArithmeticError, fn -> Expression.evaluate_block!("power(-2, 0.5)") end
 
       assert 1.0e38 == evaluate_with_value("power(value, 2)", 10 ** 19)
+      # credo:disable-for-next-line Credo.Check.Readability.LargeNumbers
       assert 1.0715086071862673e301 == Expression.evaluate_block!("power(2, 1000)")
       assert 1.0000000000000001e-20 == evaluate_with_value("power(value, 2)", 1.0e-10)
     end

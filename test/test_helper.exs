@@ -1,4 +1,2 @@
-Code.require_file("support/type_test_matrix.ex", __DIR__)
-Code.require_file("support/fuzz_helpers.ex", __DIR__)
-
+# Support modules in test/support are compiled via elixirc_paths (see mix.exs).
 ExUnit.start(exclude: [:fuzz])

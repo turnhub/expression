@@ -67,3 +67,10 @@ Expressions preserve types through evaluation (integers, floats, booleans, DateT
 ## Testing
 
 CI tests against Elixir 1.15/OTP 26, 1.18/OTP 27, and 1.19/OTP 28. Format checking runs only on 1.19/OTP 28.
+
+Beyond `@expression_doc` doctests and `expression_test.exs`, the suite includes
+systematic **type-matrix** tests per function category
+(`test/*_functions_type_test.exs`) and **property-based fuzz** tests
+(`test/expression_fuzz_test.exs`, tagged `:fuzz`, excluded from `mix test` —
+run with `mix test --only fuzz`). These document current V1 behavior (pinning
+crashes, not endorsing them). See `TESTING.md` for the full approach.

@@ -10,8 +10,9 @@ tests when you change or add a function.
 | `@expression_doc` annotations in `lib/expression/callbacks/standard.ex` | Happy-path examples that double as doctests |
 | `test/expression_test.exs` | Core engine + hand-written edge cases (incl. the pilot type tests for `upper`, `lower`, `abs`, `round`, `date`) |
 | `test/*_functions_type_test.exs` | Systematic **type-matrix** tests, one file per function category |
+| `test/crash_safe_classification_test.exs` | Deterministic guard that the crash-safe set never raises across the type matrix |
 | `test/expression_fuzz_test.exs` | Property-based **crash-safety** tests (tagged `:fuzz`) |
-| `test/support/*.ex` | Reusable test helpers |
+| `test/support/*.ex` | Reusable test helpers (compiled via `elixirc_paths` for `:test`) |
 
 The category type-test files are:
 
@@ -81,8 +82,15 @@ each runtime type, plus convenience evaluators:
 ### `Expression.Test.FuzzHelpers`
 
 Imported by the fuzz file. Provides `StreamData` generators (`any_value/0`,
-`string_value/0`, `list_value/0`, …) and `assert_no_crash/2`, which fails only
-if evaluating an expression *raises* (returning an error map is fine).
+`string_value/0`, `list_value/0`, `enumerable_value/0`, …) and
+`assert_no_crash/2`, which fails only if evaluating an expression *raises* or
+`throw`s/`exit`s (returning an error map is fine).
+
+### `Expression.Test.CrashSafe`
+
+The single source of truth for the crash-safe function set. `groups/0`,
+`group/1`, and `all/0` return `{label, expression}` entries consumed by both the
+deterministic classification test and the fuzz suite.
 
 ## The context-coercion gotcha
 
@@ -111,9 +119,18 @@ never raise** on arbitrary input (returning a value or an error map is fine).
 
 The V1 engine does **not** uphold this invariant universally, so the suite
 fuzzes only the subset of functions empirically confirmed crash-safe across the
-whole type matrix. The functions that currently *do* crash are listed in the
-file's moduledoc as a hardening backlog; each is pinned with its exact exception
-in the relevant `*_functions_type_test.exs` file.
+whole type matrix. That subset is defined once in `Expression.Test.CrashSafe`
+(`test/support/crash_safe.ex`) and consumed by two suites:
+
+- `test/crash_safe_classification_test.exs` — a **deterministic** guard (runs in
+  the default suite, every CI build) that evaluates each crash-safe function
+  against the full type matrix and fails if any raises. This is what pins the
+  classification; it cannot drift on a lucky seed.
+- `test/expression_fuzz_test.exs` — random exploration on top, for inputs the
+  fixed matrix doesn't contain.
+
+Functions that currently *do* crash are not in `CrashSafe`; each is pinned with
+its exact exception in the relevant `*_functions_type_test.exs` file.
 
 These tests are **not** a merge gate. They use a random seed each run and exist
 to *discover* new crashing inputs, so they can legitimately go red when they
@@ -136,8 +153,9 @@ mix test --only fuzz --seed <N>
 ```
 
 If you harden a known-crashing function so it returns an error map instead of
-raising, move it into the appropriate `@crash_safe_*` list at the top of the
-fuzz file (and update its type test).
+raising, add it to the appropriate category in `Expression.Test.CrashSafe` (and
+update its type test). Both the deterministic guard and the fuzz suite pick it
+up automatically.
 
 ## Adding tests for a new function
 
