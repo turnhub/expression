@@ -1414,23 +1414,41 @@ defmodule Expression.Callbacks.Standard do
                   result: "4.21"
   def fixed(ctx, number, precision) do
     [number, precision] = eval_args!([number, precision], ctx)
-    Number.Delimit.number_to_delimited(number, precision: precision)
+    Number.Delimit.number_to_delimited(coerce_to_number!(number), precision: precision)
   end
 
   @expression_category "number"
   def fixed(ctx, number, precision, no_commas) do
     case eval_args!([number, precision, no_commas], ctx) do
       [number, precision, true] ->
-        Number.Delimit.number_to_delimited(number,
+        Number.Delimit.number_to_delimited(coerce_to_number!(number),
           precision: precision,
           delimiter: "",
           separator: "."
         )
 
       [number, precision, false] ->
-        Number.Delimit.number_to_delimited(number, precision: precision)
+        Number.Delimit.number_to_delimited(coerce_to_number!(number), precision: precision)
     end
   end
+
+  # `Number.Delimit.number_to_delimited/2` raises an uncaught `ArgumentError`
+  # when handed a value it cannot convert to a float (for example a `nil` or a
+  # non-numeric string that has bubbled up from a failed sub-expression).
+  # Coerce numeric strings to numbers and otherwise raise the library's
+  # standard "expression is not a number" error, so callers using
+  # `Expression.evaluate_block/4` receive a graceful `{:error, _}` tuple instead
+  # of a crash.
+  defp coerce_to_number!(number) when is_number(number), do: number
+
+  defp coerce_to_number!(value) when is_binary(value) do
+    case Expression.Eval.parse_number(value) do
+      number when is_number(number) -> number
+      _not_a_number -> raise "expression is not a number: `#{inspect(value)}`"
+    end
+  end
+
+  defp coerce_to_number!(value), do: raise("expression is not a number: `#{inspect(value)}`")
 
   @doc """
   Returns the first characters in a text string. This is Unicode safe.
@@ -1943,11 +1961,14 @@ defmodule Expression.Callbacks.Standard do
                   result: ["ing"]
   def regex_capture(ctx, binary, pattern) do
     [binary, pattern] = eval_args!([binary, pattern], ctx)
-    regex = Regex.compile!(pattern)
 
-    case Regex.run(regex, binary) do
-      nil -> nil
-      [_matched_text | captures] -> captures
+    if is_binary(binary) do
+      regex = Regex.compile!(pattern)
+
+      case Regex.run(regex, binary) do
+        nil -> nil
+        [_matched_text | captures] -> captures
+      end
     end
   end
 
@@ -1980,8 +2001,13 @@ defmodule Expression.Callbacks.Standard do
                   result: %{"match" => "ing"}
   def regex_named_capture(ctx, binary, pattern) do
     [binary, pattern] = eval_args!([binary, pattern], ctx)
-    regex = Regex.compile!(pattern)
-    Regex.named_captures(regex, binary) || %{}
+
+    if is_binary(binary) do
+      regex = Regex.compile!(pattern)
+      Regex.named_captures(regex, binary) || %{}
+    else
+      %{}
+    end
   end
 
   @doc """
@@ -2015,9 +2041,13 @@ defmodule Expression.Callbacks.Standard do
   def with_index(ctx, enumerable) do
     [enumerable] = eval_args!([enumerable], ctx)
 
-    enumerable
-    |> Enum.with_index()
-    |> Enum.map(fn {element, index} -> [element, index] end)
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      []
+    else
+      enumerable
+      |> Enum.with_index()
+      |> Enum.map(fn {element, index} -> [element, index] end)
+    end
   end
 
   @doc """
@@ -2567,7 +2597,12 @@ defmodule Expression.Callbacks.Standard do
                   result: true
   def has_all_members(ctx, list, items) do
     [list, items] = eval_args!([list, items], ctx)
-    Enum.all?(items, &Enum.member?(list, &1))
+
+    if is_list(list) and is_list(items) do
+      Enum.all?(items, &Enum.member?(list, &1))
+    else
+      false
+    end
   end
 
   @doc """
@@ -2699,7 +2734,12 @@ defmodule Expression.Callbacks.Standard do
                   result: true
   def has_any_member(ctx, list, items) do
     [list, items] = eval_args!([list, items], ctx)
-    Enum.any?(items, &Enum.member?(list, &1))
+
+    if is_list(list) and is_list(items) do
+      Enum.any?(items, &Enum.member?(list, &1))
+    else
+      false
+    end
   end
 
   @expression_category "string"
@@ -2939,7 +2979,11 @@ defmodule Expression.Callbacks.Standard do
   def uniq(ctx, enumerable) do
     [enumerable] = eval_args!([enumerable], ctx)
 
-    Enum.uniq(enumerable)
+    if is_nil(enumerable) or is_nil(Enumerable.impl_for(enumerable)) do
+      []
+    else
+      Enum.uniq(enumerable)
+    end
   end
 
   @doc """
@@ -3007,6 +3051,7 @@ defmodule Expression.Callbacks.Standard do
 
     if is_binary(haystack) do
       [words] = eval_args!([words], ctx)
+      words = to_string(words)
       haystack_words = String.split(haystack)
       haystacks_lowercase = Enum.map(haystack_words, &String.downcase/1)
       words_lowercase = words |> String.split() |> Enum.map(&String.downcase/1)
@@ -3063,12 +3108,17 @@ defmodule Expression.Callbacks.Standard do
     [text, phrases] = eval_args!([text, phrases], ctx)
 
     phrases =
-      if is_binary(phrases) do
-        phrases
-        |> String.split(",")
-        |> Enum.map(&String.trim/1)
-      else
-        phrases
+      cond do
+        is_binary(phrases) ->
+          phrases
+          |> String.split(",")
+          |> Enum.map(&String.trim/1)
+
+        is_list(phrases) ->
+          phrases
+
+        true ->
+          []
       end
 
     String.contains?(
