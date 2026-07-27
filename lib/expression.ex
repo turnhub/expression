@@ -35,6 +35,17 @@ defmodule Expression do
   Hello @contact.name, you were born in @(YEAR(contact.birthday))
   ```
 
+  ## v2-compat mode
+
+  All evaluation entry points accept a trailing options list. Passing
+  `mode: :v2` restores the v2 evaluation semantics that changed in v3
+  (context key lowercasing and string value coercion):
+
+  ```
+  Expression.evaluate_as_string!("@date", %{"date" => "2020-12-13T23:34:45"}, mod, mode: :v2)
+  ```
+
+  See `t:evaluation_opts/0` for the individual flags.
   """
 
   @type expression_type ::
@@ -114,12 +125,44 @@ defmodule Expression do
   @spec time_struct?(String.t() | Time.t()) :: boolean
   def time_struct?(value), do: is_struct(value, Time)
 
+  @typedoc """
+  Options accepted by the evaluation entry points.
+
+  `mode: :v2` expands to the v2-compat flags:
+  `lowercase_keys: true, coerce_strings: true`. Explicitly passed flags win
+  over the expansion. `mode: :v3` (or omitting `:mode`) keeps the v3
+  defaults.
+
+    * `:lowercase_keys` / `:coerce_strings` - see `Expression.Context.new/2`.
+
+  Note: v2's operator semantics need no compat flags — the parser collapses
+  `=` and `==` into the same operator in both v2 and v3, so the documented
+  v2 "date-only `=`" behavior was unreachable dead code and evaluation
+  semantics beyond context normalization are unchanged.
+  """
+  @type evaluation_opts :: [
+          mode: :v2 | :v3,
+          lowercase_keys: boolean(),
+          coerce_strings: boolean()
+        ]
+
+  @v2_mode_opts [lowercase_keys: true, coerce_strings: true]
+
+  @spec normalize_opts(evaluation_opts()) :: Keyword.t()
+  defp normalize_opts(opts) do
+    case Keyword.pop(opts, :mode) do
+      {:v2, rest} -> Keyword.merge(@v2_mode_opts, rest)
+      {_v3_or_nil, rest} -> rest
+    end
+  end
+
   def evaluate_block!(
         expression,
         context \\ %{},
         mod \\ Expression.Callbacks,
         opts \\ []
       ) do
+    opts = normalize_opts(opts)
     ast = parse_expression!(expression)
     Eval.eval!([expression: ast], Context.new(context, opts), mod)
   rescue
@@ -138,10 +181,12 @@ defmodule Expression do
     e in Expression.Error -> {:error, e}
   end
 
-  def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
+  def evaluate!(expression, context \\ %{}, mod \\ Expression.Callbacks, opts \\ []) do
+    opts = normalize_opts(opts)
+
     expression
     |> parse!
-    |> Eval.eval!(Context.new(context), mod)
+    |> Eval.eval!(Context.new(context, opts), mod)
     |> Eval.default_value()
   rescue
     e in Expression.Error ->
@@ -156,22 +201,25 @@ defmodule Expression do
   @spec evaluate_as_string!(
           String.t() | Number.t() | nil,
           map(),
-          module()
+          module(),
+          evaluation_opts()
         ) :: String.t()
-  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks)
+  def evaluate_as_string!(expression, context \\ %{}, mod \\ Expression.Callbacks, opts \\ [])
 
-  def evaluate_as_string!(nil, _context, _mod), do: ""
+  def evaluate_as_string!(nil, _context, _mod, _opts), do: ""
 
-  def evaluate_as_string!(expression, context, mod) do
+  def evaluate_as_string!(expression, context, mod, opts) do
+    opts = normalize_opts(opts)
+
     expression
     |> parse!
-    |> Eval.eval!(Context.new(context), mod)
+    |> Eval.eval!(Context.new(context, opts), mod)
     |> Eval.default_value(handle_not_found: true)
     |> stringify()
   end
 
-  def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks) do
-    case evaluate!(expression, context, mod) do
+  def evaluate_as_boolean!(expression, context \\ %{}, mod \\ Expression.Callbacks, opts \\ []) do
+    case evaluate!(expression, context, mod, opts) do
       boolean when is_boolean(boolean) ->
         boolean
 
@@ -198,8 +246,8 @@ defmodule Expression do
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 
-  def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks) do
-    {:ok, evaluate!(expression, context, mod)}
+  def evaluate(expression, context \\ %{}, mod \\ Expression.Callbacks, opts \\ []) do
+    {:ok, evaluate!(expression, context, mod, opts)}
   rescue
     e in Expression.Error -> {:error, e}
   end
@@ -240,9 +288,9 @@ defmodule Expression do
       "1 + 1 = 2"
 
   """
-  @spec evaluate_template!(String.t(), map(), module()) :: String.t()
-  def evaluate_template!(template, context \\ %{}, mod \\ Expression.Callbacks) do
-    evaluate_as_string!(template, context, mod)
+  @spec evaluate_template!(String.t(), map(), module(), evaluation_opts()) :: String.t()
+  def evaluate_template!(template, context \\ %{}, mod \\ Expression.Callbacks, opts \\ []) do
+    evaluate_as_string!(template, context, mod, opts)
   end
 
   defdelegate prewalk(ast, fun), to: Macro
