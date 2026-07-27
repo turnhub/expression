@@ -43,6 +43,7 @@ defmodule Expression do
           | map
           | DateTime.t()
           | Date.t()
+          | Time.t()
 
   alias Expression.Context
   alias Expression.Eval
@@ -193,6 +194,7 @@ defmodule Expression do
   def stringify(binary) when is_binary(binary), do: binary
   def stringify(%DateTime{} = date), do: DateTime.to_iso8601(date)
   def stringify(%Date{} = date), do: Date.to_iso8601(date)
+  def stringify(%Time{} = time), do: Time.to_iso8601(time)
   def stringify(map) when is_map(map), do: "#{inspect(map)}"
   def stringify(other), do: to_string(other)
 

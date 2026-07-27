@@ -64,6 +64,36 @@ defmodule ExpressionTest do
       assert false ==
                Expression.evaluate_as_boolean!("@has_only_phrase(name, 'bar')", %{"name" => nil})
 
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_phrase('hello', phrases)",
+                 %{"phrases" => nil}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_all_members(list, items)",
+                 %{"list" => nil, "items" => ["a"]}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_all_members(list, items)",
+                 %{"list" => ["a"], "items" => nil}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_member(list, items)",
+                 %{"list" => nil, "items" => ["a"]}
+               )
+
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_member(list, items)",
+                 %{"list" => ["a"], "items" => nil}
+               )
+
       assert true ==
                Expression.evaluate_as_boolean!("@has_beginning(contact.number, \"123\")", %{
                  "contact" => %{"number" => 123_456}
@@ -219,6 +249,19 @@ defmodule ExpressionTest do
     test "Stringify time sigil" do
       assert "11:00:00" =
                Expression.evaluate_as_string!(~T[11:00:00])
+    end
+
+    test "stringify time reached via context substitution" do
+      assert "11:00:00" ==
+               Expression.evaluate_as_string!("@appointment", %{"appointment" => ~T[11:00:00]})
+    end
+
+    test "stringify time embedded in surrounding text" do
+      assert "Your slot is 11:00:00 today" ==
+               Expression.evaluate_as_string!(
+                 "Your slot is @appointment today",
+                 %{"appointment" => ~T[11:00:00]}
+               )
     end
 
     test "list with out of bound indicess" do
@@ -612,6 +655,25 @@ defmodule ExpressionTest do
         })
       end
     end
+
+    test "fixed/2 with a numeric string still formats the number" do
+      assert {:ok, "4.21"} == Expression.evaluate_block("fixed(value, 2)", %{"value" => "4.209"})
+    end
+
+    test "fixed/2 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error, "expression is not a number: `\"not a number\"`"} =
+               Expression.evaluate_block("fixed(value, 2)", %{"value" => "not a number"})
+    end
+
+    test "fixed/2 with a nil value returns an error tuple instead of crashing" do
+      assert {:error, "expression is not a number: `nil`"} =
+               Expression.evaluate_block("fixed(value, 2)", %{"value" => nil})
+    end
+
+    test "fixed/3 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error, "expression is not a number: `\"not a number\"`"} =
+               Expression.evaluate_block("fixed(value, 2, true)", %{"value" => "not a number"})
+    end
   end
 
   test "escaping" do
@@ -709,6 +771,36 @@ defmodule ExpressionTest do
         expected_string_result: "",
         context: %{}
       )
+    end
+  end
+
+  describe "nil safety for callbacks" do
+    test "with_index returns empty list for nil" do
+      assert [] == Expression.evaluate!("@with_index(items)", %{"items" => nil})
+    end
+
+    test "uniq returns empty list for nil" do
+      assert [] == Expression.evaluate!("@uniq(items)", %{"items" => nil})
+    end
+
+    test "regex_capture returns nil for nil input" do
+      assert nil == Expression.evaluate!("@regex_capture(text, \"test(.+)\")", %{"text" => nil})
+    end
+
+    test "regex_named_capture returns empty map for nil input" do
+      assert %{} ==
+               Expression.evaluate!(
+                 "@regex_named_capture(text, \"test(?P<match>.+)\")",
+                 %{"text" => nil}
+               )
+    end
+
+    test "has_any_word returns false for nil words" do
+      assert false ==
+               Expression.evaluate_as_boolean!(
+                 "@has_any_word('hello world', words)",
+                 %{"words" => nil}
+               )
     end
   end
 end

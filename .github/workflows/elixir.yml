@@ -30,17 +30,17 @@ jobs:
             otp: "28"
             check_formatting: true
         # when updating this, please also see ./releases.yml
-        cache_version: ["3"]
+        cache_version: ["4"]
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
       - name: Set up Elixir
-        uses: erlef/setup-beam@v1
+        uses: erlef/setup-beam@fc68ffb90438ef2936bbb3251622353b3dcb2f93 # v1
         with:
           elixir-version: ${{ matrix.elixir }}
           otp-version: ${{ matrix.otp }}
       - name: Restore dependencies cache
-        uses: actions/cache@v5
+        uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         id: mix-cache
         with:
           path: deps
@@ -58,7 +58,7 @@ jobs:
       - name: Credo
         run: mix credo --strict
       - name: Retrieve PLT Cache
-        uses: actions/cache/restore@v5
+        uses: actions/cache/restore@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         id: plt_cache
         with:
           path: priv/plts
@@ -70,7 +70,7 @@ jobs:
         run: mix dialyzer --plt
       - name: Save PLT cache
         id: plt_cache_save
-        uses: actions/cache/save@v5
+        uses: actions/cache/save@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5
         if: steps.plt_cache.outputs.cache-hit != 'true'
         with:
           key: |
