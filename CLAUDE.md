@@ -40,12 +40,11 @@ mix dialyzer --format dialyxir
 
 ## Architecture
 
-### Two Parser Implementations
-The library maintains both V1 and V2 parsers for compatibility:
-- **V1** (`lib/expression/parser.ex`, `lib/expression/eval.ex`) - Original implementation
-- **V2** (`lib/expression/v2/`) - An EXPERIMENTAL and SOON TO BE THROWN AWAY parser with `compile.ex`, `eval.ex`, `context.ex`. MAKE NO CHANGES TO V2
+The parser and evaluator live under `lib/expression/parser.ex` and
+`lib/expression/eval.ex`. Parsing uses
+[NimbleParsec](https://hexdocs.pm/nimble_parsec).
 
-Both use [NimbleParsec](https://hexdocs.pm/nimble_parsec) for parsing.
+(The experimental V2 parser/evaluator was removed in v3.0.0.)
 
 ### Core Modules
 - `Expression` (`lib/expression.ex`) - Main API: `evaluate!/3`, `evaluate_as_string!/3`, `parse!/1`

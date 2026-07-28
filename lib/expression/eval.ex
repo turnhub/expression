@@ -170,10 +170,17 @@ defmodule Expression.Eval do
 
   defp read_key_from_subject(subject, index)
        when is_number(index) and (is_list(subject) or is_map(subject)),
-       do: get_in(subject, [Access.at(index)])
+       do: get_in(subject, [Access.at(trunc(index))])
 
   defp read_key_from_subject(subject, range) when is_struct(range, Range) and is_list(subject),
     do: Enum.slice(subject, range)
+
+  defp read_key_from_subject(subject, binary) when is_binary(binary) and is_list(subject) do
+    case Integer.parse(binary) do
+      {index, ""} -> get_in(subject, [Access.at(index)])
+      _ -> nil
+    end
+  end
 
   defp read_key_from_subject(subject, binary) when is_binary(binary) and is_map(subject),
     do: Map.get(subject, binary)
@@ -205,7 +212,7 @@ defmodule Expression.Eval do
     do: DateTime.compare(a, b) == :eq
 
   def op(:=, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
-    do: Date.compare(a, b) == :eq
+    do: DateTime.compare(a, b) == :eq
 
   def op(:>, a, b) when is_struct(a, Date) and is_struct(b, Date),
     do: Date.compare(a, b) == :gt

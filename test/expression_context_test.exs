@@ -8,11 +8,14 @@ defmodule ExpressionContextTest do
              "integer" => 1,
              "string_integer" => 1
            } ==
-             Expression.Context.new(%{
-               "string_integer" => "1",
-               "integer" => 1,
-               "trouble" => "_she_calls_me_princes___🤔"
-             })
+             Expression.Context.new(
+               %{
+                 "string_integer" => "1",
+                 "integer" => 1,
+                 "trouble" => "_she_calls_me_princes___🤔"
+               },
+               coerce_strings: true
+             )
   end
 
   describe "Expression.Context.build/2" do
@@ -29,7 +32,13 @@ defmodule ExpressionContextTest do
     end
 
     test "normalizes vars through Context.new" do
-      ctx = Expression.Context.build(%{Name: "Jane", date: "2020-12-13T23:34:45"})
+      ctx =
+        Expression.Context.build(
+          %{Name: "Jane", date: "2020-12-13T23:34:45"},
+          lowercase_keys: true,
+          coerce_strings: true
+        )
+
       assert ctx.vars["name"] == "Jane"
       assert %DateTime{} = ctx.vars["date"]
     end

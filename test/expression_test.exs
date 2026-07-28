@@ -220,7 +220,9 @@ defmodule ExpressionTest do
                      "body" => ["hello", "bye"]
                    },
                    "current_activity" => "0"
-                 }
+                 },
+                 Expression.Callbacks,
+                 coerce_strings: true
                )
     end
 
@@ -612,17 +614,18 @@ defmodule ExpressionTest do
     end
 
     test "return an error tuple" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("block.value > 0", %{
                  "block" => %{"value" => "not a number"}
                })
     end
 
     test "return an error tuple when variables are not defined" do
-      assert {:error, "attribute is not found: `value`"} =
+      assert {:error, %Expression.Error{message: "attribute is not found: `value`"}} =
                Expression.evaluate_block("block.value > 0", %{"block" => %{}})
 
-      assert {:error, "attribute is not found: `block.value`"} =
+      assert {:error, %Expression.Error{message: "attribute is not found: `block.value`"}} =
                Expression.evaluate_block("block.value > 0", %{})
     end
 
@@ -658,17 +661,19 @@ defmodule ExpressionTest do
     end
 
     test "fixed/2 with a non-numeric value returns an error tuple instead of crashing" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("fixed(value, 2)", %{"value" => "not a number"})
     end
 
     test "fixed/2 with a nil value returns an error tuple instead of crashing" do
-      assert {:error, "expression is not a number: `nil`"} =
+      assert {:error, %Expression.Error{message: "expression is not a number: `nil`"}} =
                Expression.evaluate_block("fixed(value, 2)", %{"value" => nil})
     end
 
     test "fixed/3 with a non-numeric value returns an error tuple instead of crashing" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("fixed(value, 2, true)", %{"value" => "not a number"})
     end
   end
