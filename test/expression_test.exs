@@ -325,6 +325,58 @@ defmodule ExpressionTest do
                })
     end
 
+    test "case-insensitive lookup of a camelCase key holding false" do
+      context = %{"contact" => %{"isActive" => false}}
+
+      assert Expression.evaluate("@contact.isactive", context) == {:ok, false}
+      assert Expression.evaluate("@contact.isActive", context) == {:ok, false}
+      assert Expression.evaluate("@contact.ISACTIVE", context) == {:ok, false}
+    end
+
+    test "case-insensitive lookup of a top-level key holding false" do
+      assert Expression.evaluate("@enabled", %{"Enabled" => false}) == {:ok, false}
+    end
+
+    test "case-insensitive lookup of false through a multi-level attribute chain" do
+      assert Expression.evaluate("@a.b.c", %{"A" => %{"B" => %{"C" => false}}}) == {:ok, false}
+    end
+
+    test "case-insensitive lookup of other falsy values" do
+      context = %{
+        "map" => %{
+          "itemCount" => 0,
+          "emptyTags" => [],
+          "blankNote" => "",
+          "zeroRate" => 0.0
+        }
+      }
+
+      assert Expression.evaluate("@map.itemcount", context) == {:ok, 0}
+      assert Expression.evaluate("@map.emptytags", context) == {:ok, []}
+      assert Expression.evaluate("@map.blanknote", context) == {:ok, ""}
+      assert Expression.evaluate("@map.zerorate", context) == {:ok, 0.0}
+    end
+
+    test "a missing key is still reported as not found alongside a false sibling" do
+      context = %{"contact" => %{"isActive" => false}}
+
+      assert Expression.evaluate_block("contact.missing", context) ==
+               {:ok, {:not_found, ["missing"]}}
+
+      assert_raise Expression.Error, "attribute is not found: `missing`", fn ->
+        Expression.evaluate_block!("contact.missing > 0", context)
+      end
+    end
+
+    test "a case-insensitively resolved false is usable downstream" do
+      context = %{"contact" => %{"isActive" => false}}
+
+      assert Expression.evaluate_block!("contact.isactive == false", context) == true
+      assert Expression.evaluate_as_boolean!("@contact.isactive", context) == false
+      assert Expression.evaluate!(~S|@IF(contact.isactive, "on", "off")|, context) == "off"
+      assert Expression.evaluate_as_string!("@contact.isactive", context) == "false"
+    end
+
     test "delete an element from a map" do
       assert {:ok, %{"age" => 32}} ==
                Expression.evaluate("@delete(patient, \"gender\")", %{
