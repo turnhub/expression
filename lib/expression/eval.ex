@@ -390,8 +390,16 @@ defmodule Expression.Eval do
   defp case_insensitive_scan(map, key) do
     downcased = String.downcase(key)
 
-    Enum.find_value(map, {:not_found, [key]}, fn {k, v} ->
-      if is_binary(k) and String.downcase(k) == downcased, do: v
-    end)
+    # Wrap matches in a tuple so that falsy values (`false`, `nil`) are not
+    # mistaken by `find_value/3` for "no match".
+    match =
+      Enum.find_value(map, {:error, :not_found}, fn {k, v} ->
+        if is_binary(k) and String.downcase(k) == downcased, do: {:ok, v}
+      end)
+
+    case match do
+      {:ok, value} -> value
+      {:error, :not_found} -> {:not_found, [key]}
+    end
   end
 end
