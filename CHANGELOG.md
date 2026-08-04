@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.0.0-rc.2
+
+### Fixed
+
+- Identifiers may now start with underscores, so attribute access on
+  WhatsApp webhook vendor keys such as `@event.message._vnd.v1.chat`
+  parses fully instead of stopping at the underscore. A bare `_` is
+  still not an identifier: `@(_)` remains literal text, and unresolved
+  variables like `@_missing` render back as-is.
+
 ## v3.0.0-rc.0
 
 This is the first release candidate for v3.0.0. It contains the breaking

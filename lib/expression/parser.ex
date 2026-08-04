@@ -36,8 +36,13 @@ defmodule Expression.Parser do
   )
 
   # atom = atom
+  #
+  # Leading underscores are valid (WhatsApp webhook payloads have keys such as
+  # `_vnd`) but an atom needs at least one letter or digit, so that a bare `_`
+  # keeps failing to parse and `@(_)` remains literal text.
   atom =
-    ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
+    ascii_string([?_], min: 0)
+    |> ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
     |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})

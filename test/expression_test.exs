@@ -197,6 +197,22 @@ defmodule ExpressionTest do
       assert "bar" == Expression.evaluate_as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
     end
 
+    test "attributes with leading underscores" do
+      context = %{
+        "event" => %{
+          "message" => %{"_vnd" => %{"v1" => %{"chat" => %{"state" => "OPEN"}}}}
+        }
+      }
+
+      assert "OPEN" ==
+               Expression.evaluate_as_string!("@event.message._vnd.v1.chat.state", context)
+
+      assert %{"state" => "OPEN"} ==
+               Expression.evaluate_block!("event.message._vnd.v1.chat", context)
+
+      assert "@_missing" == Expression.evaluate_as_string!("@_missing", %{})
+    end
+
     test "list with variable" do
       assert "bar" =
                Expression.evaluate_as_string!("@foo[cursor]", %{

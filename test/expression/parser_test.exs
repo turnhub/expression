@@ -10,6 +10,11 @@ defmodule Expression.ParserTest do
     assert_ast([expression: [atom: "foo"]], "@foo")
   end
 
+  test "expression with a leading underscore" do
+    assert_ast([expression: [atom: "_foo"]], "@_foo")
+    assert_ast([expression: [atom: "__foo"]], "@__foo")
+  end
+
   test "escaped at" do
     assert_ast([text: "user", text: "@", text: "example.org"], "user@@example.org")
   end
@@ -416,6 +421,31 @@ defmodule Expression.ParserTest do
           ]
         ],
         "@foo.bar.baz"
+      )
+    end
+
+    test "on keys with leading underscores" do
+      assert_ast(
+        [
+          expression: [
+            attribute: [
+              attribute: [
+                attribute: [
+                  attribute: [atom: "event", atom: "message"],
+                  atom: "_vnd"
+                ],
+                atom: "v1"
+              ],
+              atom: "chat"
+            ]
+          ]
+        ],
+        "@event.message._vnd.v1.chat"
+      )
+
+      assert_ast(
+        [expression: [attribute: [atom: "foo", atom: "_bar"]]],
+        "@(foo._bar)"
       )
     end
 
