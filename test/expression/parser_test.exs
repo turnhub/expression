@@ -89,6 +89,12 @@ defmodule Expression.ParserTest do
       assert_ast([expression: [literal: 11]], "@(1_1)")
       assert_ast([expression: [[]], text: "(1__1)"], "@(1__1)")
       assert_ast([expression: [literal: 111]], "@(1_1_1)")
+      # digit groups with leading zeros must keep them: 180_000 used to parse as 1800
+      assert_ast([expression: [literal: 180_000]], "@(180_000)")
+      assert_ast([expression: [literal: 1_000_000]], "@(1_000_000)")
+      assert_ast([expression: [literal: -1_000_000]], "@(-1_000_000)")
+      assert_ast([expression: [literal: 1_234_567.89]], "@(1_234_567.89)")
+      assert_ast([expression: [literal: 0.000_5]], "@(0.000_5)")
 
       assert_ast(
         [expression: [literal: ~U[2022-05-24 00:00:00.0Z]]],
