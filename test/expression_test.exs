@@ -800,6 +800,17 @@ defmodule ExpressionTest do
                "message" => "Invalid enumerable"
              }
     end
+
+    test "underscored number literals keep their value in comparisons and arithmetic" do
+      # 180_000 used to parse as 1800 (each digit group was parsed as an
+      # integer before joining, dropping leading zeros), which made
+      # `5000 > 180_000` evaluate to true
+      assert Expression.evaluate_block!("5000 > 180_000") == false
+      assert Expression.evaluate_block!("180_000 < 5000") == false
+      assert Expression.evaluate_block!("200_000 + 1") == 200_001
+      assert Expression.evaluate_block!("1_000_000") == 1_000_000
+      assert Expression.evaluate_block!("1_234_567.89") == 1_234_567.89
+    end
   end
 
   describe "evaluate_as_string!" do

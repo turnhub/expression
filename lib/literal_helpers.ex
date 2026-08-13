@@ -4,22 +4,29 @@ defmodule Expression.LiteralHelpers do
 
   def int do
     optional(string("-"))
-    |> times(
-      integer(min: 1)
-      |> concat(optional(ignore(utf8_char([?_])))),
-      min: 1
-    )
+    |> concat(digits_with_underscores())
     |> reduce({Enum, :join, [""]})
     |> map({String, :to_integer, []})
   end
 
   def float do
     optional(string("-"))
-    |> concat(utf8_string([?0..?9], min: 1))
+    |> concat(digits_with_underscores())
     |> concat(string("."))
-    |> concat(utf8_string([?0..?9], min: 1))
+    |> concat(digits_with_underscores())
     |> reduce({Enum, :join, [""]})
     |> map({String, :to_float, []})
+  end
+
+  # Digit groups must be captured as strings, not with `integer/1`: parsing
+  # "000" in "180_000" as an integer collapses it to 0, so the joined number
+  # became 1800 instead of 180000.
+  defp digits_with_underscores do
+    times(
+      ascii_string([?0..?9], min: 1)
+      |> concat(optional(ignore(utf8_char([?_])))),
+      min: 1
+    )
   end
 
   def numeric do
