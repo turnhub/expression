@@ -37,7 +37,8 @@ defmodule Expression.Parser do
 
   # atom = atom
   atom =
-    ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
+    ascii_string([?_], min: 0)
+    |> ascii_string([?a..?z, ?A..?Z, ?0..?9], min: 1)
     |> ascii_string([?a..?z, ?A..?Z, ?0..?9, ?_, ?-], min: 0)
     |> map({String, :downcase, []})
     |> reduce({Enum, :join, []})
