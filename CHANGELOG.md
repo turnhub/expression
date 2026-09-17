@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.0.0-rc.4
+
+### Fixed
+
+- A runtime arithmetic fault during evaluation, division by zero being the
+  canonical case, now surfaces as an `Expression.Error` instead of crashing the
+  caller. `evaluate_block!/4` and `evaluate!/4` already reraised a `RuntimeError`
+  this way (how a non-numeric operand surfaces); `ArithmeticError` was simply the
+  missing case.
+
 ## v3.0.0-rc.3
 
 ### Fixed

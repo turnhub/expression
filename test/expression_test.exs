@@ -190,6 +190,10 @@ defmodule ExpressionTest do
       assert_raise Expression.Error, "expression is not a number: `\"NaN\"`", fn ->
         Expression.evaluate_as_boolean!("@(\"NaN\" * 0.2 == 0.02)")
       end
+
+      assert_raise Expression.Error, "bad argument in arithmetic expression", fn ->
+        Expression.evaluate_as_boolean!("@(1 / 0 == 2)")
+      end
     end
 
     test "list with indices" do
@@ -722,6 +726,17 @@ defmodule ExpressionTest do
         Expression.evaluate("@delete(map, \"key\")", %{
           "map" => ["A", "B", "C"]
         })
+      end
+    end
+
+    test "a division by zero returns an error tuple instead of crashing" do
+      assert {:error, %Expression.Error{message: "bad argument in arithmetic expression"}} =
+               Expression.evaluate_block("score / total", %{"score" => 10, "total" => 0})
+    end
+
+    test "a division by zero raises Expression.Error from the bang variant" do
+      assert_raise Expression.Error, "bad argument in arithmetic expression", fn ->
+        Expression.evaluate_block!("score / total", %{"score" => 10, "total" => 0})
       end
     end
 

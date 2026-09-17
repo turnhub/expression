@@ -169,9 +169,9 @@ defmodule Expression do
     e in Expression.Error ->
       reraise e, __STACKTRACE__
 
-    e in RuntimeError ->
+    e in [RuntimeError, ArithmeticError] ->
       reraise Expression.Error,
-              [type: :eval, message: e.message, expression: expression],
+              [type: :eval, message: Exception.message(e), expression: expression],
               __STACKTRACE__
   end
 
@@ -192,9 +192,9 @@ defmodule Expression do
     e in Expression.Error ->
       reraise e, __STACKTRACE__
 
-    e in RuntimeError ->
+    e in [RuntimeError, ArithmeticError] ->
       reraise Expression.Error,
-              [type: :eval, message: e.message, expression: expression],
+              [type: :eval, message: Exception.message(e), expression: expression],
               __STACKTRACE__
   end
 
