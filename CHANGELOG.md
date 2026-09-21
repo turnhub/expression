@@ -1,5 +1,15 @@
 # Changelog
 
+## v3.0.0-rc.5
+
+### Fixed
+
+- `ROUND` now rounds whole numbers and numeric strings. It used to accept only
+  floats, so `ROUND(5)`, `ROUND(2 * 3)` and a whole-number variable all raised a
+  `FunctionClauseError`. A value that is not a number now surfaces as the
+  standard "expression is not a number" `Expression.Error`, as `FIXED` already
+  does.
+
 ## v3.0.0-rc.4
 
 ### Fixed
