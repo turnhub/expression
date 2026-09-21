@@ -760,6 +760,35 @@ defmodule ExpressionTest do
               %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("fixed(value, 2, true)", %{"value" => "not a number"})
     end
+
+    test "round/1 rounds a whole number to itself" do
+      assert {:ok, "4"} == Expression.evaluate_block("round(value)", %{"value" => 4})
+    end
+
+    test "round/2 rounds a whole number to the given places" do
+      assert {:ok, "4.00"} == Expression.evaluate_block("round(value, 2)", %{"value" => 4})
+    end
+
+    test "round/1 with a numeric string still rounds the number" do
+      assert {:ok, "4"} == Expression.evaluate_block("round(value)", %{"value" => "3.7"})
+    end
+
+    test "round/1 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
+               Expression.evaluate_block("round(value)", %{"value" => "not a number"})
+    end
+
+    test "round/1 with a nil value returns an error tuple instead of crashing" do
+      assert {:error, %Expression.Error{message: "expression is not a number: `nil`"}} =
+               Expression.evaluate_block("round(value)", %{"value" => nil})
+    end
+
+    test "round/2 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
+               Expression.evaluate_block("round(value, 2)", %{"value" => "not a number"})
+    end
   end
 
   test "escaping" do

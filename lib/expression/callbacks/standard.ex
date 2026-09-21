@@ -351,7 +351,8 @@ defmodule Expression.Callbacks.Standard do
     [value] = eval_args!([value], ctx)
 
     value
-    |> Decimal.from_float()
+    |> coerce_to_number!()
+    |> number_to_decimal()
     |> Decimal.round(0)
     |> Decimal.to_string(:normal)
   end
@@ -361,10 +362,14 @@ defmodule Expression.Callbacks.Standard do
     [value, places] = eval_args!([value, places], ctx)
 
     value
-    |> Decimal.from_float()
+    |> coerce_to_number!()
+    |> number_to_decimal()
     |> Decimal.round(places)
     |> Decimal.to_string(:normal)
   end
+
+  defp number_to_decimal(number) when is_float(number), do: Decimal.from_float(number)
+  defp number_to_decimal(number) when is_integer(number), do: Decimal.new(number)
 
   @doc """
   MID extracts part of a string, starting at a specified position and for a specified length.
