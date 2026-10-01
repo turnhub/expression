@@ -170,10 +170,17 @@ defmodule Expression.Eval do
 
   defp read_key_from_subject(subject, index)
        when is_number(index) and (is_list(subject) or is_map(subject)),
-       do: get_in(subject, [Access.at(index)])
+       do: get_in(subject, [Access.at(trunc(index))])
 
   defp read_key_from_subject(subject, range) when is_struct(range, Range) and is_list(subject),
     do: Enum.slice(subject, range)
+
+  defp read_key_from_subject(subject, binary) when is_binary(binary) and is_list(subject) do
+    case Integer.parse(binary) do
+      {index, ""} -> get_in(subject, [Access.at(index)])
+      _ -> nil
+    end
+  end
 
   defp read_key_from_subject(subject, binary) when is_binary(binary) and is_map(subject),
     do: Map.get(subject, binary)
@@ -205,7 +212,7 @@ defmodule Expression.Eval do
     do: DateTime.compare(a, b) == :eq
 
   def op(:=, a, b) when is_struct(a, DateTime) and is_struct(b, DateTime),
-    do: Date.compare(a, b) == :eq
+    do: DateTime.compare(a, b) == :eq
 
   def op(:>, a, b) when is_struct(a, Date) and is_struct(b, Date),
     do: Date.compare(a, b) == :gt
@@ -383,8 +390,16 @@ defmodule Expression.Eval do
   defp case_insensitive_scan(map, key) do
     downcased = String.downcase(key)
 
-    Enum.find_value(map, {:not_found, [key]}, fn {k, v} ->
-      if is_binary(k) and String.downcase(k) == downcased, do: v
-    end)
+    # Wrap matches in a tuple so that falsy values (`false`, `nil`) are not
+    # mistaken by `find_value/3` for "no match".
+    match =
+      Enum.find_value(map, {:error, :not_found}, fn {k, v} ->
+        if is_binary(k) and String.downcase(k) == downcased, do: {:ok, v}
+      end)
+
+    case match do
+      {:ok, value} -> value
+      {:error, :not_found} -> {:not_found, [key]}
+    end
   end
 end

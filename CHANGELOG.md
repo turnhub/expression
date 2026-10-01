@@ -1,0 +1,74 @@
+# Changelog
+
+## v3.0.0-rc.5
+
+### Fixed
+
+- `ROUND` now rounds whole numbers and numeric strings. It used to accept only
+  floats, so `ROUND(5)`, `ROUND(2 * 3)` and a whole-number variable all raised a
+  `FunctionClauseError`. A value that is not a number now surfaces as the
+  standard "expression is not a number" `Expression.Error`, as `FIXED` already
+  does.
+
+## v3.0.0-rc.4
+
+### Fixed
+
+- A runtime arithmetic fault during evaluation, division by zero being the
+  canonical case, now surfaces as an `Expression.Error` instead of crashing the
+  caller. `evaluate_block!/4` and `evaluate!/4` already reraised a `RuntimeError`
+  this way (how a non-numeric operand surfaces); `ArithmeticError` was simply the
+  missing case.
+
+## v3.0.0-rc.3
+
+### Fixed
+
+- Identifiers may now start with underscores, so attribute access on
+  WhatsApp webhook vendor keys such as `@event.message._vnd.v1.chat`
+  parses fully instead of stopping at the underscore. A bare `_` is
+  still not an identifier: `@(_)` remains literal text, and unresolved
+  variables like `@_missing` render back as-is.
+
+## v3.0.0-rc.0
+
+This is the first release candidate for v3.0.0. It contains the breaking
+changes intended for the major version. Cut to allow downstream CI runs
+to surface migration work before the final v3.0.0 tag.
+
+### Breaking changes
+
+- **`Context.new/2` no longer normalizes by default.** Both `lowercase_keys`
+  and `coerce_strings` now default to `false`. Original key casing is
+  preserved (variable lookup remains case-insensitive at evaluation time
+  via `Eval.case_insensitive_get/2`), and string values pass through
+  untouched. Callers that need v2 behavior must opt in explicitly:
+  `Context.new(ctx, lowercase_keys: true, coerce_strings: true)`.
+- **`:skip_context_evaluation?` option has been removed.** Use
+  `coerce_strings: false` instead.
+- **`Expression.error/1` has been removed.** Use `Expression.error_map/1`
+  to produce the legacy error map shape, or raise `Expression.Error` for
+  new code.
+- **The entire V2 parser/evaluator has been removed.** All modules under
+  `lib/expression/v2/` (`Expression.V2`, `Expression.V2.Parser`,
+  `Expression.V2.Compile`, `Expression.V2.Context`, `Expression.V2.Eval`,
+  `Expression.V2.Callbacks`, `Expression.V2.Callbacks.Standard`,
+  `Expression.V2.Autodoc`) and `Expression.V2.Compat` are gone. Consumers
+  using V2 for static analysis (`Expression.V2.parse_block/1`,
+  `Expression.V2.Compile.to_quoted/1`) will need to migrate to V1's
+  AST surface or build their own analysis layer.
+
+### Added
+
+- **v2-compat mode on all evaluation entry points.** `evaluate!/4`,
+  `evaluate/4`, `evaluate_block!/4`, `evaluate_block/4`,
+  `evaluate_as_string!/4`, `evaluate_as_boolean!/4` and
+  `evaluate_template!/4` accept a trailing options list. `mode: :v2`
+  expands to `lowercase_keys: true, coerce_strings: true`, restoring the
+  v2 context normalization per evaluation; explicitly passed flags win
+  over the expansion. This lets a consumer run v2- and v3-semantics
+  evaluations side by side in the same VM.
+
+### Migration
+
+See `V3_PLAN.md` for the detailed plan and engage-specific impact notes.

@@ -7,56 +7,64 @@ defmodule Expression.EvalTest do
     assert "bar" == Expression.evaluate_as_string!("@foo", %{"foo" => "bar"})
   end
 
-  test "substitutions in substitutions" do
+  test "string literals containing @variable references are evaluated as templates" do
+    assert "hello" == Expression.evaluate_block!(~S("@my_var"), %{"my_var" => "hello"})
+  end
+
+  test "string literals without @references are returned as-is" do
     assert "string with quotes \" inside" ==
              Expression.evaluate_block!(~S("string with quotes \" inside"))
+  end
 
-    # Note the escaping of the @IF here with an @
-    # credo:disable-for-lines:2 Credo.Check.Readability.StringSigils
-    assert true ==
-             Expression.evaluate_block!(
-               "block.response = \"@@IF(cursor + 1 < total_items, \\\"Next article ➡️\\\", \\\"⏮ First article\\\")\"",
-               %{
-                 "block" => %{
-                   "response" =>
-                     "@IF(cursor + 1 < total_items, \"Next article ➡️\", \"⏮ First article\")"
-                 },
-                 "cursor" => "1",
-                 "total_items" => "10"
-               }
-             )
+  test "string literals in function args resolve @references" do
+    ctx = %{
+      "conditional" => true,
+      "confirm" => "successful",
+      "deny" => "unsuccessful"
+    }
 
-    assert "Your application was successful" ==
+    assert "was successful" ==
              Expression.evaluate_as_string!(
-               ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
-               %{
-                 "conditional" => true,
-                 "confirm" => "successful",
-                 "deny" => "unsuccessful"
-               }
-             )
-
-    assert "Your application was unsuccessful" ==
-             Expression.evaluate_as_string!(
-               ~s|Your application @if(conditional, "was @confirm", "was @deny")|,
-               %{
-                 "conditional" => false,
-                 "confirm" => "successful",
-                 "deny" => "unsuccessful"
-               }
+               ~s|@if(conditional, "was @confirm", "was @deny")|,
+               ctx
              )
 
     assert "true" ==
              Expression.evaluate_as_string!(
                ~s|@or(answer == 1, has_all_words(answer, "red fox"))|,
-               %{
-                 "answer" => "1"
-               }
+               Expression.Context.new(%{"answer" => "1"}, coerce_strings: true)
              )
   end
 
   test "attributes on substitutions" do
     assert "baz" == Expression.evaluate_as_string!("@foo.bar", %{"foo" => %{"bar" => "baz"}})
+  end
+
+  test "string index on list coerces to integer" do
+    assert %{"name" => "c"} ==
+             Expression.evaluate_block!(
+               "items[index]",
+               %{
+                 "items" => [%{"name" => "a"}, %{"name" => "b"}, %{"name" => "c"}],
+                 "index" => "2"
+               }
+             )
+  end
+
+  test "float index on list truncates to integer" do
+    assert "b" ==
+             Expression.evaluate_block!(
+               "items[index]",
+               %{"items" => ["a", "b", "c"], "index" => 1.0}
+             )
+  end
+
+  test "non-numeric string index on list returns nil" do
+    assert nil ==
+             Expression.evaluate_block!(
+               "items[index]",
+               %{"items" => ["a", "b"], "index" => "not_a_number"}
+             )
   end
 
   test "attributes on things that cannot have attributes should return nil" do

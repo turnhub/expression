@@ -2,86 +2,112 @@ defmodule Expression.ContextTest do
   use ExUnit.Case
   alias Expression.Context
 
-  test "new context from a context containing a date string in dd/mm/yyyy" do
-    context = %{"block" => %{"value" => %{"birth_date" => "19/10/2002"}}}
+  describe "string coercion (coerce_strings: true)" do
+    test "context containing a date string in dd/mm/yyyy" do
+      context = %{"block" => %{"value" => %{"birth_date" => "19/10/2002"}}}
 
-    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-19]}}} =
-             Context.new(context)
-  end
+      assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-19]}}} =
+               Context.new(context, coerce_strings: true)
+    end
 
-  test "new context from a context containing a date string in dd/mm/yyyy starting with 0" do
-    context = %{"block" => %{"value" => %{"birth_date" => "09/10/2002"}}}
+    test "context containing a date string in dd/mm/yyyy starting with 0" do
+      context = %{"block" => %{"value" => %{"birth_date" => "09/10/2002"}}}
 
-    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-09]}}} =
-             Context.new(context)
-  end
+      assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-09]}}} =
+               Context.new(context, coerce_strings: true)
+    end
 
-  test "new context from a context containing a date string in dd-mm-yyyy" do
-    context = %{"block" => %{"value" => %{"birth_date" => "19-10-2002"}}}
+    test "context containing a date string in dd-mm-yyyy" do
+      context = %{"block" => %{"value" => %{"birth_date" => "19-10-2002"}}}
 
-    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-19]}}} =
-             Context.new(context)
-  end
+      assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-19]}}} =
+               Context.new(context, coerce_strings: true)
+    end
 
-  test "new context from a context containing a date string in dd-mm-yyyy starting with 0" do
-    context = %{"block" => %{"value" => %{"birth_date" => "09-10-2002"}}}
+    test "context containing a date string in dd-mm-yyyy starting with 0" do
+      context = %{"block" => %{"value" => %{"birth_date" => "09-10-2002"}}}
 
-    assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-09]}}} =
-             Context.new(context)
-  end
+      assert %{"block" => %{"value" => %{"birth_date" => ~D[2002-10-09]}}} =
+               Context.new(context, coerce_strings: true)
+    end
 
-  test "new context from a context containing a datetime string" do
-    context = %{"block" => %{"value" => %{"program_start_date" => "2022-11-10T13:40:05.921378"}}}
+    test "context containing a datetime string" do
+      context = %{
+        "block" => %{"value" => %{"program_start_date" => "2022-11-10T13:40:05.921378"}}
+      }
 
-    assert %{"block" => %{"value" => %{"program_start_date" => ~U[2022-11-10 13:40:05.921378Z]}}} =
-             Context.new(context)
-  end
+      assert %{
+               "block" => %{"value" => %{"program_start_date" => ~U[2022-11-10 13:40:05.921378Z]}}
+             } =
+               Context.new(context, coerce_strings: true)
+    end
 
-  test "new context from a context containing a datetime string with microseconds precision 7" do
-    context = %{"block" => %{"value" => %{"program_start_date" => "2022-11-10T13:40:05.9213782"}}}
+    test "context containing a datetime string with microseconds precision 7" do
+      context = %{
+        "block" => %{"value" => %{"program_start_date" => "2022-11-10T13:40:05.9213782"}}
+      }
 
-    # Assert that the microseconds are truncated to precision 6 (the maximum precision supported by Elixir's DateTime)
-    assert %{"block" => %{"value" => %{"program_start_date" => ~U[2022-11-10 13:40:05.921378Z]}}} =
-             Context.new(context)
-  end
+      # microseconds are truncated to precision 6 (Elixir's DateTime maximum)
+      assert %{
+               "block" => %{"value" => %{"program_start_date" => ~U[2022-11-10 13:40:05.921378Z]}}
+             } =
+               Context.new(context, coerce_strings: true)
+    end
 
-  test "new context from a context containing numbers" do
-    values = [
-      %{"score" => 1234},
-      %{"rate" => 1.1234567}
-    ]
+    test "context containing numbers" do
+      values = [
+        %{"score" => 1234},
+        %{"rate" => 1.1234567}
+      ]
 
-    for context <- values do
-      # Assert that the number is not parsed
-      assert Context.new(context) == context
+      for context <- values do
+        # numbers are unchanged
+        assert Context.new(context, coerce_strings: true) == context
+      end
+    end
+
+    test "zero as a string is parsed as a number" do
+      assert Context.new(%{"zero" => "0"}, coerce_strings: true) == %{"zero" => 0}
+    end
+
+    test "strings starting with zero are not parsed as numbers" do
+      values = [
+        %{"national_id" => "01234567"},
+        %{"code" => "01234abc"},
+        %{"rate" => "0.1234567"},
+        %{"password" => "0.123abc"}
+      ]
+
+      for context <- values do
+        assert Context.new(context, coerce_strings: true) == context
+      end
     end
   end
 
-  test "new context with zero as a string" do
-    # Assert that the string "0" is parsed as a number
-    assert Context.new(%{"zero" => "0"}) == %{"zero" => 0}
-  end
+  describe "v3 default behavior (no coercion, no key lowercasing)" do
+    test "string values are preserved by default" do
+      context = %{"birth_date" => "19/10/2002", "active" => "true", "score" => "42"}
 
-  test "new context from a context containing a string starting with zero" do
-    values = [
-      %{"national_id" => "01234567"},
-      %{"code" => "01234abc"},
-      %{"rate" => "0.1234567"},
-      %{"password" => "0.123abc"}
-    ]
+      assert Context.new(context) == context
+    end
 
-    for context <- values do
-      # Assert that the string starting with zero is not parsed as number
+    test "atom keys are stringified but case is preserved" do
+      assert Context.new(%{Name: "Jane", AGE: 30}) == %{"Name" => "Jane", "AGE" => 30}
+    end
+
+    test "datetime strings are not coerced by default" do
+      context = %{"date" => "2022-11-10T13:40:05.921378"}
+
       assert Context.new(context) == context
     end
   end
 
   describe "lowercase_keys option" do
-    test "default: keys are lowercased" do
-      assert %{"name" => "Jane"} = Context.new(%{Name: "Jane"})
+    test "default: original key casing is preserved" do
+      assert %{"Name" => "Jane"} = Context.new(%{Name: "Jane"})
     end
 
-    test "lowercase_keys: true is the same as default" do
+    test "lowercase_keys: true lowercases keys" do
       assert %{"name" => "Jane"} = Context.new(%{Name: "Jane"}, lowercase_keys: true)
     end
 
@@ -130,13 +156,14 @@ defmodule Expression.ContextTest do
   end
 
   describe "coerce_strings option" do
-    test "default: strings are coerced" do
-      assert %{"flag" => true} = Context.new(%{"flag" => "true"})
-      assert %{"num" => 42} = Context.new(%{"num" => "42"})
+    test "default: strings are preserved (no coercion)" do
+      assert %{"flag" => "true"} = Context.new(%{"flag" => "true"})
+      assert %{"num" => "42"} = Context.new(%{"num" => "42"})
     end
 
-    test "coerce_strings: true is the same as default" do
+    test "coerce_strings: true coerces booleans and numbers" do
       assert %{"flag" => true} = Context.new(%{"flag" => "true"}, coerce_strings: true)
+      assert %{"num" => 42} = Context.new(%{"num" => "42"}, coerce_strings: true)
     end
 
     test "coerce_strings: false preserves string values" do
@@ -169,12 +196,6 @@ defmodule Expression.ContextTest do
 
       assert ctx["block"]["value"] == "42"
     end
-
-    test "coerce_strings: false is backwards compat with skip_context_evaluation?" do
-      ctx1 = Context.new(%{"flag" => "True"}, coerce_strings: false)
-      ctx2 = Context.new(%{"flag" => "True"}, skip_context_evaluation?: true)
-      assert ctx1 == ctx2
-    end
   end
 
   describe "combined options" do
@@ -203,50 +224,6 @@ defmodule Expression.ContextTest do
 
       # Case-insensitive lookup works through the struct
       assert "Jane" == Expression.evaluate_as_string!("@firstname", ctx)
-    end
-  end
-
-  describe "context is parsed correctly when using the `skip_context_evaluation?` option" do
-    test "string values in context that resemble booleans should not be parsed as booleans" do
-      # By default (without the flag) boolean-ish string values as parsed as booleans
-      assert %{"block" => %{"response" => true}} ==
-               Context.new(%{
-                 "block" => %{"response" => "True"}
-               })
-
-      # With the flag set to true they are kept as strings
-      assert %{"block" => %{"response" => "True"}} ==
-               Context.new(%{"block" => %{"response" => "True"}},
-                 skip_context_evaluation?: true
-               )
-
-      assert %{"block" => %{"response" => "true"}} ==
-               Context.new(
-                 %{"block" => %{"response" => "true"}},
-                 skip_context_evaluation?: true
-               )
-    end
-
-    test "string values in context that resemble numbers should not be parsed as numbers" do
-      assert %{
-               "ref_buttons_7bef16" => %{
-                 "__value__" => "2",
-                 "index" => 1,
-                 "label" => "2",
-                 "name" => "2"
-               }
-             } ==
-               Context.new(
-                 %{
-                   "ref_Buttons_7bef16" => %{
-                     "__value__" => "2",
-                     "index" => 1,
-                     "label" => "2",
-                     "name" => "2"
-                   }
-                 },
-                 skip_context_evaluation?: true
-               )
     end
   end
 end

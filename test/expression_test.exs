@@ -190,11 +190,32 @@ defmodule ExpressionTest do
       assert_raise Expression.Error, "expression is not a number: `\"NaN\"`", fn ->
         Expression.evaluate_as_boolean!("@(\"NaN\" * 0.2 == 0.02)")
       end
+
+      assert_raise Expression.Error, "bad argument in arithmetic expression", fn ->
+        Expression.evaluate_as_boolean!("@(1 / 0 == 2)")
+      end
     end
 
     test "list with indices" do
       assert "baz" == Expression.evaluate_as_string!("@foo[0]", %{"foo" => ["baz", "bar"]})
       assert "bar" == Expression.evaluate_as_string!("@foo[1]", %{"foo" => ["baz", "bar"]})
+    end
+
+    test "attributes with leading underscores" do
+      context = %{
+        "event" => %{
+          "message" => %{"_vnd" => %{"v1" => %{"chat" => %{"state" => "OPEN"}}}}
+        }
+      }
+
+      assert Expression.evaluate_as_string!("@event.message._vnd.v1.chat.state", context) ==
+               "OPEN"
+
+      assert Expression.evaluate_block!("event.message._vnd.v1.chat", context) == %{
+               "state" => "OPEN"
+             }
+
+      assert Expression.evaluate_as_string!("@_missing", %{}) == "@_missing"
     end
 
     test "list with variable" do
@@ -220,7 +241,9 @@ defmodule ExpressionTest do
                      "body" => ["hello", "bye"]
                    },
                    "current_activity" => "0"
-                 }
+                 },
+                 Expression.Callbacks,
+                 coerce_strings: true
                )
     end
 
@@ -321,6 +344,58 @@ defmodule ExpressionTest do
                    "bar" => "bar"
                  }
                })
+    end
+
+    test "case-insensitive lookup of a camelCase key holding false" do
+      context = %{"contact" => %{"isActive" => false}}
+
+      assert Expression.evaluate("@contact.isactive", context) == {:ok, false}
+      assert Expression.evaluate("@contact.isActive", context) == {:ok, false}
+      assert Expression.evaluate("@contact.ISACTIVE", context) == {:ok, false}
+    end
+
+    test "case-insensitive lookup of a top-level key holding false" do
+      assert Expression.evaluate("@enabled", %{"Enabled" => false}) == {:ok, false}
+    end
+
+    test "case-insensitive lookup of false through a multi-level attribute chain" do
+      assert Expression.evaluate("@a.b.c", %{"A" => %{"B" => %{"C" => false}}}) == {:ok, false}
+    end
+
+    test "case-insensitive lookup of other falsy values" do
+      context = %{
+        "map" => %{
+          "itemCount" => 0,
+          "emptyTags" => [],
+          "blankNote" => "",
+          "zeroRate" => 0.0
+        }
+      }
+
+      assert Expression.evaluate("@map.itemcount", context) == {:ok, 0}
+      assert Expression.evaluate("@map.emptytags", context) == {:ok, []}
+      assert Expression.evaluate("@map.blanknote", context) == {:ok, ""}
+      assert Expression.evaluate("@map.zerorate", context) == {:ok, 0.0}
+    end
+
+    test "a missing key is still reported as not found alongside a false sibling" do
+      context = %{"contact" => %{"isActive" => false}}
+
+      assert Expression.evaluate_block("contact.missing", context) ==
+               {:ok, {:not_found, ["missing"]}}
+
+      assert_raise Expression.Error, "attribute is not found: `missing`", fn ->
+        Expression.evaluate_block!("contact.missing > 0", context)
+      end
+    end
+
+    test "a case-insensitively resolved false is usable downstream" do
+      context = %{"contact" => %{"isActive" => false}}
+
+      assert Expression.evaluate_block!("contact.isactive == false", context) == true
+      assert Expression.evaluate_as_boolean!("@contact.isactive", context) == false
+      assert Expression.evaluate!(~S|@IF(contact.isactive, "on", "off")|, context) == "off"
+      assert Expression.evaluate_as_string!("@contact.isactive", context) == "false"
     end
 
     test "delete an element from a map" do
@@ -612,17 +687,18 @@ defmodule ExpressionTest do
     end
 
     test "return an error tuple" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("block.value > 0", %{
                  "block" => %{"value" => "not a number"}
                })
     end
 
     test "return an error tuple when variables are not defined" do
-      assert {:error, "attribute is not found: `value`"} =
+      assert {:error, %Expression.Error{message: "attribute is not found: `value`"}} =
                Expression.evaluate_block("block.value > 0", %{"block" => %{}})
 
-      assert {:error, "attribute is not found: `block.value`"} =
+      assert {:error, %Expression.Error{message: "attribute is not found: `block.value`"}} =
                Expression.evaluate_block("block.value > 0", %{})
     end
 
@@ -653,23 +729,65 @@ defmodule ExpressionTest do
       end
     end
 
+    test "a division by zero returns an error tuple instead of crashing" do
+      assert {:error, %Expression.Error{message: "bad argument in arithmetic expression"}} =
+               Expression.evaluate_block("score / total", %{"score" => 10, "total" => 0})
+    end
+
+    test "a division by zero raises Expression.Error from the bang variant" do
+      assert_raise Expression.Error, "bad argument in arithmetic expression", fn ->
+        Expression.evaluate_block!("score / total", %{"score" => 10, "total" => 0})
+      end
+    end
+
     test "fixed/2 with a numeric string still formats the number" do
       assert {:ok, "4.21"} == Expression.evaluate_block("fixed(value, 2)", %{"value" => "4.209"})
     end
 
     test "fixed/2 with a non-numeric value returns an error tuple instead of crashing" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("fixed(value, 2)", %{"value" => "not a number"})
     end
 
     test "fixed/2 with a nil value returns an error tuple instead of crashing" do
-      assert {:error, "expression is not a number: `nil`"} =
+      assert {:error, %Expression.Error{message: "expression is not a number: `nil`"}} =
                Expression.evaluate_block("fixed(value, 2)", %{"value" => nil})
     end
 
     test "fixed/3 with a non-numeric value returns an error tuple instead of crashing" do
-      assert {:error, "expression is not a number: `\"not a number\"`"} =
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
                Expression.evaluate_block("fixed(value, 2, true)", %{"value" => "not a number"})
+    end
+
+    test "round/1 rounds a whole number to itself" do
+      assert {:ok, "4"} == Expression.evaluate_block("round(value)", %{"value" => 4})
+    end
+
+    test "round/2 rounds a whole number to the given places" do
+      assert {:ok, "4.00"} == Expression.evaluate_block("round(value, 2)", %{"value" => 4})
+    end
+
+    test "round/1 with a numeric string still rounds the number" do
+      assert {:ok, "4"} == Expression.evaluate_block("round(value)", %{"value" => "3.7"})
+    end
+
+    test "round/1 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
+               Expression.evaluate_block("round(value)", %{"value" => "not a number"})
+    end
+
+    test "round/1 with a nil value returns an error tuple instead of crashing" do
+      assert {:error, %Expression.Error{message: "expression is not a number: `nil`"}} =
+               Expression.evaluate_block("round(value)", %{"value" => nil})
+    end
+
+    test "round/2 with a non-numeric value returns an error tuple instead of crashing" do
+      assert {:error,
+              %Expression.Error{message: "expression is not a number: `\"not a number\"`"}} =
+               Expression.evaluate_block("round(value, 2)", %{"value" => "not a number"})
     end
   end
 
@@ -742,6 +860,17 @@ defmodule ExpressionTest do
                "error" => true,
                "message" => "Invalid enumerable"
              }
+    end
+
+    test "underscored number literals keep their value in comparisons and arithmetic" do
+      # 180_000 used to parse as 1800 (each digit group was parsed as an
+      # integer before joining, dropping leading zeros), which made
+      # `5000 > 180_000` evaluate to true
+      assert Expression.evaluate_block!("5000 > 180_000") == false
+      assert Expression.evaluate_block!("180_000 < 5000") == false
+      assert Expression.evaluate_block!("200_000 + 1") == 200_001
+      assert Expression.evaluate_block!("1_000_000") == 1_000_000
+      assert Expression.evaluate_block!("1_234_567.89") == 1_234_567.89
     end
   end
 

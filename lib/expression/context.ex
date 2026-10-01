@@ -6,46 +6,49 @@ defmodule Expression.Context do
 
   ## Plain map context
 
-  `new/2` returns a plain map with lowercased string keys and
-  auto-coerced values. This is the legacy format and remains the
-  default for backwards compatibility.
+  `new/2` returns a plain map. By default it preserves original key
+  casing (variable lookup is case-insensitive at evaluation time) and
+  leaves string values untouched. Atom keys are stringified.
 
     iex> Expression.Context.new(%{foo: "bar"})
     %{"foo" => "bar"}
     iex> Expression.Context.new(%{FOO: "bar"})
-    %{"foo" => "bar"}
+    %{"FOO" => "bar"}
     iex> Expression.Context.new(%{foo: %{bar: "baz"}})
     %{"foo" => %{"bar" => "baz"}}
     iex> Expression.Context.new(%{Foo: %{Bar: "baz"}})
-    %{"foo" => %{"bar" => "baz"}}
+    %{"Foo" => %{"Bar" => "baz"}}
     iex> Expression.Context.new(%{foo: %{bar: 1}})
     %{"foo" => %{"bar" => 1}}
     iex> Expression.Context.new(%{date: "2020-12-13T23:34:45"})
-    %{"date" => ~U[2020-12-13 23:34:45.0Z]}
+    %{"date" => "2020-12-13T23:34:45"}
     iex> Expression.Context.new(%{boolean: "true"})
-    %{"boolean" => true}
+    %{"boolean" => "true"}
     iex> Expression.Context.new(%{float: 1.234})
     %{"float" => 1.234}
-    iex> now = DateTime.utc_now()
-    iex> ctx = Expression.Context.new(%{float: "1.234", nested: %{date: now}})
-    iex> ctx["float"]
-    1.234
-    iex> now == ctx["nested"]["date"]
-    true
-    iex> Expression.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]})
+
+  Pass `lowercase_keys: true` and/or `coerce_strings: true` to opt in
+  to v2-style normalization:
+
+    iex> Expression.Context.new(%{FOO: "bar"}, lowercase_keys: true)
+    %{"foo" => "bar"}
+    iex> Expression.Context.new(%{date: "2020-12-13T23:34:45"}, coerce_strings: true)
+    %{"date" => ~U[2020-12-13 23:34:45.0Z]}
+    iex> Expression.Context.new(%{boolean: "true"}, coerce_strings: true)
+    %{"boolean" => true}
+    iex> Expression.Context.new(%{mixed: ["2020-12-13T23:34:45", 1, "true", "binary"]}, coerce_strings: true)
     %{"mixed" => [~U[2020-12-13 23:34:45.0Z], 1, true, "binary"]}
 
   ## Options
 
   `new/2` accepts the following options:
 
-    * `:lowercase_keys` - when `true` (default), all keys are lowercased.
-      Set to `false` to preserve original casing — the evaluator uses
-      case-insensitive lookup so expressions still resolve correctly.
-    * `:coerce_strings` - when `true` (default), string values are
-      auto-parsed to their typed equivalents (dates, booleans, numbers).
-      Set to `false` to preserve all string values as-is.
-    * `:skip_context_evaluation?` - legacy alias for `coerce_strings: false`.
+    * `:lowercase_keys` - when `true`, all keys are lowercased. Default
+      is `false`. Variable lookup remains case-insensitive at evaluation
+      time regardless of this setting.
+    * `:coerce_strings` - when `true`, string values are auto-parsed to
+      their typed equivalents (dates, booleans, numbers). Default is
+      `false`.
 
   ## Structured context with private state
 
@@ -78,7 +81,7 @@ defmodule Expression.Context do
   def new(%__MODULE__{} = ctx, _opts), do: ctx
 
   def new(ctx, opts) when is_map(ctx) do
-    lowercase? = Keyword.get(opts, :lowercase_keys, true)
+    lowercase? = Keyword.get(opts, :lowercase_keys, false)
 
     ctx
     |> Enum.map(if lowercase?, do: &downcase_string_key/1, else: &stringify_key/1)
@@ -121,13 +124,7 @@ defmodule Expression.Context do
   defp downcase_string_key({key, value}), do: {String.downcase(to_string(key)), value}
   defp stringify_key({key, value}), do: {to_string(key), value}
 
-  defp coerce_strings?(opts) do
-    # coerce_strings option takes precedence; fall back to legacy skip_context_evaluation?
-    case Keyword.get(opts, :coerce_strings) do
-      nil -> not Keyword.get(opts, :skip_context_evaluation?, false)
-      value -> value
-    end
-  end
+  defp coerce_strings?(opts), do: Keyword.get(opts, :coerce_strings, false)
 
   defp iterate({key, value}, opts) when is_map(value) or is_list(value) do
     {key, evaluate!(value, opts)}
