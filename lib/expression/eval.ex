@@ -48,7 +48,10 @@ defmodule Expression.Eval do
     case_insensitive_get(vars, atom)
   end
 
-  def eval!({:atom, atom}, context, _mod) when is_map(context) do
+  # Structs (such as a Date coerced from a string) fall through to the clause
+  # below like any other scalar: their keys are atoms so a string key can never
+  # match, and scanning them would raise because they are not Enumerable.
+  def eval!({:atom, atom}, context, _mod) when is_map(context) and not is_struct(context) do
     case_insensitive_get(context, atom)
   end
 

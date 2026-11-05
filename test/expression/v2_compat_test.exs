@@ -50,6 +50,46 @@ defmodule Expression.V2CompatTest do
 
       assert Expression.evaluate!("@(age > 21)", ctx, Expression.Callbacks, mode: :v2) == true
     end
+
+    test "attribute access on a coerced date resolves to empty like other scalars" do
+      ctx = %{"reply" => "19/09/1995", "sent_at" => "2020-12-13T23:34:45"}
+
+      assert Expression.evaluate_as_string!("@reply.date", ctx, Expression.Callbacks, mode: :v2) ==
+               ""
+
+      assert Expression.evaluate_as_string!("@sent_at.date", ctx, Expression.Callbacks, mode: :v2) ==
+               ""
+
+      assert Expression.evaluate!("@has_date(reply.date)", ctx, Expression.Callbacks, mode: :v2) ==
+               false
+    end
+
+    # The journey canvas routes a WhatsApp Flow card's submit button on this exact
+    # condition, so a typed date or time instead of a form submission must fall
+    # through to the card's default exit rather than fail the journey.
+    test "a typed date or time does not count as a flow submission" do
+      for reply <- ["19/09/1995", "19/09/1995 10:30", "10:30"] do
+        ctx = %{"ref_flow_1" => reply}
+
+        assert Expression.evaluate!(
+                 "@(not is_nil_or_empty(ref_flow_1.flow_token))",
+                 ctx,
+                 Expression.Callbacks,
+                 mode: :v2
+               ) == false
+      end
+    end
+
+    test "a flow submission still exposes its flow token" do
+      ctx = %{"ref_flow_1" => %{"flow_token" => "token", "date" => "1995-09-19"}}
+
+      assert Expression.evaluate!(
+               "@(not is_nil_or_empty(ref_flow_1.flow_token))",
+               ctx,
+               Expression.Callbacks,
+               mode: :v2
+             ) == true
+    end
   end
 
   describe "context key lowercasing" do
