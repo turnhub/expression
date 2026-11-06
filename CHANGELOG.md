@@ -1,5 +1,14 @@
 # Changelog
 
+## v3.0.0-rc.6
+
+### Fixed
+
+- Attribute access into a value coerced to a date or time, such as
+  `@value.foo` where `value` holds a date string, no longer crashes the caller.
+  Structs are now treated like any other scalar instead of being scanned as a
+  map, which raised because they are not `Enumerable`.
+
 ## v3.0.0-rc.5
 
 ### Fixed
