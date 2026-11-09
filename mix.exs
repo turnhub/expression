@@ -51,7 +51,7 @@ defmodule Expression.MixProject do
       {:nimble_parsec, "~> 1.1"},
       {:number, "~> 1.0"},
       {:decimal, "~> 2.0"},
-      {:timex, "~> 3.7"}
+      {:timex, "~> 4.0"}
     ]
   end
 
