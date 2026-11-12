@@ -1,5 +1,16 @@
 # Changelog
 
+## v3.0.0-rc.7
+
+### Fixed
+
+- `DAY`, `MONTH`, `YEAR`, `HOUR`, `MINUTE`, `SECOND` and `WEEKDAY` no longer
+  crash the caller when the value is not a date, such as an empty field. They
+  now return the standard "Invalid date" error, as `DATETIME_ADD` already does,
+  which renders as empty text and can be checked with `IS_ERROR`. They also
+  read date strings, so they work on context values in v3 mode, where strings
+  are no longer coerced to dates.
+
 ## v3.0.0-rc.6
 
 ### Fixed

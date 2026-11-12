@@ -530,9 +530,14 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 29
+  @expression_doc doc: "Return day from a date string",
+                  expression: "day(\"2022-09-10\")",
+                  result: 10
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "day(nil)",
+                  result: Expression.error_map("Invalid date")
   def day(ctx, date) do
-    %{day: day} = eval!(date, ctx)
-    day
+    date |> eval!(ctx) |> date_part(:day, &DateHelpers.extract_dateish/1)
   end
 
   @doc """
@@ -655,9 +660,14 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 3
+  @expression_doc doc: "Return hour from a datetime string",
+                  expression: "hour(\"2022-07-31T03:23:15Z\")",
+                  result: 3
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "hour(nil)",
+                  result: Expression.error_map("Invalid date")
   def hour(ctx, date) do
-    %{hour: hour} = eval!(date, ctx)
-    hour
+    date |> eval!(ctx) |> date_part(:hour, &DateHelpers.extract_datetimeish/1)
   end
 
   @doc """
@@ -678,9 +688,14 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 23
+  @expression_doc doc: "Return minute from a datetime string",
+                  expression: "minute(\"2022-07-31T03:23:15Z\")",
+                  result: 23
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "minute(nil)",
+                  result: Expression.error_map("Invalid date")
   def minute(ctx, date) do
-    %{minute: minute} = DateHelpers.extract_datetimeish(eval!(date, ctx))
-    minute
+    date |> eval!(ctx) |> date_part(:minute, &DateHelpers.extract_datetimeish/1)
   end
 
   @doc """
@@ -701,9 +716,14 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 7
+  @expression_doc doc: "Return month from a date string",
+                  expression: "month(\"2022-07-31\")",
+                  result: 7
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "month(nil)",
+                  result: Expression.error_map("Invalid date")
   def month(ctx, date) do
-    %{month: month} = eval!(date, ctx)
-    month
+    date |> eval!(ctx) |> date_part(:month, &DateHelpers.extract_dateish/1)
   end
 
   @doc """
@@ -745,9 +765,14 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 15
+  @expression_doc doc: "Return second from a datetime string",
+                  expression: "second(\"2022-07-31T03:23:15Z\")",
+                  result: 15
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "second(nil)",
+                  result: Expression.error_map("Invalid date")
   def second(ctx, date) do
-    %{second: second} = eval!(date, ctx)
-    second
+    date |> eval!(ctx) |> date_part(:second, &DateHelpers.extract_datetimeish/1)
   end
 
   @doc """
@@ -853,13 +878,18 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 1
+  @expression_doc doc: "Return day of week from a date string",
+                  expression: "weekday(\"2022-11-06\")",
+                  result: 1
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "weekday(nil)",
+                  result: Expression.error_map("Invalid date")
   def weekday(ctx, date) do
-    iso_week_day = Timex.weekday(eval!(date, ctx))
-
-    if iso_week_day == 7 do
-      1
+    if date = weekday_date(eval!(date, ctx)) do
+      iso_week_day = Timex.weekday(date)
+      if iso_week_day == 7, do: 1, else: iso_week_day + 1
     else
-      iso_week_day + 1
+      Expression.error_map("Invalid date")
     end
   end
 
@@ -880,9 +910,14 @@ defmodule Expression.Callbacks.Standard do
                     }
                   },
                   result: 2022
+  @expression_doc doc: "Return year from a date string",
+                  expression: "year(\"2022-11-06\")",
+                  result: 2022
+  @expression_doc doc: "Return an error when the value is not a date",
+                  expression: "year(nil)",
+                  result: Expression.error_map("Invalid date")
   def year(ctx, date) do
-    %{year: year} = DateHelpers.extract_dateish(eval!(date, ctx))
-    year
+    date |> eval!(ctx) |> date_part(:year, &DateHelpers.extract_dateish/1)
   end
 
   @doc """
@@ -3419,6 +3454,31 @@ defmodule Expression.Callbacks.Standard do
   defp date_compare(nil, _date2), do: {:error, Expression.error_map("The first argument is nil")}
   defp date_compare(_date1, nil), do: {:error, Expression.error_map("The second argument is nil")}
   defp date_compare(date1, date2), do: {:ok, Date.compare(date1, date2)}
+
+  # Structs that already carry the part (Date, DateTime, NaiveDateTime, Time)
+  # are read as they are, so `hour(time(12, 0, 0))` keeps working.
+  @spec date_part(term, :year | :month | :day | :hour | :minute | :second, (term -> map | nil)) ::
+          integer | %{required(String.t()) => term}
+  defp date_part(value, part, _extract) when is_struct(value) and is_map_key(value, part),
+    do: Map.fetch!(value, part)
+
+  defp date_part(value, part, extract) when is_binary(value) or is_struct(value, Date) do
+    case extract.(value) do
+      %{^part => part_value} -> part_value
+      _ -> Expression.error_map("Invalid date")
+    end
+  end
+
+  defp date_part(_value, _part, _extract), do: Expression.error_map("Invalid date")
+
+  @spec weekday_date(term) :: Date.t() | DateTime.t() | NaiveDateTime.t() | nil
+  defp weekday_date(value)
+       when is_struct(value, Date) or is_struct(value, DateTime) or
+              is_struct(value, NaiveDateTime),
+       do: value
+
+  defp weekday_date(value) when is_binary(value), do: DateHelpers.extract_dateish(value)
+  defp weekday_date(_value), do: nil
 
   @doc """
   Tests whether an email is contained in text
